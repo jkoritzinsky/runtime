@@ -1,0 +1,13 @@
+﻿{
+  "configurations": [
+    {
+      "name": "x64 Debug",
+      "cacheRoot": "${thisFileDir}/../../../../artifacts/obj/native/net6.0-windows-Debug-x64",
+      "cacheGenerationCommand": "${thisFileDir}/../build-native.cmd x64  Debug outconfig net6.0-windows-Debug-x64 -os windows ninja configureonly",
+      "buildRoot": "${thisFileDir}/../../../../artifacts/obj/native/net6.0-windows-Debug-x64",
+      "intelliSenseMode": "windows-msvc-x64",
+      "inheritEnvironments": [],
+      "variables": []
+    }
+  ]
+}

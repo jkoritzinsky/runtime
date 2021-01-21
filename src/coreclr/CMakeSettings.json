@@ -1,0 +1,25 @@
+﻿{
+    "configurations": [
+        {
+            "name": "x64 Debug",
+            "cacheRoot": "${thisFileDir}/../../artifacts/nmakeobj/windows.x64.debug",
+            "cacheGenerationCommand": "${thisFileDir}/build-runtime.cmd configureonly -ninja -debug -x64",
+            "buildRoot": "${thisFileDir}/../../artifacts/nmakeobj/windows.x64.debug",
+            "intelliSenseMode": "windows-msvc-x64"
+        },
+        {
+            "name": "x64 Checked",
+            "cacheRoot": "${thisFileDir}/../../artifacts/nmakeobj/windows.x64.Checked",
+            "cacheGenerationCommand": "${thisFileDir}/build-runtime.cmd configureonly -ninja -checked -x64",
+            "buildRoot": "${thisFileDir}/../../artifacts/nmakeobj/windows.x64.Checked",
+            "intelliSenseMode": "windows-msvc-x64"
+        },
+        {
+            "name": "x64 Release",
+            "cacheRoot": "${thisFileDir}/../../artifacts/nmakeobj/windows.x64.Release",
+            "cacheGenerationCommand": "${thisFileDir}/build-runtime.cmd configureonly -ninja -release -x64",
+            "buildRoot": "${thisFileDir}/../../artifacts/nmakeobj/windows.x64.Release",
+            "intelliSenseMode": "windows-msvc-x64"
+        }
+    ]
+}

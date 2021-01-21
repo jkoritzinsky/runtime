@@ -17,6 +17,7 @@ set CMAKE_BUILD_TYPE=Debug
 set "__LinkArgs= "
 set "__LinkLibraries= "
 set __Ninja=0
+set __ConfigureOnly=0
 
 :Arg_Loop
 :: Since the native build requires some configuration information before msbuild is called, we have to do some manual args parsing
@@ -39,6 +40,8 @@ if /i [%1] == [Browser] ( set __TargetOS=Browser&&shift&goto Arg_Loop)
 if /i [%1] == [rebuild] ( set __BuildTarget=rebuild&&shift&goto Arg_Loop)
 
 if /i [%1] == [ninja] ( set __Ninja=1&&shift&goto Arg_Loop)
+
+if /i [%1] == [configureonly] ( set __ConfigureOnly=1&&shift&goto Arg_Loop)
 
 shift
 goto :Arg_Loop
@@ -151,6 +154,7 @@ pushd "%__IntermediatesDir%"
 call "%__repoRoot%\eng\native\gen-buildsys.cmd" "%__sourceDir%" "%__IntermediatesDir%" %__VSVersion% %__BuildArch% "-DCMAKE_REPO_ROOT=%__cmakeRepoRoot%"
 if NOT [%errorlevel%] == [0] goto :Failure
 popd
+if [%__ConfigureOnly%] == [1] goto :Success
 
 :BuildNativeProj
 :: Build the project created by Cmake
@@ -168,6 +172,7 @@ IF ERRORLEVEL 1 (
     goto :Failure
 )
 
+:Success
 echo Done building Native components
 exit /B 0
 
