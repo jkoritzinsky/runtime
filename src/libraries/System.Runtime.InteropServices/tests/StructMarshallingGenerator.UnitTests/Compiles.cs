@@ -19,6 +19,8 @@ namespace StructMarshallingGenerator.UnitTests
             yield return CreateTestCase(CodeSnippets.TrivialStructDeclaration);
             yield return CreateTestCase(CodeSnippets.BlittableStructDeclarations);
             yield return CreateTestCase(CodeSnippets.NonBlittableStructDeclaration);
+            yield return CreateTestCase(CodeSnippets.BlittableFixedBufferDeclaration);
+            yield return CreateTestCase(CodeSnippets.NonBlittableFixedBufferDeclaration);
         }
 
         private static object[] CreateTestCase(string source, [CallerArgumentExpression("source")] string snippetName = "")

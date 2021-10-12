@@ -43,5 +43,35 @@ partial struct NonBlittable
     public string s;
 }
 ";
+
+        public static readonly string BlittableFixedBufferDeclaration = @"
+using System.Runtime.InteropServices;
+[GeneratedMarshalling]
+[StructLayout(LayoutKind.Sequential)]
+partial struct NonBlittable
+{
+    public unsafe fixed int Buffer[4];
+}
+";
+
+        public static readonly string NonBlittableFixedBufferDeclaration = @"
+using System.Runtime.InteropServices;
+[GeneratedMarshalling]
+[StructLayout(LayoutKind.Sequential)]
+partial struct NonBlittable
+{
+    [MarshalUsing(typeof(WrappedCBool), ElementIndirectionLevel = 1)]
+    public unsafe fixed bool Buffer[4];
+}
+
+struct WrappedCBool
+{
+    private byte value;
+
+    public WrappedCBool(bool b) { value = b ? 1 : 0; }
+
+    public bool ToManaged() => value != 0;
+};
+";
     }
 }

@@ -10,6 +10,7 @@ using System.Threading;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.Interop.Generators;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace Microsoft.Interop
@@ -58,7 +59,7 @@ namespace Microsoft.Interop
             StructDeclarationSyntax nativeMarshallingStruct = StructMarshallingImplementationGenerator.GenerateStructMarshallingCode(
                 context,
                 (info, ex) => diagnostics.ReportMarshallingNotSupported(originalSyntax, info.InstanceIdentifier, ex.NotSupportedDetails),
-                new DefaultMarshallingGeneratorFactory(new InteropGenerationOptions(false, false)));
+                new StructMarshallingGeneratorFactory(new DefaultMarshallingGeneratorFactory(new InteropGenerationOptions(false, false))));
 
             return (PrintGeneratedSource(context.Namespace, originalSyntax, nativeMarshallingStruct), context.Diagnostics.AddRange(diagnostics.ToImmutable()));
         }
