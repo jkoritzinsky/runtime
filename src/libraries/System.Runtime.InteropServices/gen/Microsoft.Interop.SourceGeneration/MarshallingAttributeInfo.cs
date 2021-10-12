@@ -151,6 +151,18 @@ namespace Microsoft.Interop
             UseDefaultMarshalling
         );
 
+    /// <summary>
+    /// The field is a fixed buffer.
+    /// </summary>
+    /// <param name="Size">ZThe number of elements in the buffer.</param>
+    /// <param name="ElementType">The type of elements in the buffer.</param>
+    /// <param name="ElementMarshallingInfo">The marshalling info for the elemnents in the buffer.</param>
+    public sealed record FixedBufferMarshallingInfo(
+        int Size,
+        ManagedTypeInfo ElementType,
+        MarshallingInfo ElementMarshallingInfo
+        ) : MarshallingInfo;
+
     public sealed class MarshallingAttributeInfoParser
     {
         private readonly Compilation _compilation;
@@ -175,35 +187,29 @@ namespace Microsoft.Interop
         }
 
         public MarshallingInfo ParseMarshallingInfo(
+            ISymbol? metadataElement,
             ITypeSymbol managedType,
             IEnumerable<AttributeData> useSiteAttributes)
         {
-            return ParseMarshallingInfo(managedType, useSiteAttributes, ImmutableHashSet<string>.Empty);
+            return ParseMarshallingInfo(metadataElement, managedType, useSiteAttributes, ImmutableHashSet<string>.Empty);
         }
 
         private MarshallingInfo ParseMarshallingInfo(
+            ISymbol? metadataElement,
             ITypeSymbol managedType,
             IEnumerable<AttributeData> useSiteAttributes,
             ImmutableHashSet<string> inspectedElements)
         {
-            Dictionary<int, AttributeData> marshallingAttributesByIndirectionLevel = new();
-            int maxIndirectionLevelDataProvided = 0;
-            foreach (AttributeData attribute in useSiteAttributes)
+            Dictionary<int, AttributeData> marshallingAttributesByIndirectionLevel = CategoriesAttributesByIndirectionLevel(useSiteAttributes, out int maxIndirectionLevelDataProvided);
+
+            if (marshallingAttributesByIndirectionLevel is null)
             {
-                if (TryGetAttributeIndirectionLevel(attribute, out int indirectionLevel))
-                {
-                    if (marshallingAttributesByIndirectionLevel.ContainsKey(indirectionLevel))
-                    {
-                        _diagnostics.ReportInvalidMarshallingAttributeInfo(attribute, nameof(Resources.DuplicateMarshallingInfo), indirectionLevel.ToString());
-                        return NoMarshallingInfo.Instance;
-                    }
-                    marshallingAttributesByIndirectionLevel.Add(indirectionLevel, attribute);
-                    maxIndirectionLevelDataProvided = Math.Max(maxIndirectionLevelDataProvided, indirectionLevel);
-                }
+                return NoMarshallingInfo.Instance;
             }
 
             int maxIndirectionLevelUsed = 0;
             MarshallingInfo info = GetMarshallingInfo(
+                metadataElement,
                 managedType,
                 marshallingAttributesByIndirectionLevel,
                 indirectionLevel: 0,
@@ -220,7 +226,28 @@ namespace Microsoft.Interop
             return info;
         }
 
+        private Dictionary<int, AttributeData>? CategoriesAttributesByIndirectionLevel(IEnumerable<AttributeData> useSiteAttributes, out int maxIndirectionLevelDataProvided)
+        {
+            Dictionary<int, AttributeData> marshallingAttributesByIndirectionLevel = new();
+            maxIndirectionLevelDataProvided = 0;
+            foreach (AttributeData attribute in useSiteAttributes)
+            {
+                if (TryGetAttributeIndirectionLevel(attribute, out int indirectionLevel))
+                {
+                    if (marshallingAttributesByIndirectionLevel.ContainsKey(indirectionLevel))
+                    {
+                        _diagnostics.ReportInvalidMarshallingAttributeInfo(attribute, nameof(Resources.DuplicateMarshallingInfo), indirectionLevel.ToString());
+                        return null;
+                    }
+                    marshallingAttributesByIndirectionLevel.Add(indirectionLevel, attribute);
+                    maxIndirectionLevelDataProvided = Math.Max(maxIndirectionLevelDataProvided, indirectionLevel);
+                }
+            }
+            return marshallingAttributesByIndirectionLevel;
+        }
+
         private MarshallingInfo GetMarshallingInfo(
+            ISymbol? metadataElement,
             ITypeSymbol type,
             Dictionary<int, AttributeData> useSiteAttributes,
             int indirectionLevel,
@@ -298,7 +325,8 @@ namespace Microsoft.Interop
 
             // If the type doesn't have custom attributes that dictate marshalling,
             // then consider the type itself.
-            if (TryCreateTypeBasedMarshallingInfo(
+            if (TryCreateMetadataDefaultMarshallingInfo(
+                metadataElement,
                 type,
                 parsedCountInfo,
                 indirectionLevel,
@@ -397,7 +425,7 @@ namespace Microsoft.Interop
             {
                 return TypePositionInfo.CreateForParameter(
                     param,
-                    ParseMarshallingInfo(param.Type, param.GetAttributes(), inspectedElements.Add(param.Name)), _compilation) with
+                    ParseMarshallingInfo(param, param.Type, param.GetAttributes(), inspectedElements.Add(param.Name)), _compilation) with
                 { ManagedIndex = paramIndex };
             }
             // Specifically catch the exception when we're trying to inspect the element that started the cycle.
@@ -417,7 +445,7 @@ namespace Microsoft.Interop
                 {
                     return new TypePositionInfo(
                         ManagedTypeInfo.CreateTypeInfoForTypeSymbol(method.ReturnType),
-                        ParseMarshallingInfo(method.ReturnType, method.GetReturnTypeAttributes(), inspectedElements)) with
+                        ParseMarshallingInfo(null, method.ReturnType, method.GetReturnTypeAttributes(), inspectedElements)) with
                     {
                         ManagedIndex = TypePositionInfo.ReturnIndex
                     };
@@ -428,7 +456,7 @@ namespace Microsoft.Interop
                     IParameterSymbol param = method.Parameters[i];
                     if (param.Name == elementName)
                     {
-                        return TypePositionInfo.CreateForParameter(param, ParseMarshallingInfo(param.Type, param.GetAttributes(), inspectedElements), _compilation) with { ManagedIndex = i };
+                        return TypePositionInfo.CreateForParameter(param, ParseMarshallingInfo(param, param.Type, param.GetAttributes(), inspectedElements), _compilation) with { ManagedIndex = i };
                     }
                 }
             }
@@ -527,7 +555,7 @@ namespace Microsoft.Interop
             else
             {
                 maxIndirectionLevelUsed = 1;
-                elementMarshallingInfo = GetMarshallingInfo(elementType, new Dictionary<int, AttributeData>(), 1, ImmutableHashSet<string>.Empty, ref maxIndirectionLevelUsed);
+                elementMarshallingInfo = GetMarshallingInfo(null, elementType, new Dictionary<int, AttributeData>(), 1, ImmutableHashSet<string>.Empty, ref maxIndirectionLevelUsed);
             }
 
             INamedTypeSymbol? arrayMarshaller;
@@ -685,7 +713,7 @@ namespace Microsoft.Interop
                     UseDefaultMarshalling: !isMarshalUsingAttribute,
                     parsedCountInfo,
                     ManagedTypeInfo.CreateTypeInfoForTypeSymbol(elementType),
-                    GetMarshallingInfo(elementType, useSiteAttributes, indirectionLevel + 1, inspectedElements, ref maxIndirectionLevelUsed));
+                    GetMarshallingInfo(null, elementType, useSiteAttributes, indirectionLevel + 1, inspectedElements, ref maxIndirectionLevelUsed));
             }
 
             return new NativeMarshallingAttributeInfo(
@@ -695,7 +723,8 @@ namespace Microsoft.Interop
                 UseDefaultMarshalling: !isMarshalUsingAttribute);
         }
 
-        private bool TryCreateTypeBasedMarshallingInfo(
+        private bool TryCreateMetadataDefaultMarshallingInfo(
+            ISymbol? metadataElement,
             ITypeSymbol type,
             CountInfo parsedCountInfo,
             int indirectionLevel,
@@ -704,6 +733,18 @@ namespace Microsoft.Interop
             ref int maxIndirectionLevelUsed,
             out MarshallingInfo marshallingInfo)
         {
+
+            if (metadataElement is IFieldSymbol { IsFixedSizeBuffer: true, FixedSize: int size })
+            {
+                ITypeSymbol pointedAtType = ((IPointerTypeSymbol)type).PointedAtType;
+
+                marshallingInfo = new FixedBufferMarshallingInfo(
+                    Size: size,
+                    ElementType: ManagedTypeInfo.CreateTypeInfoForTypeSymbol(pointedAtType),
+                    ElementMarshallingInfo: GetMarshallingInfo(null, pointedAtType, useSiteAttributes, indirectionLevel + 1, inspectedElements, ref maxIndirectionLevelUsed));
+                return true;
+            }
+
             // Check for an implicit SafeHandle conversion.
             CodeAnalysis.Operations.CommonConversion conversion = _compilation.ClassifyCommonConversion(type, _compilation.GetTypeByMetadataName(TypeNames.System_Runtime_InteropServices_SafeHandle)!);
             if (conversion.Exists
@@ -755,7 +796,7 @@ namespace Microsoft.Interop
                     UseDefaultMarshalling: true,
                     ElementCountInfo: parsedCountInfo,
                     ElementType: ManagedTypeInfo.CreateTypeInfoForTypeSymbol(elementType),
-                    ElementMarshallingInfo: GetMarshallingInfo(elementType, useSiteAttributes, indirectionLevel + 1, inspectedElements, ref maxIndirectionLevelUsed));
+                    ElementMarshallingInfo: GetMarshallingInfo(null, elementType, useSiteAttributes, indirectionLevel + 1, inspectedElements, ref maxIndirectionLevelUsed));
                 return true;
             }
 

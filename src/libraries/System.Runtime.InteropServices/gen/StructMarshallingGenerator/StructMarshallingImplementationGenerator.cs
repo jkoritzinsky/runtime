@@ -1,0 +1,142 @@
+﻿// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+
+using System;
+using System.Collections.Generic;
+using System.Text;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
+using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
+using Microsoft.CodeAnalysis.CSharp;
+using System.Collections.Immutable;
+using System.Linq;
+
+namespace Microsoft.Interop
+{
+    internal static class StructMarshallingImplementationGenerator
+    {
+        private record struct BoundGenerator(TypePositionInfo TypeInfo, IMarshallingGenerator Generator);
+
+        private class StructMarshallingStubCodeContext : StubCodeContext
+        {
+            public override bool SingleFrameSpansNativeContext => false;
+
+            public override bool AdditionalTemporaryStateLivesAcrossStages => false;
+
+            public override (string managed, string native) GetIdentifiers(TypePositionInfo info)
+            {
+                return ($"managed.{info.InstanceIdentifier}", info.InstanceIdentifier);
+            }
+
+            public StructMarshallingStubCodeContext WithStage(Stage stage)
+            {
+                return new StructMarshallingStubCodeContext { CurrentStage = stage };
+            }
+        }
+
+        public static StructDeclarationSyntax GenerateStructMarshallingCode(
+            StructMarshallingContext structToMarshal,
+            Action<TypePositionInfo, MarshallingNotSupportedException> marshallingNotSupportedCallback,
+            IMarshallingGeneratorFactory generatorFactory)
+        {
+            StructDeclarationSyntax nativeStruct = StructDeclaration("__Native")
+                .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.UnsafeKeyword)));
+
+            StructMarshallingStubCodeContext codeContext = new StructMarshallingStubCodeContext();
+
+            ImmutableArray<BoundGenerator> boundGenerators = ImmutableArray.CreateRange(structToMarshal.Fields.Select(CreateGenerator));
+
+            nativeStruct = nativeStruct.AddMembers(CreateFields(boundGenerators));
+
+            Dictionary<TypePositionInfo, int> typePositionInfoToIndex = structToMarshal.Fields.Select(static (field, index) => (field, index)).ToDictionary(value => value.field, value => value.index);
+
+            IEnumerable<BoundGenerator> dependencySortedFields = MarshallerHelpers.GetTopologicallySortedElements(
+                boundGenerators,
+                m => typePositionInfoToIndex[m.TypeInfo],
+                m => GetInfoDependencies(m.TypeInfo))
+                .ToList();
+
+            ConstructorDeclarationSyntax managedToNativeConstructor = ConstructorDeclaration("__Native")
+                .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword)))
+                .AddParameterListParameters(Parameter(Identifier("managed")).WithType(IdentifierName(structToMarshal.Name)));
+
+            codeContext = codeContext.WithStage(StubCodeContext.Stage.Marshal);
+
+            managedToNativeConstructor = managedToNativeConstructor.AddBodyStatements(boundGenerators.SelectMany(gen => gen.Generator.Generate(gen.TypeInfo, codeContext)).ToArray());
+
+            MethodDeclarationSyntax toManagedMethod = MethodDeclaration(IdentifierName(structToMarshal.Name), "ToManaged")
+                .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword)));
+
+            codeContext = codeContext.WithStage(StubCodeContext.Stage.Unmarshal);
+
+            toManagedMethod = toManagedMethod
+                .AddBodyStatements(LocalDeclarationStatement(
+                    VariableDeclaration(IdentifierName(structToMarshal.Name),
+                        SingletonSeparatedList(VariableDeclarator(Identifier("managed"))
+                            .WithInitializer(EqualsValueClause(LiteralExpression(SyntaxKind.DefaultLiteralExpression)))))))
+                .AddBodyStatements(boundGenerators.SelectMany(gen => gen.Generator.Generate(gen.TypeInfo, codeContext)).ToArray())
+                .AddBodyStatements(ReturnStatement(IdentifierName("managed")));
+
+            MethodDeclarationSyntax freeNativeMethod = MethodDeclaration(PredefinedType(Token(SyntaxKind.VoidKeyword)), "FreeNative")
+                .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword)));
+
+            codeContext = codeContext.WithStage(StubCodeContext.Stage.Cleanup);
+
+            freeNativeMethod = freeNativeMethod.AddBodyStatements(boundGenerators.SelectMany(gen => gen.Generator.Generate(gen.TypeInfo, codeContext)).ToArray());
+
+            nativeStruct = nativeStruct.AddMembers(managedToNativeConstructor, toManagedMethod);
+
+            if (freeNativeMethod.Body.Statements.Count > 0)
+            {
+                nativeStruct = nativeStruct.AddMembers(freeNativeMethod);
+            }
+
+            return nativeStruct;
+
+            IEnumerable<int> GetInfoDependencies(TypePositionInfo info)
+            {
+                return MarshallerHelpers.GetDependentElementsOfMarshallingInfo(info.MarshallingAttributeInfo)
+                    .Select(info => typePositionInfoToIndex[info]).ToList();
+            }
+
+            BoundGenerator CreateGenerator(TypePositionInfo p)
+            {
+                try
+                {
+                    return new BoundGenerator(p, generatorFactory.Create(p, codeContext));
+                }
+                catch (MarshallingNotSupportedException e)
+                {
+                    marshallingNotSupportedCallback(p, e);
+                    return new BoundGenerator(p, new Forwarder());
+                }
+            }
+        }
+
+        private static FieldDeclarationSyntax[] CreateFields(ImmutableArray<BoundGenerator> boundGenerators)
+        {
+            List<FieldDeclarationSyntax> fieldDeclarationSyntaxes = new();
+            foreach (BoundGenerator gen in boundGenerators)
+            {
+                if (gen.TypeInfo.MarshallingAttributeInfo is FixedBufferMarshallingInfo fixedBuffer)
+                {
+                    fieldDeclarationSyntaxes.Add(
+                           FieldDeclaration(
+                               VariableDeclaration(gen.Generator.AsNativeType(gen.TypeInfo),
+                                   SingletonSeparatedList(
+                                       VariableDeclarator(Identifier(gen.TypeInfo.InstanceIdentifier))
+                                        .WithArgumentList(BracketedArgumentList(SingletonSeparatedList(Argument(LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(fixedBuffer.Size)))))))))
+                           .WithModifiers(TokenList(Token(SyntaxKind.FixedKeyword))));
+                }
+                else
+                {
+                    fieldDeclarationSyntaxes.Add(
+                        FieldDeclaration(
+                            VariableDeclaration(gen.Generator.AsNativeType(gen.TypeInfo),
+                                SingletonSeparatedList(
+                                    VariableDeclarator(Identifier(gen.TypeInfo.InstanceIdentifier))))));
+                }
+            }
+            return fieldDeclarationSyntaxes.ToArray();
+        }
+    }
+}

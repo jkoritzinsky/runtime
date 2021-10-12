@@ -75,5 +75,7 @@ namespace Microsoft.Interop
         {
             return options.UseInternalUnsafeType ? Internal_Runtime_CompilerServices_Unsafe : System_Runtime_CompilerServices_Unsafe;
         }
+
+        public const string System_Runtime_InteropServices_FieldOffsetAttribute = "System.Runtime.InteropServices.FieldOffsetAttribute";
     }
 }
