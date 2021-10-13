@@ -41,7 +41,7 @@ namespace Microsoft.Interop
             StructDeclarationSyntax nativeStruct = StructDeclaration("__Native")
                 .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.UnsafeKeyword)));
 
-            StructMarshallingStubCodeContext codeContext = new StructMarshallingStubCodeContext();
+            StructMarshallingStubCodeContext codeContext = new StructMarshallingStubCodeContext().WithStage(StubCodeContext.Stage.Setup);
 
             ImmutableArray<BoundGenerator> boundGenerators = ImmutableArray.CreateRange(structToMarshal.Fields.Select(CreateGenerator));
 
@@ -59,34 +59,40 @@ namespace Microsoft.Interop
                 .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword)))
                 .AddParameterListParameters(Parameter(Identifier("managed")).WithType(IdentifierName(structToMarshal.Name)));
 
+            StatementSyntax[] setupStatements = boundGenerators.SelectMany(gen => gen.Generator.Generate(gen.TypeInfo, codeContext)).ToArray();
+
             codeContext = codeContext.WithStage(StubCodeContext.Stage.Marshal);
 
-            managedToNativeConstructor = managedToNativeConstructor.AddBodyStatements(boundGenerators.SelectMany(gen => gen.Generator.Generate(gen.TypeInfo, codeContext)).ToArray());
+            managedToNativeConstructor = managedToNativeConstructor.AddBodyStatements(setupStatements).AddBodyStatements(boundGenerators.SelectMany(gen => gen.Generator.Generate(gen.TypeInfo, codeContext)).ToArray());
 
             MethodDeclarationSyntax toManagedMethod = MethodDeclaration(IdentifierName(structToMarshal.Name), "ToManaged")
                 .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword)));
 
             codeContext = codeContext.WithStage(StubCodeContext.Stage.Unmarshal);
 
-            toManagedMethod = toManagedMethod
-                .AddBodyStatements(LocalDeclarationStatement(
+            StatementSyntax declareManagedStatement = LocalDeclarationStatement(
                     VariableDeclaration(IdentifierName(structToMarshal.Name),
                         SingletonSeparatedList(VariableDeclarator(Identifier("managed"))
-                            .WithInitializer(EqualsValueClause(LiteralExpression(SyntaxKind.DefaultLiteralExpression)))))))
+                            .WithInitializer(EqualsValueClause(LiteralExpression(SyntaxKind.DefaultLiteralExpression))))));
+
+            toManagedMethod = toManagedMethod
+                .AddBodyStatements(declareManagedStatement)
+                .AddBodyStatements(setupStatements)
                 .AddBodyStatements(boundGenerators.SelectMany(gen => gen.Generator.Generate(gen.TypeInfo, codeContext)).ToArray())
                 .AddBodyStatements(ReturnStatement(IdentifierName("managed")));
 
-            MethodDeclarationSyntax freeNativeMethod = MethodDeclaration(PredefinedType(Token(SyntaxKind.VoidKeyword)), "FreeNative")
-                .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword)));
-
-            codeContext = codeContext.WithStage(StubCodeContext.Stage.Cleanup);
-
-            freeNativeMethod = freeNativeMethod.AddBodyStatements(boundGenerators.SelectMany(gen => gen.Generator.Generate(gen.TypeInfo, codeContext)).ToArray());
-
             nativeStruct = nativeStruct.AddMembers(managedToNativeConstructor, toManagedMethod);
 
-            if (freeNativeMethod.Body.Statements.Count > 0)
+            StatementSyntax[] freeStatements = boundGenerators.SelectMany(gen => gen.Generator.Generate(gen.TypeInfo, codeContext)).ToArray();
+
+            if (freeStatements.Length > 0)
             {
+                codeContext = codeContext.WithStage(StubCodeContext.Stage.Cleanup);
+                MethodDeclarationSyntax freeNativeMethod = MethodDeclaration(PredefinedType(Token(SyntaxKind.VoidKeyword)), "FreeNative")
+                    .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword)))
+                    .AddBodyStatements(declareManagedStatement)
+                    .AddBodyStatements(setupStatements)
+                    .AddBodyStatements(freeStatements);
                 nativeStruct = nativeStruct.AddMembers(freeNativeMethod);
             }
 

@@ -33,7 +33,7 @@ namespace Microsoft.Interop.Generators
                 return new BlittableFixedBufferGenerator();
             }
 
-            throw new MarshallingNotSupportedException(info, context);
+            return new NonBlittableFixedBufferGenerator(elementMarshaller);
         }
     }
 }

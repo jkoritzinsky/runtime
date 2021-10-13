@@ -31,7 +31,7 @@ namespace Microsoft.Interop
 
         public void ReportMarshallingNotSupported(TypeDeclarationSyntax originalType, string fieldName, string? notSupportedDetails)
         {
-            Location location = originalType.Members.Where(member => member.IsKind(SyntaxKind.FieldDeclaration)).SelectMany(field => ((FieldDeclarationSyntax)field).Declaration.Variables).First(var => var.Identifier.ValueText == "fieldName").GetLocation();
+            Location location = originalType.Members.Where(member => member.IsKind(SyntaxKind.FieldDeclaration)).SelectMany(field => ((FieldDeclarationSyntax)field).Declaration.Variables).First(var => var.Identifier.ValueText == fieldName).GetLocation();
             diagnostics.Add(Diagnostic.Create(ConfigurationNotSupported, location));
         }
 

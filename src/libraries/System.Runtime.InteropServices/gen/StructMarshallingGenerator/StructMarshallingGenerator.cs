@@ -54,12 +54,17 @@ namespace Microsoft.Interop
 
         private (MemberDeclarationSyntax Syntax, ImmutableArray<Diagnostic> Diagnostics) GenerateSyntaxAndDiagnosticsFromContext(StructDeclarationSyntax originalSyntax, StructMarshallingContext context)
         {
+            IMarshallingGeneratorFactory generatorFactory = new DefaultMarshallingGeneratorFactory(new InteropGenerationOptions(false, false));
+            AttributedMarshallingModelGeneratorFactory attributedMarshallingModelGeneratorFactory = new(generatorFactory, new InteropGenerationOptions(false, false));
+            StructMarshallingGeneratorFactory structMarshallingGeneratorFactory =new(attributedMarshallingModelGeneratorFactory);
+            attributedMarshallingModelGeneratorFactory.ElementMarshallingGeneratorFactory = structMarshallingGeneratorFactory;
+
             GeneratorDiagnostics diagnostics = new();
 
             StructDeclarationSyntax nativeMarshallingStruct = StructMarshallingImplementationGenerator.GenerateStructMarshallingCode(
                 context,
                 (info, ex) => diagnostics.ReportMarshallingNotSupported(originalSyntax, info.InstanceIdentifier, ex.NotSupportedDetails),
-                new StructMarshallingGeneratorFactory(new DefaultMarshallingGeneratorFactory(new InteropGenerationOptions(false, false))));
+                structMarshallingGeneratorFactory);
 
             return (PrintGeneratedSource(context.Namespace, originalSyntax, nativeMarshallingStruct), context.Diagnostics.AddRange(diagnostics.ToImmutable()));
         }

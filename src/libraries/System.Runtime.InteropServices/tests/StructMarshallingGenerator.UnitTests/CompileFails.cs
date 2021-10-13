@@ -12,35 +12,35 @@ using Xunit;
 
 namespace StructMarshallingGenerator.UnitTests
 {
-    public class Compiles
+    public class CompileFails
     {
         public static IEnumerable<object[]> CodeSnippetsToCompile()
         {
-            yield return CreateTestCase(CodeSnippets.TrivialStructDeclaration);
-            yield return CreateTestCase(CodeSnippets.BlittableStructDeclarations);
-            yield return CreateTestCase(CodeSnippets.NonBlittableStructDeclaration);
-            yield return CreateTestCase(CodeSnippets.BlittableFixedBufferDeclaration);
+            yield return CreateTestCase(CodeSnippets.NonBlittableFixedBufferDeclaration, 0 , 1); // Until we get generalized fixed-buffer support in C#, non-blittable fixed buffers won't work in the language as well.
         }
 
-        private static object[] CreateTestCase(string source, [CallerArgumentExpression("source")] string snippetName = "")
+        private static object[] CreateTestCase(string source, int expectedGeneratorErrors, int expectedCompilerErrors, [CallerArgumentExpression("source")] string snippetName = "")
         {
-            return new object[] { snippetName, source };
+            return new object[] { snippetName, source, expectedGeneratorErrors, expectedCompilerErrors };
         }
 
         [Theory]
         [MemberData(nameof(CodeSnippetsToCompile))]
 #pragma warning disable xUnit1026 // Theory methods should use all of their parameters. The _ parameter is used to get a better IDE test discovery/selection experience
-        public async Task ValidateSnippets(string _, string source)
+        public async Task ValidateSnippets(string _, string source, int expectedGeneratorErrors, int expectedCompilerErrors)
 #pragma warning restore xUnit1026 // Theory methods should use all of their parameters
         {
             Compilation comp = await TestUtils.CreateCompilation(source);
             TestUtils.AssertPreSourceGeneratorCompilation(comp);
 
             var newComp = TestUtils.RunGenerators(comp, out var generatorDiags, new Microsoft.Interop.StructMarshallingGenerator());
-            Assert.Empty(generatorDiags);
 
-            var newCompDiags = newComp.GetDiagnostics();
-            Assert.Empty(newCompDiags);
+            // Verify the compilation failed with errors.
+            int generatorErrors = generatorDiags.Count(d => d.Severity == DiagnosticSeverity.Error);
+            Assert.Equal(expectedGeneratorErrors, generatorErrors);
+
+            int compilerErrors = newComp.GetDiagnostics().Count(d => d.Severity == DiagnosticSeverity.Error);
+            Assert.Equal(expectedCompilerErrors, compilerErrors);
         }
     }
 }

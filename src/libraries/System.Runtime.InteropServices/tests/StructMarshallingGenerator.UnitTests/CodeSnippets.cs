@@ -68,7 +68,7 @@ struct WrappedCBool
 {
     private byte value;
 
-    public WrappedCBool(bool b) { value = b ? 1 : 0; }
+    public WrappedCBool(bool b) { value = b ? (byte)1 : (byte)0; }
 
     public bool ToManaged() => value != 0;
 };
