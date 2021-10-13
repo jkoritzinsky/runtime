@@ -123,13 +123,6 @@ namespace Microsoft.Interop
         bool UseDefaultMarshalling) : MarshallingInfo;
 
     /// <summary>
-    /// User-applied System.Runtime.InteropServices.GeneratedMarshallingAttribute
-    /// on a non-blittable type in source in this compilation.
-    /// </summary>
-    public sealed record GeneratedNativeMarshallingAttributeInfo(
-        string NativeMarshallingFullyQualifiedTypeName) : MarshallingInfo;
-
-    /// <summary>
     /// The type of the element is a SafeHandle-derived type with no marshalling attributes.
     /// </summary>
     public sealed record SafeHandleMarshallingInfo(bool AccessibleDefaultConstructor, bool IsAbstract) : MarshallingInfo;
@@ -167,6 +160,7 @@ namespace Microsoft.Interop
     {
         private readonly Compilation _compilation;
         private readonly IGeneratorDiagnostics _diagnostics;
+        private readonly GeneratedStructMarshallingFeatureCache _generatedStructMarshallingFeatureCache;
         private readonly DefaultMarshallingInfo _defaultInfo;
         private readonly ISymbol _contextSymbol;
         private readonly ITypeSymbol _marshalAsAttribute;
@@ -175,11 +169,13 @@ namespace Microsoft.Interop
         public MarshallingAttributeInfoParser(
             Compilation compilation,
             IGeneratorDiagnostics diagnostics,
+            GeneratedStructMarshallingFeatureCache generatedStructMarshallingFeatureCache,
             DefaultMarshallingInfo defaultInfo,
             ISymbol contextSymbol)
         {
             _compilation = compilation;
             _diagnostics = diagnostics;
+            _generatedStructMarshallingFeatureCache = generatedStructMarshallingFeatureCache;
             _defaultInfo = defaultInfo;
             _contextSymbol = contextSymbol;
             _marshalAsAttribute = compilation.GetTypeByMetadataName(TypeNames.System_Runtime_InteropServices_MarshalAsAttribute)!;
@@ -319,7 +315,26 @@ namespace Microsoft.Interop
                 }
                 else if (SymbolEqualityComparer.Default.Equals(_compilation.GetTypeByMetadataName(TypeNames.GeneratedMarshallingAttribute), attributeClass))
                 {
-                    return type.IsConsideredBlittable() ? new BlittableTypeAttributeInfo() : new GeneratedNativeMarshallingAttributeInfo(null! /* TODO: determine naming convention */);
+                    if (type.IsConsideredBlittable())
+                    {
+                        return new BlittableTypeAttributeInfo();
+                    }
+
+                    if (type is INamedTypeSymbol named && _generatedStructMarshallingFeatureCache.TryGetGeneratedStructMarshallingFeatures(named, out GeneratedStructMarshallingFeatures marshallingFeatures))
+                    {
+                        string marshallerName = MarshallerHelpers.GetFullyQualifiedGeneratedNativeStructNameForStruct(named);
+                        string? valuePropertyTypeName = marshallingFeatures.HasValueProperty ? MarshallerHelpers.GetFullyQualifiedGeneratedNativeValuePropertyTypeNameForStruct(named) : null;
+                        return new NativeMarshallingAttributeInfo(
+                            new SimpleManagedTypeInfo(marshallerName, marshallerName),
+                            valuePropertyTypeName is not null ? new SimpleManagedTypeInfo(valuePropertyTypeName, valuePropertyTypeName) : null,
+                            marshallingFeatures.MarshallingFeatures,
+                            UseDefaultMarshalling: true);
+                    }
+                    else
+                    {
+                        _diagnostics.ReportInvalidMarshallingAttributeInfo(typeAttribute, nameof(Resources.GeneratedMarshallingAttributeInfoMissingMessage), type.ToDisplayString());
+                        return NoMarshallingInfo.Instance;
+                    }
                 }
             }
 

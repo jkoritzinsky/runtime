@@ -101,6 +101,20 @@ namespace Microsoft.Interop
             return context.GetAdditionalIdentifier(info, "nativeSpan");
         }
 
+        public static readonly string GeneratedNativeStructName = "__Native";
+
+        public static readonly string GeneratedNativeStructValuePropertyTypeName = "__Native";
+
+        public static string GetFullyQualifiedGeneratedNativeStructNameForStruct(ITypeSymbol type)
+        {
+            return $"{type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}.{GeneratedNativeStructName}";
+        }
+
+        public static string GetFullyQualifiedGeneratedNativeValuePropertyTypeNameForStruct(ITypeSymbol type)
+        {
+            return $"{GetFullyQualifiedGeneratedNativeStructNameForStruct(type)}.{GeneratedNativeStructValuePropertyTypeName}";
+        }
+
         /// <summary>
         /// Generate a topologically sorted collection of elements.
         /// </summary>

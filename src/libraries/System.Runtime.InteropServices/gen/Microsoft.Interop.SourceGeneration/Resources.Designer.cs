@@ -187,6 +187,15 @@ namespace Microsoft.Interop {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to The marshalling information for type &apos;{0}&apos; with a &apos;GeneratedMarshallingAttribute&apos; could not be calculated..
+        /// </summary>
+        internal static string GeneratedMarshallingAttributeInfoMissingMessage {
+            get {
+                return ResourceManager.GetString("GeneratedMarshallingAttributeInfoMissingMessage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to The provided graph has cycles and cannot be topologically sorted..
         /// </summary>
         internal static string GraphHasCycles {

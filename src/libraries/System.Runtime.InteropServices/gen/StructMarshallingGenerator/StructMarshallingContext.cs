@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using Microsoft.CodeAnalysis;
@@ -13,7 +14,7 @@ namespace Microsoft.Interop
     internal sealed record StructMarshallingContext(
         string? Namespace,
         string Name,
-        CustomMarshallingFeatures MarshallingFeatures,
+        GeneratedStructMarshallingFeatures MarshallingFeatures,
         ImmutableArray<TypePositionInfo> Fields,
         ImmutableArray<Diagnostic> Diagnostics)
     {
@@ -25,11 +26,11 @@ namespace Microsoft.Interop
                 && Fields.SequenceEqual(other.Fields);
         }
 
-        public static StructMarshallingContext Create(INamedTypeSymbol type, Compilation compilation)
+        public static StructMarshallingContext Create(INamedTypeSymbol type, Compilation compilation, GeneratedStructMarshallingFeatureCache generatedStructMarshallingCache)
         {
             GeneratorDiagnostics diagnostics = new();
 
-            MarshallingAttributeInfoParser parser = new MarshallingAttributeInfoParser(compilation, diagnostics, new DefaultMarshallingInfo(CharEncoding.Undefined), type);
+            MarshallingAttributeInfoParser parser = new MarshallingAttributeInfoParser(compilation, diagnostics, generatedStructMarshallingCache, new DefaultMarshallingInfo(CharEncoding.Undefined), type);
 
             ImmutableArray<TypePositionInfo>.Builder fieldsBuilder = ImmutableArray.CreateBuilder<TypePositionInfo>();
 
@@ -63,7 +64,10 @@ namespace Microsoft.Interop
                 fieldsBuilder.Add(info);
             }
 
-            return new StructMarshallingContext(type.ContainingNamespace?.Name, type.Name, CustomMarshallingFeatures.ManagedToNative | CustomMarshallingFeatures.NativeToManaged, fieldsBuilder.ToImmutable(), diagnostics.ToImmutable());
+            bool found = generatedStructMarshallingCache.TryGetGeneratedStructMarshallingFeatures(type, out GeneratedStructMarshallingFeatures marshallingFeatures);
+            Debug.Assert(found);
+
+            return new StructMarshallingContext(type.ContainingNamespace?.Name, type.Name, marshallingFeatures, fieldsBuilder.ToImmutable(), diagnostics.ToImmutable());
         }
     }
 }

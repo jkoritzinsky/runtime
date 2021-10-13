@@ -219,4 +219,7 @@
   <data name="ConstantAndElementCountInfoDisallowed" xml:space="preserve">
     <value>Only one of 'ConstantElementCount' or 'ElementCountInfo' may be used in a 'MarshalUsingAttribute' for a given 'ElementIndirectionLevel'</value>
   </data>
+  <data name="GeneratedMarshallingAttributeInfoMissingMessage" xml:space="preserve">
+    <value>The marshalling information for type '{0}' with a 'GeneratedMarshallingAttribute' could not be calculated.</value>
+  </data>
 </root>

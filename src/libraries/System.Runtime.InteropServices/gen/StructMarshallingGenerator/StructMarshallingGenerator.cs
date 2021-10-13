@@ -24,7 +24,8 @@ namespace Microsoft.Interop
                 context.SyntaxProvider.CreateSyntaxProvider(ShouldVisitNode, (context, ct) => (Syntax: (StructDeclarationSyntax)context.Node, Symbol: (INamedTypeSymbol)context.SemanticModel.GetDeclaredSymbol(context.Node, ct)))
                     .Where(syntaxAndSymbol => HasTriggerAttribute(syntaxAndSymbol.Symbol))
                     .Combine(context.CompilationProvider)
-                    .Select((data, ct) => (data.Left.Syntax, Context: CreateStructMarshallingContext(data.Left.Symbol, data.Right)))
+                    .Combine(context.CreateGeneratedStructMarshallingFeatureCacheProvider())
+                    .Select((data, ct) => (data.Left.Left.Syntax, Context: CreateStructMarshallingContext(data.Left.Left.Symbol, data.Left.Right, data.Right)))
                     .Select((syntaxAndContext, ct) => GenerateSyntaxAndDiagnosticsFromContext(syntaxAndContext.Syntax, syntaxAndContext.Context))
                     .Select((syntaxAndDiagnostics, ct) => (syntaxAndDiagnostics.Syntax.NormalizeWhitespace().ToFullString(), syntaxAndDiagnostics.Diagnostics))
                     .Collect()
@@ -114,9 +115,9 @@ namespace Microsoft.Interop
             }
         }
 
-        private static StructMarshallingContext CreateStructMarshallingContext(INamedTypeSymbol symbol, Compilation compilation)
+        private static StructMarshallingContext CreateStructMarshallingContext(INamedTypeSymbol symbol, Compilation compilation, GeneratedStructMarshallingFeatureCache generatedStructMarshallingCache)
         {
-            return StructMarshallingContext.Create(symbol, compilation);
+            return StructMarshallingContext.Create(symbol, compilation, generatedStructMarshallingCache);
         }
 
         private static bool HasTriggerAttribute(INamedTypeSymbol symbol)
@@ -124,7 +125,7 @@ namespace Microsoft.Interop
 
         private static bool ShouldVisitNode(SyntaxNode syntaxNode, CancellationToken cancellationToken)
         {
-            // We only support C# method declarations.
+            // We only support C# declarations.
             if (syntaxNode.Language != LanguageNames.CSharp
                 || !(syntaxNode.IsKind(SyntaxKind.StructDeclaration) || syntaxNode.IsKind(SyntaxKind.RecordStructDeclaration)))
             {

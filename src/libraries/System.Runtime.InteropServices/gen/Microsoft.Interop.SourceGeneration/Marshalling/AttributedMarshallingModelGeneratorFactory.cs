@@ -12,7 +12,6 @@ namespace Microsoft.Interop
     public class AttributedMarshallingModelGeneratorFactory : IMarshallingGeneratorFactory
     {
         private static readonly BlittableMarshaller s_blittable = new BlittableMarshaller();
-        private static readonly Forwarder s_forwarder = new Forwarder();
 
         private readonly IMarshallingGeneratorFactory _innerMarshallingGenerator;
 
@@ -37,7 +36,6 @@ namespace Microsoft.Interop
             {
                 NativeMarshallingAttributeInfo marshalInfo => CreateCustomNativeTypeMarshaller(info, context, marshalInfo),
                 BlittableTypeAttributeInfo => s_blittable,
-                GeneratedNativeMarshallingAttributeInfo => s_forwarder,
                 _ => _innerMarshallingGenerator.Create(info, context)
             };
         }

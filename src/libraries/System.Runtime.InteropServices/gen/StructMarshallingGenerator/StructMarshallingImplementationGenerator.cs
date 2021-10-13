@@ -9,6 +9,7 @@ using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 using Microsoft.CodeAnalysis.CSharp;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Diagnostics;
 
 namespace Microsoft.Interop
 {
@@ -38,6 +39,9 @@ namespace Microsoft.Interop
             Action<TypePositionInfo, MarshallingNotSupportedException> marshallingNotSupportedCallback,
             IMarshallingGeneratorFactory generatorFactory)
         {
+            // TODO: Add support for emitting the Value property and other advanced custom marshalling features accurately.
+            Debug.Assert(!structToMarshal.MarshallingFeatures.HasValueProperty);
+
             StructDeclarationSyntax nativeStruct = StructDeclaration("__Native")
                 .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.UnsafeKeyword)));
 
@@ -83,17 +87,31 @@ namespace Microsoft.Interop
 
             nativeStruct = nativeStruct.AddMembers(managedToNativeConstructor, toManagedMethod);
 
-            StatementSyntax[] freeStatements = boundGenerators.SelectMany(gen => gen.Generator.Generate(gen.TypeInfo, codeContext)).ToArray();
+            codeContext = codeContext.WithStage(StubCodeContext.Stage.Cleanup);
 
-            if (freeStatements.Length > 0)
+            if (structToMarshal.MarshallingFeatures.MarshallingFeatures.HasFlag(CustomMarshallingFeatures.FreeNativeResources))
             {
-                codeContext = codeContext.WithStage(StubCodeContext.Stage.Cleanup);
+                StatementSyntax[] freeStatements = boundGenerators.SelectMany(gen => gen.Generator.Generate(gen.TypeInfo, codeContext)).ToArray();
+
                 MethodDeclarationSyntax freeNativeMethod = MethodDeclaration(PredefinedType(Token(SyntaxKind.VoidKeyword)), "FreeNative")
-                    .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword)))
-                    .AddBodyStatements(declareManagedStatement)
+                        .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword)));
+
+                if (setupStatements.Length > 0)
+                {
+                    // We might need a local based on the managed value if we have setup statements.
+                    // Re-declare a dummy managed value.
+                    freeNativeMethod = freeNativeMethod.AddBodyStatements(setupStatements);
+                }
+
+                freeNativeMethod = freeNativeMethod
                     .AddBodyStatements(setupStatements)
                     .AddBodyStatements(freeStatements);
                 nativeStruct = nativeStruct.AddMembers(freeNativeMethod);
+            }
+            else
+            {
+                // We shouldn't have any cleanup statements if we decided eariler that we didn't need the FreeNative method.
+                Debug.Assert(!boundGenerators.SelectMany(gen => gen.Generator.Generate(gen.TypeInfo, codeContext)).Any());
             }
 
             return nativeStruct;

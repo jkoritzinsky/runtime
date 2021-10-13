@@ -5,9 +5,12 @@
 // Types in this file are used for generated p/invokes (docs/design/features/source-generator-pinvokes.md).
 // See the DllImportGenerator experiment in https://github.com/dotnet/runtimelab.
 //
+using System.Diagnostics;
+
 namespace System.Runtime.InteropServices
 {
     [AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct)]
+    [Conditional("SOURCE_GENERATOR_ONLY")]
 #if DLLIMPORT_GENERATOR_TEST
     public
 #else

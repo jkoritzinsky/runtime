@@ -73,5 +73,40 @@ struct WrappedCBool
     public bool ToManaged() => value != 0;
 };
 ";
+
+        public static readonly string GeneratedStructReferencingSimpleGeneratedStruct = @"
+using System.Runtime.InteropServices;
+[GeneratedMarshalling]
+[StructLayout(LayoutKind.Sequential)]
+partial struct Outer
+{
+    public Inner b;
+}
+
+[GeneratedMarshalling]
+[StructLayout(LayoutKind.Sequential)]
+partial struct Inner
+{
+    public bool b;
+}
+";
+
+        public static readonly string GeneratedStructReferencingGeneratedStructWithFreeNative = @"
+using System.Runtime.InteropServices;
+[GeneratedMarshalling]
+[StructLayout(LayoutKind.Sequential)]
+partial struct Outer
+{
+    public Inner i;
+}
+
+[GeneratedMarshalling]
+[StructLayout(LayoutKind.Sequential)]
+partial struct Inner
+{
+    [MarshalAs(UnmanagedType.LPWStr)]
+    public string s;
+}
+";
     }
 }
