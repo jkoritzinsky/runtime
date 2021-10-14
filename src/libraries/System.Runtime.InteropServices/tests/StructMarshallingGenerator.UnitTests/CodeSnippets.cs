@@ -230,7 +230,7 @@ partial struct BlittableConstSizeArray
 using System.Runtime.InteropServices;
 [GeneratedMarshalling]
 [StructLayout(LayoutKind.Sequential)]
-partial struct BlittableConstSizeArray
+partial struct BlittableElementSizeArray
 {
     [MarshalUsing(CountElementName = nameof(numElements))]
     public int[] i;
@@ -238,5 +238,67 @@ partial struct BlittableConstSizeArray
     public int numElements;
 }
 ";
+
+        public static readonly string NonBlittableConstSizeArrayField = @"
+using System.Runtime.InteropServices;
+[GeneratedMarshalling]
+[StructLayout(LayoutKind.Sequential)]
+partial struct NonBlittableConstSizeArray
+{
+    [MarshalUsing(ConstantElementCount = 10)]
+    public S[] i;
+}
+
+[NativeMarshalling(typeof(Native))]
+[StructLayout(LayoutKind.Sequential)]
+struct S
+{
+    public bool b;
+}
+
+struct Native
+{
+    private int i;
+    public Native(S s)
+    {
+        i = s.b ? 1 : 0;
+    }
+
+    public S ToManaged() => new S { b = i != 0 };
+
+    public void FreeNative() {}
+}";
+
+        public static readonly string NonBlittableElementSizeArrayField = @"
+using System.Runtime.InteropServices;
+[GeneratedMarshalling]
+[StructLayout(LayoutKind.Sequential)]
+partial struct NonBlittableElementSizeArray
+{
+    [MarshalUsing(CountElementName = nameof(numElements))]
+    public S[] i;
+
+    public int numElements;
+}
+
+[NativeMarshalling(typeof(Native))]
+[StructLayout(LayoutKind.Sequential)]
+struct S
+{
+    public bool b;
+}
+
+struct Native
+{
+    private int i;
+    public Native(S s)
+    {
+        i = s.b ? 1 : 0;
+    }
+
+    public S ToManaged() => new S { b = i != 0 };
+
+    public void FreeNative() {}
+}";
     }
 }
