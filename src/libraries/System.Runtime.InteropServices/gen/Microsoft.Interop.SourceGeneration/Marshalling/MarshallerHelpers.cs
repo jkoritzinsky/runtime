@@ -103,7 +103,7 @@ namespace Microsoft.Interop
 
         public static readonly string GeneratedNativeStructName = "__Native";
 
-        public static readonly string GeneratedNativeStructValuePropertyTypeName = "__Native";
+        public static readonly string GeneratedNativeStructValuePropertyTypeName = "__Value";
 
         public static string GetFullyQualifiedGeneratedNativeStructNameForStruct(ITypeSymbol type)
         {

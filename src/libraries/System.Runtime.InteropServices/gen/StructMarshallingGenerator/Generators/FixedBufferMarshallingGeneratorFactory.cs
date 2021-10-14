@@ -7,11 +7,11 @@ using System.Text;
 
 namespace Microsoft.Interop.Generators
 {
-    internal class StructMarshallingGeneratorFactory : IMarshallingGeneratorFactory
+    internal class FixedBufferMarshallingGeneratorFactory : IMarshallingGeneratorFactory
     {
         private readonly IMarshallingGeneratorFactory _innerFactory;
 
-        public StructMarshallingGeneratorFactory(IMarshallingGeneratorFactory innerFactory)
+        public FixedBufferMarshallingGeneratorFactory(IMarshallingGeneratorFactory innerFactory)
         {
             _innerFactory = innerFactory;
             ElementMarshallingGeneratorFactory = this;

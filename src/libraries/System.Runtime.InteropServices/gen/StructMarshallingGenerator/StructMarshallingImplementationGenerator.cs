@@ -11,6 +11,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Diagnostics;
 using Microsoft.CodeAnalysis;
+using Microsoft.Interop.Generators;
 
 namespace Microsoft.Interop
 {
@@ -35,64 +36,81 @@ namespace Microsoft.Interop
             }
         }
 
+        private class ValuePropertyStubCodeContext : StubCodeContext
+        {
+            public override bool SingleFrameSpansNativeContext => false;
+
+            public override bool AdditionalTemporaryStateLivesAcrossStages => false;
+
+            public override (string managed, string native) GetIdentifiers(TypePositionInfo info)
+            {
+                return (info.InstanceIdentifier, $"value.{info.InstanceIdentifier}");
+            }
+
+            public override string GetAdditionalIdentifier(TypePositionInfo info, string name) => $"{info.InstanceIdentifier}__{name}";
+
+            public ValuePropertyStubCodeContext WithStage(Stage stage)
+            {
+                return new ValuePropertyStubCodeContext { CurrentStage = stage };
+            }
+        }
+
         public static StructDeclarationSyntax GenerateStructMarshallingCode(
             StructMarshallingContext structToMarshal,
             Action<TypePositionInfo, MarshallingNotSupportedException> marshallingNotSupportedCallback,
-            IMarshallingGeneratorFactory generatorFactory)
+            FixedBufferMarshallingGeneratorFactory generatorFactory)
         {
-            // TODO: Add support for emitting the Value property and other advanced custom marshalling features accurately.
-            Debug.Assert(!structToMarshal.MarshallingFeatures.HasValueProperty);
+            // TODO: Add support for emitting other advanced custom marshalling features accurately.
 
-            StructDeclarationSyntax nativeStruct = StructDeclaration("__Native")
+            AttributedMarshallingModelGeneratorFactory attributedMarshallingModelFactory = new(
+                generatorFactory,
+                new AttributedMarshallingModelGeneratorFactoryOptions(
+                    false,
+                    false,
+                    ValidateScenarioSupport: false,
+                    structToMarshal.MarshallingFeatures.HasValueProperty
+                    ? AttributedMarshallingModelGenerationPhases.ManagedToMarshallerType
+                    : AttributedMarshallingModelGenerationPhases.All));
+
+            generatorFactory.ElementMarshallingGeneratorFactory = attributedMarshallingModelFactory;
+
+            StructDeclarationSyntax nativeStruct = StructDeclaration(MarshallerHelpers.GeneratedNativeStructName)
                 .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.UnsafeKeyword)));
 
             StructMarshallingStubCodeContext codeContext = new StructMarshallingStubCodeContext().WithStage(StubCodeContext.Stage.Setup);
 
-            ImmutableArray<BoundGenerator> boundGenerators = ImmutableArray.CreateRange(structToMarshal.Fields.Select(CreateGenerator));
+            ImmutableArray<BoundGenerator> boundGenerators = ImmutableArray.CreateRange(structToMarshal.Fields.Select(p => CreateGenerator(p, marshallingNotSupportedCallback, attributedMarshallingModelFactory, codeContext)));
 
             nativeStruct = nativeStruct.AddMembers(CreateFields(boundGenerators));
 
             Dictionary<TypePositionInfo, int> typePositionInfoToIndex = structToMarshal.Fields.Select(static (field, index) => (field, index)).ToDictionary(value => value.field, value => value.index);
 
-            IEnumerable<BoundGenerator> dependencySortedFields = MarshallerHelpers.GetTopologicallySortedElements(
+            ImmutableArray<BoundGenerator> dependencySortedFields = MarshallerHelpers.GetTopologicallySortedElements(
                 boundGenerators,
                 m => typePositionInfoToIndex[m.TypeInfo],
                 m => GetInfoDependencies(m.TypeInfo))
-                .ToList();
+                .ToImmutableArray();
 
             StatementSyntax[] setupStatements = boundGenerators.SelectMany(gen => gen.Generator.Generate(gen.TypeInfo, codeContext)).ToArray();
 
             if (structToMarshal.MarshallingFeatures.MarshallingFeatures.HasFlag(CustomMarshallingFeatures.ManagedToNative))
             {
-                StubCodeContext marshalCodeContext = codeContext.WithStage(StubCodeContext.Stage.Marshal);
-
-                ConstructorDeclarationSyntax managedToNativeConstructor = ConstructorDeclaration("__Native")
-                    .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword)))
-                    .AddParameterListParameters(Parameter(Identifier("managed")).WithType(IdentifierName(structToMarshal.Name)));
-
-                managedToNativeConstructor = managedToNativeConstructor.AddBodyStatements(setupStatements).AddBodyStatements(boundGenerators.SelectMany(gen => gen.Generator.Generate(gen.TypeInfo, marshalCodeContext)).ToArray());
+                ConstructorDeclarationSyntax managedToNativeConstructor = GenerateMarshallerConstructor(
+                    structToMarshal,
+                    codeContext,
+                    dependencySortedFields,
+                    setupStatements);
 
                 nativeStruct = nativeStruct.AddMembers(managedToNativeConstructor);
             }
 
             if (structToMarshal.MarshallingFeatures.MarshallingFeatures.HasFlag(CustomMarshallingFeatures.NativeToManaged))
             {
-
-                MethodDeclarationSyntax toManagedMethod = MethodDeclaration(IdentifierName(structToMarshal.Name), "ToManaged")
-                    .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword)));
-
-                StubCodeContext unmarshalCodeContext = codeContext.WithStage(StubCodeContext.Stage.Unmarshal);
-
-                StatementSyntax declareManagedStatement = LocalDeclarationStatement(
-                        VariableDeclaration(IdentifierName(structToMarshal.Name),
-                            SingletonSeparatedList(VariableDeclarator(Identifier("managed"))
-                                .WithInitializer(EqualsValueClause(LiteralExpression(SyntaxKind.DefaultLiteralExpression))))));
-
-                toManagedMethod = toManagedMethod
-                    .AddBodyStatements(declareManagedStatement)
-                    .AddBodyStatements(setupStatements)
-                    .AddBodyStatements(boundGenerators.SelectMany(gen => gen.Generator.Generate(gen.TypeInfo, unmarshalCodeContext)).ToArray())
-                    .AddBodyStatements(ReturnStatement(IdentifierName("managed")));
+                MethodDeclarationSyntax toManagedMethod = GenerateToManagedMethod(
+                    structToMarshal,
+                    codeContext,
+                    dependencySortedFields,
+                    setupStatements);
 
                 nativeStruct = nativeStruct.AddMembers(toManagedMethod);
             }
@@ -101,27 +119,22 @@ namespace Microsoft.Interop
 
             if (structToMarshal.MarshallingFeatures.MarshallingFeatures.HasFlag(CustomMarshallingFeatures.FreeNativeResources))
             {
-                StatementSyntax[] freeStatements = boundGenerators.SelectMany(gen => gen.Generator.Generate(gen.TypeInfo, freeNativeCodeContext)).ToArray();
-
-                MethodDeclarationSyntax freeNativeMethod = MethodDeclaration(PredefinedType(Token(SyntaxKind.VoidKeyword)), "FreeNative")
-                        .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword)));
-
-                if (setupStatements.Length > 0)
-                {
-                    // We might need a local based on the managed value if we have setup statements.
-                    // Re-declare a dummy managed value.
-                    freeNativeMethod = freeNativeMethod.AddBodyStatements(setupStatements);
-                }
-
-                freeNativeMethod = freeNativeMethod
-                    .AddBodyStatements(setupStatements)
-                    .AddBodyStatements(freeStatements);
+                MethodDeclarationSyntax freeNativeMethod = GenerateFreeNativeMethod(
+                    structToMarshal,
+                    dependencySortedFields,
+                    setupStatements,
+                    freeNativeCodeContext);
                 nativeStruct = nativeStruct.AddMembers(freeNativeMethod);
             }
             else
             {
                 // We shouldn't have any cleanup statements if we decided eariler that we didn't need the FreeNative method.
                 Debug.Assert(!boundGenerators.SelectMany(gen => gen.Generator.Generate(gen.TypeInfo, freeNativeCodeContext)).Any());
+            }
+
+            if (structToMarshal.MarshallingFeatures.HasValueProperty)
+            {
+                nativeStruct = nativeStruct.AddMembers(CreateValuePropertyAndType(structToMarshal, generatorFactory, marshallingNotSupportedCallback).ToArray());
             }
 
             return nativeStruct;
@@ -131,18 +144,142 @@ namespace Microsoft.Interop
                 return MarshallerHelpers.GetDependentElementsOfMarshallingInfo(info.MarshallingAttributeInfo)
                     .Select(info => typePositionInfoToIndex[info]).ToList();
             }
+        }
 
-            BoundGenerator CreateGenerator(TypePositionInfo p)
+        private static IEnumerable<MemberDeclarationSyntax> CreateValuePropertyAndType(
+            StructMarshallingContext structToMarshal,
+            FixedBufferMarshallingGeneratorFactory generatorFactory,
+            Action<TypePositionInfo, MarshallingNotSupportedException> marshallingNotSupportedCallback)
+        {
+            AttributedMarshallingModelGeneratorFactory marshallerToValuePropertyGeneratorFactory = new(
+                generatorFactory,
+                new AttributedMarshallingModelGeneratorFactoryOptions(
+                    false,
+                    false,
+                    ValidateScenarioSupport: false,
+                    structToMarshal.MarshallingFeatures.HasValueProperty
+                    ? AttributedMarshallingModelGenerationPhases.MarshallerTypeToValueProperty
+                    : AttributedMarshallingModelGenerationPhases.All));
+
+            generatorFactory.ElementMarshallingGeneratorFactory = marshallerToValuePropertyGeneratorFactory;
+
+            ValuePropertyStubCodeContext codeContext = new ValuePropertyStubCodeContext().WithStage(StubCodeContext.Stage.Setup);
+
+            ImmutableArray<BoundGenerator> boundGenerators = ImmutableArray.CreateRange(structToMarshal.Fields.Select(p => CreateGenerator(p, marshallingNotSupportedCallback, marshallerToValuePropertyGeneratorFactory, codeContext)));
+
+            StructDeclarationSyntax valueStruct = StructDeclaration(MarshallerHelpers.GeneratedNativeStructValuePropertyTypeName).WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword)));
+
+            valueStruct = valueStruct.AddMembers(CreateFields(boundGenerators));
+
+            yield return valueStruct;
+
+            PropertyDeclarationSyntax valueProperty = PropertyDeclaration(IdentifierName(MarshallerHelpers.GeneratedNativeStructValuePropertyTypeName), ManualTypeMarshallingHelper.ValuePropertyName)
+                .WithAccessorList(AccessorList())
+                .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword)));
+
+            StatementSyntax[] setupStatements = boundGenerators.SelectMany(gen => gen.Generator.Generate(gen.TypeInfo, codeContext)).ToArray();
+
+            if (structToMarshal.MarshallingFeatures.MarshallingFeatures.HasFlag(CustomMarshallingFeatures.ManagedToNative))
             {
-                try
-                {
-                    return new BoundGenerator(p, generatorFactory.Create(p, codeContext));
-                }
-                catch (MarshallingNotSupportedException e)
-                {
-                    marshallingNotSupportedCallback(p, e);
-                    return new BoundGenerator(p, new Forwarder());
-                }
+                ValuePropertyStubCodeContext marshalCodeContext = codeContext.WithStage(StubCodeContext.Stage.Marshal);
+
+                StatementSyntax declareValueStatement = LocalDeclarationStatement(
+                        VariableDeclaration(IdentifierName(MarshallerHelpers.GeneratedNativeStructValuePropertyTypeName),
+                            SingletonSeparatedList(VariableDeclarator(Identifier("value"))
+                                .WithInitializer(EqualsValueClause(LiteralExpression(SyntaxKind.DefaultLiteralExpression))))));
+
+                AccessorDeclarationSyntax getAccessor = AccessorDeclaration(SyntaxKind.GetAccessorDeclaration)
+                    .AddBodyStatements(declareValueStatement)
+                    .AddBodyStatements(setupStatements)
+                    .AddBodyStatements(boundGenerators.SelectMany(gen => gen.Generator.Generate(gen.TypeInfo, marshalCodeContext)).ToArray())
+                    .AddBodyStatements(ReturnStatement(IdentifierName("value")));
+                valueProperty = valueProperty.AddAccessorListAccessors(getAccessor);
+            }
+            if (structToMarshal.MarshallingFeatures.MarshallingFeatures.HasFlag(CustomMarshallingFeatures.NativeToManaged))
+            {
+                ValuePropertyStubCodeContext unmarshalCodeContext = codeContext.WithStage(StubCodeContext.Stage.Unmarshal);
+
+                AccessorDeclarationSyntax setAccessor = AccessorDeclaration(SyntaxKind.SetAccessorDeclaration)
+                    .AddBodyStatements(setupStatements)
+                    .AddBodyStatements(boundGenerators.SelectMany(gen => gen.Generator.Generate(gen.TypeInfo, unmarshalCodeContext)).ToArray());
+                valueProperty = valueProperty.AddAccessorListAccessors(setAccessor);
+            }
+
+            yield return valueProperty;
+        }
+
+        private static MethodDeclarationSyntax GenerateFreeNativeMethod(StructMarshallingContext structToMarshal, ImmutableArray<BoundGenerator> boundGenerators, StatementSyntax[] setupStatements, StubCodeContext freeNativeCodeContext)
+        {
+            StatementSyntax[] freeStatements = boundGenerators.SelectMany(gen => gen.Generator.Generate(gen.TypeInfo, freeNativeCodeContext)).ToArray();
+
+            MethodDeclarationSyntax freeNativeMethod = MethodDeclaration(PredefinedType(Token(SyntaxKind.VoidKeyword)), "FreeNative")
+                    .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword)));
+
+            if (setupStatements.Length > 0)
+            {
+                StatementSyntax declareManagedStatement = LocalDeclarationStatement(
+                        VariableDeclaration(IdentifierName(structToMarshal.Name),
+                            SingletonSeparatedList(VariableDeclarator(Identifier("managed"))
+                                .WithInitializer(EqualsValueClause(LiteralExpression(SyntaxKind.DefaultLiteralExpression))))));
+                // We might need a local based on the managed value if we have setup statements.
+                // Re-declare a dummy managed value.
+                freeNativeMethod = freeNativeMethod.AddBodyStatements(declareManagedStatement);
+            }
+
+            freeNativeMethod = freeNativeMethod
+                .AddBodyStatements(setupStatements)
+                .AddBodyStatements(freeStatements);
+            return freeNativeMethod;
+        }
+
+        private static MethodDeclarationSyntax GenerateToManagedMethod(StructMarshallingContext structToMarshal, StructMarshallingStubCodeContext codeContext, ImmutableArray<BoundGenerator> dependencySortedFields, StatementSyntax[] setupStatements)
+        {
+            MethodDeclarationSyntax toManagedMethod = MethodDeclaration(IdentifierName(structToMarshal.Name), "ToManaged")
+                .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword)));
+
+            StubCodeContext unmarshalCodeContext = codeContext.WithStage(StubCodeContext.Stage.Unmarshal);
+
+            StatementSyntax declareManagedStatement = LocalDeclarationStatement(
+                    VariableDeclaration(IdentifierName(structToMarshal.Name),
+                        SingletonSeparatedList(VariableDeclarator(Identifier("managed"))
+                            .WithInitializer(EqualsValueClause(LiteralExpression(SyntaxKind.DefaultLiteralExpression))))));
+
+            toManagedMethod = toManagedMethod
+                .AddBodyStatements(declareManagedStatement)
+                .AddBodyStatements(setupStatements)
+                .AddBodyStatements(dependencySortedFields.SelectMany(gen => gen.Generator.Generate(gen.TypeInfo, unmarshalCodeContext)).ToArray())
+                .AddBodyStatements(ReturnStatement(IdentifierName("managed")));
+            return toManagedMethod;
+        }
+
+        private static ConstructorDeclarationSyntax GenerateMarshallerConstructor(StructMarshallingContext structToMarshal, StructMarshallingStubCodeContext codeContext, ImmutableArray<BoundGenerator> dependencySortedFields, StatementSyntax[] setupStatements)
+        {
+            StubCodeContext marshalCodeContext = codeContext.WithStage(StubCodeContext.Stage.Marshal);
+
+            ConstructorDeclarationSyntax managedToNativeConstructor = ConstructorDeclaration("__Native")
+                .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword)))
+                .AddParameterListParameters(Parameter(Identifier("managed")).WithType(IdentifierName(structToMarshal.Name)));
+
+            managedToNativeConstructor = managedToNativeConstructor
+                .AddBodyStatements(setupStatements)
+                .AddBodyStatements(dependencySortedFields.SelectMany(gen => gen.Generator.Generate(gen.TypeInfo, marshalCodeContext)).ToArray());
+            return managedToNativeConstructor;
+        }
+
+        private static BoundGenerator CreateGenerator(
+            TypePositionInfo p,
+            Action<TypePositionInfo, MarshallingNotSupportedException> marshallingNotSupportedCallback,
+            IMarshallingGeneratorFactory generatorFactory,
+            StubCodeContext codeContext)
+        {
+            try
+            {
+                return new BoundGenerator(p, generatorFactory.Create(p, codeContext));
+            }
+            catch (MarshallingNotSupportedException e)
+            {
+                marshallingNotSupportedCallback(p, e);
+                return new BoundGenerator(p, new Forwarder());
             }
         }
 
@@ -159,7 +296,7 @@ namespace Microsoft.Interop
                                    SingletonSeparatedList(
                                        VariableDeclarator(Identifier(gen.TypeInfo.InstanceIdentifier))
                                         .WithArgumentList(BracketedArgumentList(SingletonSeparatedList(Argument(LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(fixedBuffer.Size)))))))))
-                           .WithModifiers(TokenList(Token(SyntaxKind.FixedKeyword))));
+                           .WithModifiers(TokenList(Token(SyntaxKind.InternalKeyword), Token(SyntaxKind.FixedKeyword))));
                 }
                 else
                 {
@@ -167,7 +304,8 @@ namespace Microsoft.Interop
                         FieldDeclaration(
                             VariableDeclaration(gen.Generator.AsNativeType(gen.TypeInfo),
                                 SingletonSeparatedList(
-                                    VariableDeclarator(Identifier(gen.TypeInfo.InstanceIdentifier))))));
+                                    VariableDeclarator(Identifier(gen.TypeInfo.InstanceIdentifier)))))
+                        .WithModifiers(TokenList(Token(SyntaxKind.InternalKeyword))));
                 }
             }
             return fieldDeclarationSyntaxes.ToArray();

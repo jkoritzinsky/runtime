@@ -126,17 +126,19 @@ namespace Microsoft.Interop
 
             IncrementalValueProvider<(string, ImmutableArray<Diagnostic>)> methodSourceAndDiagnostics = methodsToGenerate
                 .Combine(stubEnvironment)
+                .Combine(context.CreateGeneratedStructMarshallingFeatureCacheProvider())
                 .Select(static (data, ct) => new
                 {
-                    data.Left.Syntax,
-                    data.Left.Symbol,
-                    Environment = data.Right
+                    data.Left.Left.Syntax,
+                    data.Left.Left.Symbol,
+                    Environment = data.Left.Right,
+                    StructMarshallingFeatureCache = data.Right
                 })
                 .Select(
                     (data, ct) =>
                     {
                         IncrementalTracker?.RecordExecutedStep(new IncrementalityTracker.ExecutedStepInfo(IncrementalityTracker.StepName.CalculateStubInformation, data));
-                        return (data.Syntax, StubContext: CalculateStubInformation(data.Syntax, data.Symbol, data.Environment, ct));
+                        return (data.Syntax, StubContext: CalculateStubInformation(data.Syntax, data.Symbol, data.Environment, data.StructMarshallingFeatureCache, ct));
                     }
                 )
                 .WithComparer(Comparers.CalculatedContextWithSyntax)
@@ -382,7 +384,7 @@ namespace Microsoft.Interop
             };
         }
 
-        private static IncrementalStubGenerationContext CalculateStubInformation(MethodDeclarationSyntax syntax, IMethodSymbol symbol, StubEnvironment environment, CancellationToken ct)
+        private static IncrementalStubGenerationContext CalculateStubInformation(MethodDeclarationSyntax syntax, IMethodSymbol symbol, StubEnvironment environment, GeneratedStructMarshallingFeatureCache generatedStructMarshallingCache, CancellationToken ct)
         {
             INamedTypeSymbol? lcidConversionAttrType = environment.Compilation.GetTypeByMetadataName(TypeNames.LCIDConversionAttribute);
             INamedTypeSymbol? suppressGCTransitionAttrType = environment.Compilation.GetTypeByMetadataName(TypeNames.SuppressGCTransitionAttribute);
@@ -443,7 +445,7 @@ namespace Microsoft.Interop
             List<AttributeSyntax> additionalAttributes = GenerateSyntaxForForwardedAttributes(suppressGCTransitionAttribute, unmanagedCallConvAttribute);
 
             // Create the stub.
-            var dllImportStub = DllImportStubContext.Create(symbol, stubDllImportData, environment, generatorDiagnostics, ct);
+            var dllImportStub = DllImportStubContext.Create(symbol, stubDllImportData, environment, generatorDiagnostics, generatedStructMarshallingCache, ct);
 
             return new IncrementalStubGenerationContext(dllImportStub, additionalAttributes.ToImmutableArray(), stubDllImportData, generatorDiagnostics.Diagnostics.ToImmutableArray());
         }

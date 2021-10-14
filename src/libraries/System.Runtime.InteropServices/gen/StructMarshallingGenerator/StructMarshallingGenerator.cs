@@ -57,16 +57,14 @@ namespace Microsoft.Interop
         {
             IMarshallingGeneratorFactory generatorFactory = new DefaultMarshallingGeneratorFactory(new InteropGenerationOptions(false, false));
             // Don't validate scenario support here as we will propogate up the same limitations in our generated source.
-            AttributedMarshallingModelGeneratorFactory attributedMarshallingModelGeneratorFactory = new(generatorFactory, new InteropGenerationOptions(false, false), validateScenarioSupport: false);
-            StructMarshallingGeneratorFactory structMarshallingGeneratorFactory = new(attributedMarshallingModelGeneratorFactory);
-            attributedMarshallingModelGeneratorFactory.ElementMarshallingGeneratorFactory = structMarshallingGeneratorFactory;
+            FixedBufferMarshallingGeneratorFactory fixedBufferMarshallerGeneratorFactory = new(generatorFactory);
 
             GeneratorDiagnostics diagnostics = new();
 
             StructDeclarationSyntax nativeMarshallingStruct = StructMarshallingImplementationGenerator.GenerateStructMarshallingCode(
                 context,
                 (info, ex) => diagnostics.ReportMarshallingNotSupported(originalSyntax, info.InstanceIdentifier, ex.NotSupportedDetails),
-                structMarshallingGeneratorFactory);
+                fixedBufferMarshallerGeneratorFactory);
 
             return (PrintGeneratedSource(context.Namespace, originalSyntax, nativeMarshallingStruct), context.Diagnostics.AddRange(diagnostics.ToImmutable()));
         }

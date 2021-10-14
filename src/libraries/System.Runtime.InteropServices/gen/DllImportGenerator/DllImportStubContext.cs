@@ -70,6 +70,7 @@ namespace Microsoft.Interop
             GeneratedDllImportData dllImportData,
             StubEnvironment env,
             GeneratorDiagnostics diagnostics,
+            GeneratedStructMarshallingFeatureCache generatedStructMarshallingCache,
             CancellationToken token)
         {
             // Cancel early if requested
@@ -102,7 +103,7 @@ namespace Microsoft.Interop
                 currType = currType.ContainingType;
             }
 
-            (ImmutableArray<TypePositionInfo> typeInfos, IMarshallingGeneratorFactory generatorFactory) = GenerateTypeInformation(method, dllImportData, diagnostics, env);
+            (ImmutableArray<TypePositionInfo> typeInfos, IMarshallingGeneratorFactory generatorFactory) = GenerateTypeInformation(method, dllImportData, diagnostics, env, generatedStructMarshallingCache);
 
             ImmutableArray<AttributeListSyntax>.Builder additionalAttrs = ImmutableArray.CreateBuilder<AttributeListSyntax>();
 
@@ -132,7 +133,7 @@ namespace Microsoft.Interop
             };
         }
 
-        private static (ImmutableArray<TypePositionInfo>, IMarshallingGeneratorFactory) GenerateTypeInformation(IMethodSymbol method, GeneratedDllImportData dllImportData, GeneratorDiagnostics diagnostics, StubEnvironment env)
+        private static (ImmutableArray<TypePositionInfo>, IMarshallingGeneratorFactory) GenerateTypeInformation(IMethodSymbol method, GeneratedDllImportData dllImportData, GeneratorDiagnostics diagnostics, StubEnvironment env, GeneratedStructMarshallingFeatureCache generatedStructMarshallingCache)
         {
             // Compute the current default string encoding value.
             CharEncoding defaultEncoding = CharEncoding.Undefined;
@@ -149,7 +150,7 @@ namespace Microsoft.Interop
 
             var defaultInfo = new DefaultMarshallingInfo(defaultEncoding);
 
-            var marshallingAttributeParser = new MarshallingAttributeInfoParser(env.Compilation, diagnostics, defaultInfo, method);
+            var marshallingAttributeParser = new MarshallingAttributeInfoParser(env.Compilation, diagnostics, generatedStructMarshallingCache, defaultInfo, method);
 
             // Determine parameter and return types
             ImmutableArray<TypePositionInfo>.Builder typeInfos = ImmutableArray.CreateBuilder<TypePositionInfo>();
@@ -184,7 +185,7 @@ namespace Microsoft.Interop
             else
             {
                 generatorFactory = new DefaultMarshallingGeneratorFactory(options);
-                AttributedMarshallingModelGeneratorFactory attributedMarshallingFactory = new(generatorFactory, options);
+                AttributedMarshallingModelGeneratorFactory attributedMarshallingFactory = new(generatorFactory, new AttributedMarshallingModelGeneratorFactoryOptions(options.UseMarshalType, options.UseInternalUnsafeType));
                 generatorFactory = attributedMarshallingFactory;
                 if (!dllImportData.PreserveSig)
                 {

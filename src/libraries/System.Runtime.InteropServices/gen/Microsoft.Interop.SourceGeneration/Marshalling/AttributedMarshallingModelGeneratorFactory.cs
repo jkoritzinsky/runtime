@@ -1,6 +1,7 @@
 ﻿// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 
+using System;
 using System.Collections.Generic;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -9,22 +10,35 @@ using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace Microsoft.Interop
 {
+    [Flags]
+    public enum AttributedMarshallingModelGenerationPhases
+    {
+        None = 0x0,
+        ManagedToMarshallerType = 0x1,
+        MarshallerTypeToValueProperty = 0x2,
+        All = ManagedToMarshallerType | MarshallerTypeToValueProperty
+    }
+
+    public record AttributedMarshallingModelGeneratorFactoryOptions(
+        bool UseMarshalType,
+        bool UseInternalUnsafeType,
+        bool ValidateScenarioSupport = true,
+        AttributedMarshallingModelGenerationPhases GenerationPhases = AttributedMarshallingModelGenerationPhases.All) : InteropGenerationOptions(UseMarshalType, UseInternalUnsafeType);
+
     public class AttributedMarshallingModelGeneratorFactory : IMarshallingGeneratorFactory
     {
         private static readonly BlittableMarshaller s_blittable = new BlittableMarshaller();
 
         private readonly IMarshallingGeneratorFactory _innerMarshallingGenerator;
-        private readonly bool _validateScenarioSupport;
 
-        public AttributedMarshallingModelGeneratorFactory(IMarshallingGeneratorFactory innerMarshallingGenerator, InteropGenerationOptions options, bool validateScenarioSupport = true)
+        public AttributedMarshallingModelGeneratorFactory(IMarshallingGeneratorFactory innerMarshallingGenerator, AttributedMarshallingModelGeneratorFactoryOptions options)
         {
             Options = options;
-            _validateScenarioSupport = validateScenarioSupport;
             _innerMarshallingGenerator = innerMarshallingGenerator;
             ElementMarshallingGeneratorFactory = this;
         }
 
-        public InteropGenerationOptions Options { get; }
+        public AttributedMarshallingModelGeneratorFactoryOptions Options { get; }
 
         /// <summary>
         /// The <see cref="IMarshallingGeneratorFactory"/> to use for collection elements.
@@ -134,21 +148,30 @@ namespace Microsoft.Interop
 
         private IMarshallingGenerator CreateCustomNativeTypeMarshaller(TypePositionInfo info, StubCodeContext context, NativeMarshallingAttributeInfo marshalInfo)
         {
-            if (_validateScenarioSupport)
+            if (Options.ValidateScenarioSupport)
             {
                 ValidateCustomNativeTypeMarshallingSupported(info, context, marshalInfo);
             }
 
-            ICustomNativeTypeMarshallingStrategy marshallingStrategy = new SimpleCustomNativeTypeMarshalling(marshalInfo.NativeMarshallingType.Syntax);
+            ICustomNativeTypeMarshallingStrategy marshallingStrategy;
 
-            if ((marshalInfo.MarshallingFeatures & CustomMarshallingFeatures.ManagedToNativeStackalloc) != 0)
+            if (Options.GenerationPhases.HasFlag(AttributedMarshallingModelGenerationPhases.ManagedToMarshallerType))
             {
-                marshallingStrategy = new StackallocOptimizationMarshalling(marshallingStrategy);
+                marshallingStrategy = new SimpleCustomNativeTypeMarshalling(marshalInfo.NativeMarshallingType.Syntax);
+
+                if ((marshalInfo.MarshallingFeatures & CustomMarshallingFeatures.ManagedToNativeStackalloc) != 0)
+                {
+                    marshallingStrategy = new StackallocOptimizationMarshalling(marshallingStrategy);
+                }
+
+                if ((marshalInfo.MarshallingFeatures & CustomMarshallingFeatures.FreeNativeResources) != 0)
+                {
+                    marshallingStrategy = new FreeNativeCleanupStrategy(marshallingStrategy);
+                }
             }
-
-            if ((marshalInfo.MarshallingFeatures & CustomMarshallingFeatures.FreeNativeResources) != 0)
+            else
             {
-                marshallingStrategy = new FreeNativeCleanupStrategy(marshallingStrategy);
+                marshallingStrategy = new NoOpCustomNativeTypeMarshalling();
             }
 
             // Collections have extra configuration, so handle them here.
@@ -157,7 +180,7 @@ namespace Microsoft.Interop
                 return CreateNativeCollectionMarshaller(info, context, collectionMarshallingInfo, marshallingStrategy);
             }
 
-            if (marshalInfo.ValuePropertyType is not null)
+            if (marshalInfo.ValuePropertyType is not null && Options.GenerationPhases.HasFlag(AttributedMarshallingModelGenerationPhases.MarshallerTypeToValueProperty))
             {
                 marshallingStrategy = DecorateWithValuePropertyStrategy(marshalInfo, marshallingStrategy);
             }
@@ -229,7 +252,8 @@ namespace Microsoft.Interop
                 return new PinnableMarshallerTypeMarshalling(nativeTypeMarshaller, valuePropertyTypeSyntax);
             }
 
-            return new CustomNativeTypeWithValuePropertyMarshalling(nativeTypeMarshaller, valuePropertyTypeSyntax);
+            // If we aren't generating the "managed" -> "marshaller" steps, then the managed identifier is the marshaller.
+            return new CustomNativeTypeWithValuePropertyMarshalling(nativeTypeMarshaller, valuePropertyTypeSyntax, !Options.GenerationPhases.HasFlag(AttributedMarshallingModelGenerationPhases.ManagedToMarshallerType));
         }
 
         private IMarshallingGenerator CreateNativeCollectionMarshaller(
@@ -256,7 +280,7 @@ namespace Microsoft.Interop
             }
 
             // Explicitly insert the Value property handling here (before numElements handling) so that the numElements handling will be emitted before the Value property handling in unmarshalling.
-            if (collectionInfo.ValuePropertyType is not null)
+            if (collectionInfo.ValuePropertyType is not null && Options.GenerationPhases.HasFlag(AttributedMarshallingModelGenerationPhases.MarshallerTypeToValueProperty))
             {
                 marshallingStrategy = DecorateWithValuePropertyStrategy(collectionInfo, marshallingStrategy);
             }
