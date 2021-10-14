@@ -46,22 +46,11 @@ namespace Microsoft.Interop
                     continue;
                 }
 
-                ImmutableArray<AttributeData> attributes = field.GetAttributes();
-                TypePositionInfo info = new TypePositionInfo(ManagedTypeInfo.CreateTypeInfoForTypeSymbol(field.Type), parser.ParseMarshallingInfo(field, field.Type, attributes))
-                {
-                    InstanceIdentifier = field.Name,
-                    RefKind = RefKind.Ref
-                };
-
-                AttributeData? fieldOffset = attributes.FirstOrDefault(attr => attr.AttributeClass.ToDisplayString() == TypeNames.System_Runtime_InteropServices_FieldOffsetAttribute);
-
-                if (fieldOffset is not null)
-                {
-                    int offset = (int)fieldOffset.ConstructorArguments[0].Value;
-                    info = info with { ManagedIndex = offset, NativeIndex = offset };
-                }
-
-                fieldsBuilder.Add(info);
+                fieldsBuilder.Add(
+                    TypePositionInfo.CreateForField(
+                        field,
+                        parser.ParseMarshallingInfo(field, field.Type, field.GetAttributes()),
+                        compilation));
             }
 
             bool found = generatedStructMarshallingCache.TryGetGeneratedStructMarshallingFeatures(type, out GeneratedStructMarshallingFeatures marshallingFeatures);

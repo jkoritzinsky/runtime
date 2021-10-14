@@ -3,7 +3,7 @@
 
 using System;
 using System.Collections.Generic;
-
+using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
@@ -71,6 +71,23 @@ namespace Microsoft.Interop
                 RefKind = paramSymbol.RefKind,
                 RefKindSyntax = RefKindToSyntax(paramSymbol.RefKind),
                 ByValueContentsMarshalKind = GetByValueContentsMarshalKind(paramSymbol.GetAttributes(), compilation)
+            };
+
+            return typeInfo;
+        }
+
+        public static TypePositionInfo CreateForField(IFieldSymbol fieldSymbol, MarshallingInfo marshallingInfo, Compilation compilation)
+        {
+            AttributeData? fieldOffset = fieldSymbol.GetAttributes().FirstOrDefault(attr => attr.AttributeClass.ToDisplayString() == TypeNames.System_Runtime_InteropServices_FieldOffsetAttribute);
+            int offset = UnsetIndex;
+
+            var typeInfo = new TypePositionInfo(ManagedTypeInfo.CreateTypeInfoForTypeSymbol(fieldSymbol.Type), marshallingInfo)
+            {
+                InstanceIdentifier = ParseToken(fieldSymbol.Name).IsReservedKeyword() ? $"@{fieldSymbol.Name}" : fieldSymbol.Name,
+                ByValueContentsMarshalKind = GetByValueContentsMarshalKind(fieldSymbol.GetAttributes(), compilation),
+                ManagedIndex = offset,
+                NativeIndex = offset,
+                RefKind = RefKind.Ref
             };
 
             return typeInfo;

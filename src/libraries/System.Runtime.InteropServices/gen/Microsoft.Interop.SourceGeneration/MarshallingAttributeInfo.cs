@@ -475,11 +475,19 @@ namespace Microsoft.Interop
                     }
                 }
             }
-            else if (_contextSymbol is INamedTypeSymbol _)
+            else if (_contextSymbol is INamedTypeSymbol namedType)
             {
-                // TODO: Handle when we create a struct marshalling generator
-                // Do we want to support CountElementName pointing to only fields, or properties as well?
-                // If only fields, how do we handle properties with generated backing fields?
+                foreach (var member in namedType.GetMembers())
+                {
+                    if (elementName == member.Name)
+                    {
+                        if (member is not IFieldSymbol { IsStatic: false, IsConst: false } field)
+                        {
+                            return null;
+                        }
+                        return TypePositionInfo.CreateForField(field, ParseMarshallingInfo(field, field.Type, field.GetAttributes(), inspectedElements), _compilation);
+                    }
+                }
             }
 
             return null;

@@ -225,5 +225,18 @@ partial struct BlittableConstSizeArray
     public int[] i;
 }
 ";
+
+        public static readonly string BlittableElementSizeArrayField = @"
+using System.Runtime.InteropServices;
+[GeneratedMarshalling]
+[StructLayout(LayoutKind.Sequential)]
+partial struct BlittableConstSizeArray
+{
+    [MarshalUsing(CountElementName = nameof(numElements))]
+    public int[] i;
+
+    public int numElements;
+}
+";
     }
 }

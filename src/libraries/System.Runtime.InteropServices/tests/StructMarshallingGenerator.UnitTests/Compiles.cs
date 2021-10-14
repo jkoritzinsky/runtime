@@ -27,6 +27,7 @@ namespace StructMarshallingGenerator.UnitTests
             yield return CreateTestCase(CodeSnippets.CustomStructMarshallingManagedToNativeOnlyField);
             yield return CreateTestCase(CodeSnippets.CustomStructMarshallingNativeToManagedOnlyField);
             yield return CreateTestCase(CodeSnippets.BlittableConstSizeArrayField);
+            yield return CreateTestCase(CodeSnippets.BlittableElementSizeArrayField);
         }
 
         private static object[] CreateTestCase(string source, [CallerArgumentExpression("source")] string snippetName = "")
