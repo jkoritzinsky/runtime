@@ -58,11 +58,11 @@ namespace Microsoft.Interop
         public static StructDeclarationSyntax GenerateStructMarshallingCode(
             StructMarshallingContext structToMarshal,
             Action<TypePositionInfo, MarshallingNotSupportedException> marshallingNotSupportedCallback,
-            FixedBufferMarshallingGeneratorFactory generatorFactory)
+            IMarshallingGeneratorFactory generatorFactory)
         {
             // TODO: Add support for emitting other advanced custom marshalling features accurately.
 
-            AttributedMarshallingModelGeneratorFactory attributedMarshallingModelFactory = new(
+            AttributedMarshallingModelGeneratorFactory managedToMarshalerGeneratorFactory = new(
                 generatorFactory,
                 new AttributedMarshallingModelGeneratorFactoryOptions(
                     false,
@@ -72,14 +72,17 @@ namespace Microsoft.Interop
                     ? AttributedMarshallingModelGenerationPhases.ManagedToMarshallerType
                     : AttributedMarshallingModelGenerationPhases.All));
 
-            generatorFactory.ElementMarshallingGeneratorFactory = attributedMarshallingModelFactory;
-
             StructDeclarationSyntax nativeStruct = StructDeclaration(MarshallerHelpers.GeneratedNativeStructName)
                 .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.UnsafeKeyword)));
 
+            if (structToMarshal.MarshallingFeatures.MarshallerMustBeRefStruct)
+            {
+                nativeStruct = nativeStruct.AddModifiers(Token(SyntaxKind.RefKeyword));
+            }
+
             StructMarshallingStubCodeContext codeContext = new StructMarshallingStubCodeContext().WithStage(StubCodeContext.Stage.Setup);
 
-            ImmutableArray<BoundGenerator> boundGenerators = ImmutableArray.CreateRange(structToMarshal.Fields.Select(p => CreateGenerator(p, marshallingNotSupportedCallback, attributedMarshallingModelFactory, codeContext)));
+            ImmutableArray<BoundGenerator> boundGenerators = ImmutableArray.CreateRange(structToMarshal.Fields.Select(p => CreateGenerator(p, marshallingNotSupportedCallback, managedToMarshalerGeneratorFactory, codeContext)));
 
             nativeStruct = nativeStruct.AddMembers(CreateFields(boundGenerators));
 
@@ -148,7 +151,7 @@ namespace Microsoft.Interop
 
         private static IEnumerable<MemberDeclarationSyntax> CreateValuePropertyAndType(
             StructMarshallingContext structToMarshal,
-            FixedBufferMarshallingGeneratorFactory generatorFactory,
+            IMarshallingGeneratorFactory generatorFactory,
             Action<TypePositionInfo, MarshallingNotSupportedException> marshallingNotSupportedCallback)
         {
             AttributedMarshallingModelGeneratorFactory marshallerToValuePropertyGeneratorFactory = new(
@@ -160,8 +163,6 @@ namespace Microsoft.Interop
                     structToMarshal.MarshallingFeatures.HasValueProperty
                     ? AttributedMarshallingModelGenerationPhases.MarshallerTypeToValueProperty
                     : AttributedMarshallingModelGenerationPhases.All));
-
-            generatorFactory.ElementMarshallingGeneratorFactory = marshallerToValuePropertyGeneratorFactory;
 
             ValuePropertyStubCodeContext codeContext = new ValuePropertyStubCodeContext().WithStage(StubCodeContext.Stage.Setup);
 

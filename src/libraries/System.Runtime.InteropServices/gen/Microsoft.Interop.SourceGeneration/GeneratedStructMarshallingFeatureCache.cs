@@ -15,7 +15,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Microsoft.Interop
 {
-    public readonly record struct GeneratedStructMarshallingFeatures(CustomMarshallingFeatures MarshallingFeatures, bool HasValueProperty);
+    public readonly record struct GeneratedStructMarshallingFeatures(CustomMarshallingFeatures MarshallingFeatures, bool HasValueProperty, bool MarshallerMustBeRefStruct);
 
     public sealed class GeneratedStructMarshallingFeatureCache : IEquatable<GeneratedStructMarshallingFeatureCache>
     {
@@ -45,6 +45,7 @@ namespace Microsoft.Interop
                 CustomMarshallingFeatures marshallingFeatures = CustomMarshallingFeatures.ManagedToNative | CustomMarshallingFeatures.NativeToManaged;
                 bool needsFreeNative = false;
                 bool needsValueProperty = false;
+                bool marshallerMustBeRefStruct = false;
                 foreach (ISymbol member in type.GetMembers())
                 {
                     if (member is not IFieldSymbol { IsStatic: false, IsConst: false } field)
@@ -55,6 +56,7 @@ namespace Microsoft.Interop
                     {
                         marshallingFeatures &= generatedFeatures.MarshallingFeatures;
                         needsValueProperty |= generatedFeatures.HasValueProperty;
+                        marshallerMustBeRefStruct |= generatedFeatures.MarshallerMustBeRefStruct;
                         if (generatedFeatures.MarshallingFeatures.HasFlag(CustomMarshallingFeatures.FreeNativeResources))
                         {
                             needsFreeNative = true;
@@ -65,6 +67,7 @@ namespace Microsoft.Interop
                         MarshallingInfo marshallingInfo = parser.ParseMarshallingInfo(field, field.Type, field.GetAttributes());
                         if (marshallingInfo is NativeMarshallingAttributeInfo nativeMarshallingInfo)
                         {
+                            marshallerMustBeRefStruct |= nativeMarshallingInfo.NativeMarshallingType is RefLikeTypeInfo;
                             needsValueProperty |= nativeMarshallingInfo.ValuePropertyType is not null;
                             marshallingFeatures &= nativeMarshallingInfo.MarshallingFeatures;
                             if (nativeMarshallingInfo.MarshallingFeatures.HasFlag(CustomMarshallingFeatures.FreeNativeResources))
@@ -89,7 +92,7 @@ namespace Microsoft.Interop
                     }
                 }
 
-                cacheBuilder.Add(type, new GeneratedStructMarshallingFeatures(marshallingFeatures | (needsFreeNative ? CustomMarshallingFeatures.FreeNativeResources : CustomMarshallingFeatures.None), needsValueProperty));
+                cacheBuilder.Add(type, new GeneratedStructMarshallingFeatures(marshallingFeatures | (needsFreeNative ? CustomMarshallingFeatures.FreeNativeResources : CustomMarshallingFeatures.None), needsValueProperty, marshallerMustBeRefStruct));
             }
 
             _cache = cacheBuilder.ToImmutable();

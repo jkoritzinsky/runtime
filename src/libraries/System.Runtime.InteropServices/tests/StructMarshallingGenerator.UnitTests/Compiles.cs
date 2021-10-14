@@ -22,10 +22,11 @@ namespace StructMarshallingGenerator.UnitTests
             yield return CreateTestCase(CodeSnippets.BlittableFixedBufferField);
             yield return CreateTestCase(CodeSnippets.SimpleGeneratedStructField);
             yield return CreateTestCase(CodeSnippets.GeneratedStructWithFreeNativeField);
-            yield return CreateTestCase(CodeSnippets.GeneratedStructWithFieldWithValueProperty);
+            yield return CreateTestCase(CodeSnippets.CustomStructMarshallingWithValueProperty);
             yield return CreateTestCase(CodeSnippets.CustomStructMarshallingField);
             yield return CreateTestCase(CodeSnippets.CustomStructMarshallingManagedToNativeOnlyField);
             yield return CreateTestCase(CodeSnippets.CustomStructMarshallingNativeToManagedOnlyField);
+            yield return CreateTestCase(CodeSnippets.BlittableConstSizeArrayField);
         }
 
         private static object[] CreateTestCase(string source, [CallerArgumentExpression("source")] string snippetName = "")

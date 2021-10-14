@@ -57,7 +57,10 @@ namespace Microsoft.Interop
         {
             IMarshallingGeneratorFactory generatorFactory = new DefaultMarshallingGeneratorFactory(new InteropGenerationOptions(false, false));
             // Don't validate scenario support here as we will propogate up the same limitations in our generated source.
-            FixedBufferMarshallingGeneratorFactory fixedBufferMarshallerGeneratorFactory = new(generatorFactory);
+            FixedBufferMarshallingGeneratorFactory fixedBufferMarshallerGeneratorFactory = new(generatorFactory)
+            {
+                ElementMarshallingGeneratorFactory = new AttributedMarshallingModelGeneratorFactory(generatorFactory, new AttributedMarshallingModelGeneratorFactoryOptions(false, false))
+            };
 
             GeneratorDiagnostics diagnostics = new();
 

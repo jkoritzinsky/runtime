@@ -187,7 +187,7 @@ struct Native
     public S ToManaged() => new S { b = i != 0 };
 }";
 
-        public static readonly string GeneratedStructWithFieldWithValueProperty = @"
+        public static readonly string CustomStructMarshallingWithValueProperty = @"
 using System.Runtime.InteropServices;
 [GeneratedMarshalling]
 [StructLayout(LayoutKind.Sequential)]
@@ -212,6 +212,17 @@ struct Native
     public S ToManaged() => new S { b = Value != 0 };
 
     public int Value { get; set; }
+}
+";
+
+        public static readonly string BlittableConstSizeArrayField = @"
+using System.Runtime.InteropServices;
+[GeneratedMarshalling]
+[StructLayout(LayoutKind.Sequential)]
+partial struct BlittableConstSizeArray
+{
+    [MarshalUsing(ConstantElementCount = 10)]
+    public int[] i;
 }
 ";
     }

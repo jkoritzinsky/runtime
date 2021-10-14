@@ -249,7 +249,7 @@ namespace Microsoft.Interop
 
             if ((marshalInfo.MarshallingFeatures & CustomMarshallingFeatures.NativeTypePinning) != 0)
             {
-                return new PinnableMarshallerTypeMarshalling(nativeTypeMarshaller, valuePropertyTypeSyntax);
+                return new PinnableMarshallerTypeMarshalling(nativeTypeMarshaller, valuePropertyTypeSyntax, !Options.GenerationPhases.HasFlag(AttributedMarshallingModelGenerationPhases.ManagedToMarshallerType));
             }
 
             // If we aren't generating the "managed" -> "marshaller" steps, then the managed identifier is the marshaller.
@@ -270,32 +270,21 @@ namespace Microsoft.Interop
 
             bool isBlittable = elementMarshaller is BlittableMarshaller;
 
-            if (isBlittable)
+            if (Options.GenerationPhases.HasFlag(AttributedMarshallingModelGenerationPhases.ManagedToMarshallerType))
             {
-                marshallingStrategy = new ContiguousBlittableElementCollectionMarshalling(marshallingStrategy, collectionInfo.ElementType.Syntax);
-            }
-            else
-            {
-                marshallingStrategy = new ContiguousNonBlittableElementCollectionMarshalling(marshallingStrategy, elementMarshaller, elementInfo);
+                marshallingStrategy = DecorateWithElementMarshallingStrategy(collectionInfo, marshallingStrategy, elementInfo, elementMarshaller, isBlittable);
             }
 
-            // Explicitly insert the Value property handling here (before numElements handling) so that the numElements handling will be emitted before the Value property handling in unmarshalling.
-            if (collectionInfo.ValuePropertyType is not null && Options.GenerationPhases.HasFlag(AttributedMarshallingModelGenerationPhases.MarshallerTypeToValueProperty))
+            if (Options.GenerationPhases.HasFlag(AttributedMarshallingModelGenerationPhases.MarshallerTypeToValueProperty))
             {
-                marshallingStrategy = DecorateWithValuePropertyStrategy(collectionInfo, marshallingStrategy);
+                // Explicitly insert the Value property handling here (before numElements handling) so that the numElements handling will be emitted before the Value property handling in unmarshalling.
+                if (collectionInfo.ValuePropertyType is not null)
+                {
+                    marshallingStrategy = DecorateWithValuePropertyStrategy(collectionInfo, marshallingStrategy);
+                }
             }
 
-            ExpressionSyntax numElementsExpression = LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(0));
-            if (info.IsManagedReturnPosition || (info.IsByRef && info.RefKind != RefKind.In))
-            {
-                // In this case, we need a numElementsExpression supplied from metadata, so we'll calculate it here.
-                numElementsExpression = GetNumElementsExpressionFromMarshallingInfo(info, collectionInfo.ElementCountInfo, context);
-            }
-
-            marshallingStrategy = new NumElementsExpressionMarshalling(
-                marshallingStrategy,
-                numElementsExpression,
-                SizeOfExpression(elementType));
+            marshallingStrategy = DecorateWithNumElementsHandlingStrategy(info, context, collectionInfo, marshallingStrategy, SizeOfExpression(elementType));
 
             if (collectionInfo.UseDefaultMarshalling && info.ManagedType is SzArrayType)
             {
@@ -314,6 +303,37 @@ namespace Microsoft.Interop
             }
 
             return marshallingGenerator;
+        }
+
+        private ICustomNativeTypeMarshallingStrategy DecorateWithNumElementsHandlingStrategy(TypePositionInfo info, StubCodeContext context, NativeContiguousCollectionMarshallingInfo collectionInfo, ICustomNativeTypeMarshallingStrategy marshallingStrategy, ExpressionSyntax sizeOfElementExpression)
+        {
+            ExpressionSyntax numElementsExpression = LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(0));
+            if (info.IsManagedReturnPosition || (info.IsByRef && info.RefKind != RefKind.In))
+            {
+                // In this case, we need a numElementsExpression supplied from metadata, so we'll calculate it here.
+                numElementsExpression = GetNumElementsExpressionFromMarshallingInfo(info, collectionInfo.ElementCountInfo, context);
+            }
+
+            marshallingStrategy = new NumElementsExpressionMarshalling(
+                marshallingStrategy,
+                numElementsExpression,
+                sizeOfElementExpression,
+                Options.GenerationPhases);
+            return marshallingStrategy;
+        }
+
+        private static ICustomNativeTypeMarshallingStrategy DecorateWithElementMarshallingStrategy(NativeContiguousCollectionMarshallingInfo collectionInfo, ICustomNativeTypeMarshallingStrategy marshallingStrategy, TypePositionInfo elementInfo, IMarshallingGenerator elementMarshaller, bool isBlittable)
+        {
+            if (isBlittable)
+            {
+                marshallingStrategy = new ContiguousBlittableElementCollectionMarshalling(marshallingStrategy, collectionInfo.ElementType.Syntax);
+            }
+            else
+            {
+                marshallingStrategy = new ContiguousNonBlittableElementCollectionMarshalling(marshallingStrategy, elementMarshaller, elementInfo);
+            }
+
+            return marshallingStrategy;
         }
     }
 }
