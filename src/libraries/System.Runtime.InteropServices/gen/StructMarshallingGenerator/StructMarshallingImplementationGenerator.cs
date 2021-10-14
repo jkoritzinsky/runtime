@@ -10,6 +10,7 @@ using Microsoft.CodeAnalysis.CSharp;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Diagnostics;
+using Microsoft.CodeAnalysis;
 
 namespace Microsoft.Interop
 {
@@ -59,39 +60,48 @@ namespace Microsoft.Interop
                 m => GetInfoDependencies(m.TypeInfo))
                 .ToList();
 
-            ConstructorDeclarationSyntax managedToNativeConstructor = ConstructorDeclaration("__Native")
-                .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword)))
-                .AddParameterListParameters(Parameter(Identifier("managed")).WithType(IdentifierName(structToMarshal.Name)));
-
             StatementSyntax[] setupStatements = boundGenerators.SelectMany(gen => gen.Generator.Generate(gen.TypeInfo, codeContext)).ToArray();
 
-            codeContext = codeContext.WithStage(StubCodeContext.Stage.Marshal);
+            if (structToMarshal.MarshallingFeatures.MarshallingFeatures.HasFlag(CustomMarshallingFeatures.ManagedToNative))
+            {
+                StubCodeContext marshalCodeContext = codeContext.WithStage(StubCodeContext.Stage.Marshal);
 
-            managedToNativeConstructor = managedToNativeConstructor.AddBodyStatements(setupStatements).AddBodyStatements(boundGenerators.SelectMany(gen => gen.Generator.Generate(gen.TypeInfo, codeContext)).ToArray());
+                ConstructorDeclarationSyntax managedToNativeConstructor = ConstructorDeclaration("__Native")
+                    .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword)))
+                    .AddParameterListParameters(Parameter(Identifier("managed")).WithType(IdentifierName(structToMarshal.Name)));
 
-            MethodDeclarationSyntax toManagedMethod = MethodDeclaration(IdentifierName(structToMarshal.Name), "ToManaged")
-                .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword)));
+                managedToNativeConstructor = managedToNativeConstructor.AddBodyStatements(setupStatements).AddBodyStatements(boundGenerators.SelectMany(gen => gen.Generator.Generate(gen.TypeInfo, marshalCodeContext)).ToArray());
 
-            codeContext = codeContext.WithStage(StubCodeContext.Stage.Unmarshal);
+                nativeStruct = nativeStruct.AddMembers(managedToNativeConstructor);
+            }
 
-            StatementSyntax declareManagedStatement = LocalDeclarationStatement(
-                    VariableDeclaration(IdentifierName(structToMarshal.Name),
-                        SingletonSeparatedList(VariableDeclarator(Identifier("managed"))
-                            .WithInitializer(EqualsValueClause(LiteralExpression(SyntaxKind.DefaultLiteralExpression))))));
+            if (structToMarshal.MarshallingFeatures.MarshallingFeatures.HasFlag(CustomMarshallingFeatures.NativeToManaged))
+            {
 
-            toManagedMethod = toManagedMethod
-                .AddBodyStatements(declareManagedStatement)
-                .AddBodyStatements(setupStatements)
-                .AddBodyStatements(boundGenerators.SelectMany(gen => gen.Generator.Generate(gen.TypeInfo, codeContext)).ToArray())
-                .AddBodyStatements(ReturnStatement(IdentifierName("managed")));
+                MethodDeclarationSyntax toManagedMethod = MethodDeclaration(IdentifierName(structToMarshal.Name), "ToManaged")
+                    .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword)));
 
-            nativeStruct = nativeStruct.AddMembers(managedToNativeConstructor, toManagedMethod);
+                StubCodeContext unmarshalCodeContext = codeContext.WithStage(StubCodeContext.Stage.Unmarshal);
 
-            codeContext = codeContext.WithStage(StubCodeContext.Stage.Cleanup);
+                StatementSyntax declareManagedStatement = LocalDeclarationStatement(
+                        VariableDeclaration(IdentifierName(structToMarshal.Name),
+                            SingletonSeparatedList(VariableDeclarator(Identifier("managed"))
+                                .WithInitializer(EqualsValueClause(LiteralExpression(SyntaxKind.DefaultLiteralExpression))))));
+
+                toManagedMethod = toManagedMethod
+                    .AddBodyStatements(declareManagedStatement)
+                    .AddBodyStatements(setupStatements)
+                    .AddBodyStatements(boundGenerators.SelectMany(gen => gen.Generator.Generate(gen.TypeInfo, unmarshalCodeContext)).ToArray())
+                    .AddBodyStatements(ReturnStatement(IdentifierName("managed")));
+
+                nativeStruct = nativeStruct.AddMembers(toManagedMethod);
+            }
+
+            StubCodeContext freeNativeCodeContext = codeContext.WithStage(StubCodeContext.Stage.Cleanup);
 
             if (structToMarshal.MarshallingFeatures.MarshallingFeatures.HasFlag(CustomMarshallingFeatures.FreeNativeResources))
             {
-                StatementSyntax[] freeStatements = boundGenerators.SelectMany(gen => gen.Generator.Generate(gen.TypeInfo, codeContext)).ToArray();
+                StatementSyntax[] freeStatements = boundGenerators.SelectMany(gen => gen.Generator.Generate(gen.TypeInfo, freeNativeCodeContext)).ToArray();
 
                 MethodDeclarationSyntax freeNativeMethod = MethodDeclaration(PredefinedType(Token(SyntaxKind.VoidKeyword)), "FreeNative")
                         .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword)));
@@ -111,7 +121,7 @@ namespace Microsoft.Interop
             else
             {
                 // We shouldn't have any cleanup statements if we decided eariler that we didn't need the FreeNative method.
-                Debug.Assert(!boundGenerators.SelectMany(gen => gen.Generator.Generate(gen.TypeInfo, codeContext)).Any());
+                Debug.Assert(!boundGenerators.SelectMany(gen => gen.Generator.Generate(gen.TypeInfo, freeNativeCodeContext)).Any());
             }
 
             return nativeStruct;

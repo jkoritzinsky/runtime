@@ -17,11 +17,15 @@ namespace StructMarshallingGenerator.UnitTests
         public static IEnumerable<object[]> CodeSnippetsToCompile()
         {
             yield return CreateTestCase(CodeSnippets.TrivialStructDeclaration);
-            yield return CreateTestCase(CodeSnippets.BlittableStructDeclarations);
-            yield return CreateTestCase(CodeSnippets.NonBlittableStructDeclaration);
-            yield return CreateTestCase(CodeSnippets.BlittableFixedBufferDeclaration);
-            yield return CreateTestCase(CodeSnippets.GeneratedStructReferencingSimpleGeneratedStruct);
-            yield return CreateTestCase(CodeSnippets.GeneratedStructReferencingGeneratedStructWithFreeNative);
+            yield return CreateTestCase(CodeSnippets.BlittableField);
+            yield return CreateTestCase(CodeSnippets.NonBlittableMarshalAsStringField);
+            yield return CreateTestCase(CodeSnippets.BlittableFixedBufferField);
+            yield return CreateTestCase(CodeSnippets.SimpleGeneratedStructField);
+            yield return CreateTestCase(CodeSnippets.GeneratedStructWithFreeNativeField);
+            // yield return CreateTestCase(CodeSnippets.GeneratedStructWithFieldWithValueProperty);
+            yield return CreateTestCase(CodeSnippets.CustomStructMarshallingField);
+            yield return CreateTestCase(CodeSnippets.CustomStructMarshallingManagedToNativeOnlyField);
+            yield return CreateTestCase(CodeSnippets.CustomStructMarshallingNativeToManagedOnlyField);
         }
 
         private static object[] CreateTestCase(string source, [CallerArgumentExpression("source")] string snippetName = "")

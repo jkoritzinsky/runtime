@@ -20,7 +20,7 @@ partial struct Empty
         /// <summary>
         /// Usage of GeneratedMarshalling on a blittable struct
         /// </summary>
-        public static readonly string BlittableStructDeclarations = @"
+        public static readonly string BlittableField = @"
 using System.Runtime.InteropServices;
 [GeneratedMarshalling]
 [StructLayout(LayoutKind.Sequential)]
@@ -33,7 +33,7 @@ partial struct Blittable
         /// <summary>
         /// Usage of GeneratedMarshalling on a non-blittable struct
         /// </summary>
-        public static readonly string NonBlittableStructDeclaration = @"
+        public static readonly string NonBlittableMarshalAsStringField = @"
 using System.Runtime.InteropServices;
 [GeneratedMarshalling]
 [StructLayout(LayoutKind.Sequential)]
@@ -44,7 +44,7 @@ partial struct NonBlittable
 }
 ";
 
-        public static readonly string BlittableFixedBufferDeclaration = @"
+        public static readonly string BlittableFixedBufferField = @"
 using System.Runtime.InteropServices;
 [GeneratedMarshalling]
 [StructLayout(LayoutKind.Sequential)]
@@ -54,7 +54,7 @@ partial struct NonBlittable
 }
 ";
 
-        public static readonly string NonBlittableFixedBufferDeclaration = @"
+        public static readonly string NonBlittableFixedBufferField = @"
 using System.Runtime.InteropServices;
 [GeneratedMarshalling]
 [StructLayout(LayoutKind.Sequential)]
@@ -74,7 +74,7 @@ struct WrappedCBool
 };
 ";
 
-        public static readonly string GeneratedStructReferencingSimpleGeneratedStruct = @"
+        public static readonly string SimpleGeneratedStructField = @"
 using System.Runtime.InteropServices;
 [GeneratedMarshalling]
 [StructLayout(LayoutKind.Sequential)]
@@ -91,7 +91,7 @@ partial struct Inner
 }
 ";
 
-        public static readonly string GeneratedStructReferencingGeneratedStructWithFreeNative = @"
+        public static readonly string GeneratedStructWithFreeNativeField = @"
 using System.Runtime.InteropServices;
 [GeneratedMarshalling]
 [StructLayout(LayoutKind.Sequential)]
@@ -106,6 +106,112 @@ partial struct Inner
 {
     [MarshalAs(UnmanagedType.LPWStr)]
     public string s;
+}
+";
+
+        public static readonly string CustomStructMarshallingField = @"
+using System.Runtime.InteropServices;
+
+[GeneratedMarshalling]
+[StructLayout(LayoutKind.Sequential)]
+partial struct Generate
+{
+    public S s;
+}
+
+[NativeMarshalling(typeof(Native))]
+struct S
+{
+    public bool b;
+}
+
+struct Native
+{
+    private int i;
+    public Native(S s)
+    {
+        i = s.b ? 1 : 0;
+    }
+
+    public S ToManaged() => new S { b = i != 0 };
+}";
+
+        public static readonly string CustomStructMarshallingManagedToNativeOnlyField = @"
+using System.Runtime.InteropServices;
+
+[GeneratedMarshalling]
+[StructLayout(LayoutKind.Sequential)]
+partial struct Generate
+{
+    public S s;
+}
+
+[NativeMarshalling(typeof(Native))]
+[StructLayout(LayoutKind.Sequential)]
+struct S
+{
+    public bool b;
+}
+
+struct Native
+{
+    private int i;
+    public Native(S s)
+    {
+        i = s.b ? 1 : 0;
+    }
+}";
+
+        public static readonly string CustomStructMarshallingNativeToManagedOnlyField = @"
+using System.Runtime.InteropServices;
+
+[GeneratedMarshalling]
+[StructLayout(LayoutKind.Sequential)]
+partial struct Generate
+{
+    public S s;
+}
+
+[NativeMarshalling(typeof(Native))]
+[StructLayout(LayoutKind.Sequential)]
+struct S
+{
+    public bool b;
+}
+
+[StructLayout(LayoutKind.Sequential)]
+struct Native
+{
+    public int i;
+
+    public S ToManaged() => new S { b = i != 0 };
+}";
+
+        public static readonly string GeneratedStructWithFieldWithValueProperty = @"
+using System.Runtime.InteropServices;
+[GeneratedMarshalling]
+[StructLayout(LayoutKind.Sequential)]
+partial struct Outer
+{
+    public S b;
+}
+
+[NativeMarshalling(typeof(Native))]
+struct S
+{
+    public bool b;
+}
+
+struct Native
+{
+    public Native(S s)
+    {
+        Value = s.b ? 1 : 0;
+    }
+
+    public S ToManaged() => new S { b = Value != 0 };
+
+    public int Value { get; set; }
 }
 ";
     }

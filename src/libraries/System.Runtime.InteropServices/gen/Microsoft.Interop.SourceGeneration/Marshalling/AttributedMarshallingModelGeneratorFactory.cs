@@ -14,10 +14,12 @@ namespace Microsoft.Interop
         private static readonly BlittableMarshaller s_blittable = new BlittableMarshaller();
 
         private readonly IMarshallingGeneratorFactory _innerMarshallingGenerator;
+        private readonly bool _validateScenarioSupport;
 
-        public AttributedMarshallingModelGeneratorFactory(IMarshallingGeneratorFactory innerMarshallingGenerator, InteropGenerationOptions options)
+        public AttributedMarshallingModelGeneratorFactory(IMarshallingGeneratorFactory innerMarshallingGenerator, InteropGenerationOptions options, bool validateScenarioSupport = true)
         {
             Options = options;
+            _validateScenarioSupport = validateScenarioSupport;
             _innerMarshallingGenerator = innerMarshallingGenerator;
             ElementMarshallingGeneratorFactory = this;
         }
@@ -132,7 +134,10 @@ namespace Microsoft.Interop
 
         private IMarshallingGenerator CreateCustomNativeTypeMarshaller(TypePositionInfo info, StubCodeContext context, NativeMarshallingAttributeInfo marshalInfo)
         {
-            ValidateCustomNativeTypeMarshallingSupported(info, context, marshalInfo);
+            if (_validateScenarioSupport)
+            {
+                ValidateCustomNativeTypeMarshallingSupported(info, context, marshalInfo);
+            }
 
             ICustomNativeTypeMarshallingStrategy marshallingStrategy = new SimpleCustomNativeTypeMarshalling(marshalInfo.NativeMarshallingType.Syntax);
 

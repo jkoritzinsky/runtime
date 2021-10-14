@@ -16,7 +16,7 @@ namespace StructMarshallingGenerator.UnitTests
     {
         public static IEnumerable<object[]> CodeSnippetsToCompile()
         {
-            yield return CreateTestCase(CodeSnippets.NonBlittableFixedBufferDeclaration, 0 , 1); // Until we get generalized fixed-buffer support in C#, non-blittable fixed buffers won't work in the language as well.
+            yield return CreateTestCase(CodeSnippets.NonBlittableFixedBufferField, 0 , 1); // Until we get generalized fixed-buffer support in C#, non-blittable fixed buffers won't work in the language as well.
         }
 
         private static object[] CreateTestCase(string source, int expectedGeneratorErrors, int expectedCompilerErrors, [CallerArgumentExpression("source")] string snippetName = "")

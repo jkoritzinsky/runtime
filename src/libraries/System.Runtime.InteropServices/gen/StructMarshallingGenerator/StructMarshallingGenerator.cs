@@ -56,8 +56,9 @@ namespace Microsoft.Interop
         private (MemberDeclarationSyntax Syntax, ImmutableArray<Diagnostic> Diagnostics) GenerateSyntaxAndDiagnosticsFromContext(StructDeclarationSyntax originalSyntax, StructMarshallingContext context)
         {
             IMarshallingGeneratorFactory generatorFactory = new DefaultMarshallingGeneratorFactory(new InteropGenerationOptions(false, false));
-            AttributedMarshallingModelGeneratorFactory attributedMarshallingModelGeneratorFactory = new(generatorFactory, new InteropGenerationOptions(false, false));
-            StructMarshallingGeneratorFactory structMarshallingGeneratorFactory =new(attributedMarshallingModelGeneratorFactory);
+            // Don't validate scenario support here as we will propogate up the same limitations in our generated source.
+            AttributedMarshallingModelGeneratorFactory attributedMarshallingModelGeneratorFactory = new(generatorFactory, new InteropGenerationOptions(false, false), validateScenarioSupport: false);
+            StructMarshallingGeneratorFactory structMarshallingGeneratorFactory = new(attributedMarshallingModelGeneratorFactory);
             attributedMarshallingModelGeneratorFactory.ElementMarshallingGeneratorFactory = structMarshallingGeneratorFactory;
 
             GeneratorDiagnostics diagnostics = new();
