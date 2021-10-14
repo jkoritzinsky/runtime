@@ -30,6 +30,7 @@ namespace StructMarshallingGenerator.UnitTests
             yield return CreateTestCase(CodeSnippets.BlittableElementSizeArrayField);
             yield return CreateTestCase(CodeSnippets.NonBlittableConstSizeArrayField);
             yield return CreateTestCase(CodeSnippets.NonBlittableElementSizeArrayField);
+            yield return CreateTestCase(CodeSnippets.ArrayOfArrayField);
         }
 
         private static object[] CreateTestCase(string source, [CallerArgumentExpression("source")] string snippetName = "")

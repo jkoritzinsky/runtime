@@ -85,7 +85,6 @@ namespace Microsoft.Interop
             {
                 InstanceIdentifier = ParseToken(fieldSymbol.Name).IsReservedKeyword() ? $"@{fieldSymbol.Name}" : fieldSymbol.Name,
                 ByValueContentsMarshalKind = GetByValueContentsMarshalKind(fieldSymbol.GetAttributes(), compilation),
-                ManagedIndex = offset,
                 NativeIndex = offset,
                 RefKind = RefKind.Ref
             };

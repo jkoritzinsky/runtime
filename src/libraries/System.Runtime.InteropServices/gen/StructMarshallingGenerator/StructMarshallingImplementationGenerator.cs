@@ -58,7 +58,7 @@ namespace Microsoft.Interop
         public static StructDeclarationSyntax GenerateStructMarshallingCode(
             StructMarshallingContext structToMarshal,
             Action<TypePositionInfo, MarshallingNotSupportedException> marshallingNotSupportedCallback,
-            IMarshallingGeneratorFactory generatorFactory)
+            FixedBufferMarshallingGeneratorFactory generatorFactory)
         {
             // TODO: Add support for emitting other advanced custom marshalling features accurately.
 
@@ -70,7 +70,10 @@ namespace Microsoft.Interop
                     ValidateScenarioSupport: false,
                     structToMarshal.MarshallingFeatures.HasValueProperty
                     ? AttributedMarshallingModelGenerationPhases.ManagedToMarshallerType
-                    : AttributedMarshallingModelGenerationPhases.All));
+                    : AttributedMarshallingModelGenerationPhases.All))
+            {
+                ElementMarshallingGeneratorFactory = generatorFactory.ElementMarshallingGeneratorFactory
+            };
 
             StructDeclarationSyntax nativeStruct = StructDeclaration(MarshallerHelpers.GeneratedNativeStructName)
                 .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.UnsafeKeyword)));
@@ -86,11 +89,9 @@ namespace Microsoft.Interop
 
             nativeStruct = nativeStruct.AddMembers(CreateFields(boundGenerators));
 
-            Dictionary<TypePositionInfo, int> typePositionInfoToIndex = structToMarshal.Fields.Select(static (field, index) => (field, index)).ToDictionary(value => value.field, value => value.index);
-
             ImmutableArray<BoundGenerator> dependencySortedFields = MarshallerHelpers.GetTopologicallySortedElements(
                 boundGenerators,
-                m => typePositionInfoToIndex[m.TypeInfo],
+                m => m.TypeInfo.ManagedIndex,
                 m => GetInfoDependencies(m.TypeInfo))
                 .ToImmutableArray();
 
@@ -118,7 +119,7 @@ namespace Microsoft.Interop
                 nativeStruct = nativeStruct.AddMembers(toManagedMethod);
             }
 
-            StubCodeContext freeNativeCodeContext = codeContext.WithStage(StubCodeContext.Stage.Cleanup);
+            StructMarshallingStubCodeContext freeNativeCodeContext = codeContext.WithStage(StubCodeContext.Stage.Cleanup);
 
             if (structToMarshal.MarshallingFeatures.MarshallingFeatures.HasFlag(CustomMarshallingFeatures.FreeNativeResources))
             {
@@ -142,16 +143,16 @@ namespace Microsoft.Interop
 
             return nativeStruct;
 
-            IEnumerable<int> GetInfoDependencies(TypePositionInfo info)
+            static IEnumerable<int> GetInfoDependencies(TypePositionInfo info)
             {
                 return MarshallerHelpers.GetDependentElementsOfMarshallingInfo(info.MarshallingAttributeInfo)
-                    .Select(info => typePositionInfoToIndex[info]).ToList();
+                    .Select(info => info.ManagedIndex).ToList();
             }
         }
 
         private static IEnumerable<MemberDeclarationSyntax> CreateValuePropertyAndType(
             StructMarshallingContext structToMarshal,
-            IMarshallingGeneratorFactory generatorFactory,
+            FixedBufferMarshallingGeneratorFactory generatorFactory,
             Action<TypePositionInfo, MarshallingNotSupportedException> marshallingNotSupportedCallback)
         {
             AttributedMarshallingModelGeneratorFactory marshallerToValuePropertyGeneratorFactory = new(
@@ -162,7 +163,10 @@ namespace Microsoft.Interop
                     ValidateScenarioSupport: false,
                     structToMarshal.MarshallingFeatures.HasValueProperty
                     ? AttributedMarshallingModelGenerationPhases.MarshallerTypeToValueProperty
-                    : AttributedMarshallingModelGenerationPhases.All));
+                    : AttributedMarshallingModelGenerationPhases.All))
+            {
+                ElementMarshallingGeneratorFactory = generatorFactory.ElementMarshallingGeneratorFactory
+            };
 
             ValuePropertyStubCodeContext codeContext = new ValuePropertyStubCodeContext().WithStage(StubCodeContext.Stage.Setup);
 
@@ -209,27 +213,58 @@ namespace Microsoft.Interop
             yield return valueProperty;
         }
 
-        private static MethodDeclarationSyntax GenerateFreeNativeMethod(StructMarshallingContext structToMarshal, ImmutableArray<BoundGenerator> boundGenerators, StatementSyntax[] setupStatements, StubCodeContext freeNativeCodeContext)
+        private static MethodDeclarationSyntax GenerateFreeNativeMethod(
+            StructMarshallingContext structToMarshal,
+            ImmutableArray<BoundGenerator> orderedElements,
+            StatementSyntax[] setupStatements,
+            StructMarshallingStubCodeContext freeNativeCodeContext)
         {
-            StatementSyntax[] freeStatements = boundGenerators.SelectMany(gen => gen.Generator.Generate(gen.TypeInfo, freeNativeCodeContext)).ToArray();
-
             MethodDeclarationSyntax freeNativeMethod = MethodDeclaration(PredefinedType(Token(SyntaxKind.VoidKeyword)), "FreeNative")
                     .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword)));
+            List<StatementSyntax> freeStatements = new();
 
-            if (setupStatements.Length > 0)
+            // re-unmarshal any dependent values so they can be available for the cleanup of the depending nodes if there are any dependencies.
+            HashSet<int> dependentFieldMetadataIndices = new();
+            foreach (BoundGenerator gen in orderedElements)
             {
+                foreach (TypePositionInfo dependent in MarshallerHelpers.GetDependentElementsOfMarshallingInfo(gen.TypeInfo.MarshallingAttributeInfo))
+                {
+                    dependentFieldMetadataIndices.Add(dependent.ManagedIndex);
+                }
+            }
+
+            // If we have no nodes that have dependencies, then we don't need to redo any unmarshalling.
+            if (dependentFieldMetadataIndices.Count != 0)
+            {
+                // Declare the managed value local again.
                 StatementSyntax declareManagedStatement = LocalDeclarationStatement(
                         VariableDeclaration(IdentifierName(structToMarshal.Name),
                             SingletonSeparatedList(VariableDeclarator(Identifier("managed"))
                                 .WithInitializer(EqualsValueClause(LiteralExpression(SyntaxKind.DefaultLiteralExpression))))));
-                // We might need a local based on the managed value if we have setup statements.
-                // Re-declare a dummy managed value.
-                freeNativeMethod = freeNativeMethod.AddBodyStatements(declareManagedStatement);
+                freeNativeMethod = freeNativeMethod
+                    .AddBodyStatements(declareManagedStatement);
+
+                var unmarshalCodeContext = freeNativeCodeContext.WithStage(StubCodeContext.Stage.Unmarshal);
+                for (int i = 0; i < orderedElements.Length; i++)
+                {
+                    // Don't unmarshal any elements that no other nodes depend on.
+                    if (dependentFieldMetadataIndices.Contains(orderedElements[i].TypeInfo.ManagedIndex))
+                    {
+                        freeStatements.AddRange(orderedElements[i].Generator.Generate(orderedElements[i].TypeInfo, unmarshalCodeContext));
+                    }
+                }
+            }
+
+            // Loop through the ordered elements in reverse to ensure that we free dependent elements after all elements that depend on it
+
+            for (int i = orderedElements.Length - 1; i >= 0; i--)
+            {
+                freeStatements.AddRange(orderedElements[i].Generator.Generate(orderedElements[i].TypeInfo, freeNativeCodeContext));
             }
 
             freeNativeMethod = freeNativeMethod
                 .AddBodyStatements(setupStatements)
-                .AddBodyStatements(freeStatements);
+                .AddBodyStatements(freeStatements.ToArray());
             return freeNativeMethod;
         }
 

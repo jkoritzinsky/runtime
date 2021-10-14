@@ -300,5 +300,22 @@ struct Native
 
     public void FreeNative() {}
 }";
+
+        public static readonly string ArrayOfArrayField = @"
+using System.Runtime.InteropServices;
+[GeneratedMarshalling]
+[StructLayout(LayoutKind.Sequential)]
+partial struct BlittableElementSizeArray
+{
+    [MarshalUsing(CountElementName = nameof(k))]
+    [MarshalUsing(CountElementName = nameof(j), ElementIndirectionLevel = 1)]
+    public int[][] i;
+
+    [MarshalUsing(CountElementName = nameof(k))]
+    public int[] j;
+
+    public int k;
+}
+";
     }
 }

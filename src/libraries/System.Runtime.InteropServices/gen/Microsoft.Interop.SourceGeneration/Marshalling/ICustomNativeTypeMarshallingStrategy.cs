@@ -644,9 +644,10 @@ namespace Microsoft.Interop
             // When temporary state does not live across stages, the marshaller state is uninitialized
             // in any stage other than Marshal and Unmarshal. So, we need to reinitialize it here in Cleanup
             // from the native data so we can safely run any cleanup functionality in the marshaller.
+            // We don't need to set the native collection length as we're just releasing memory.
             if (!context.AdditionalTemporaryStateLivesAcrossStages)
             {
-                foreach (StatementSyntax statement in GenerateUnmarshallerCollectionInitialization(info, context))
+                foreach (StatementSyntax statement in GenerateUnmarshallerCollectionInitialization(info, context, setLength: true))
                 {
                     yield return statement;
                 }
@@ -673,7 +674,7 @@ namespace Microsoft.Interop
             return _innerMarshaller.GenerateSetupStatements(info, context);
         }
 
-        private IEnumerable<StatementSyntax> GenerateUnmarshallerCollectionInitialization(TypePositionInfo info, StubCodeContext context)
+        private IEnumerable<StatementSyntax> GenerateUnmarshallerCollectionInitialization(TypePositionInfo info, StubCodeContext context, bool setLength)
         {
             string marshalerIdentifier = !_generationPhases.HasFlag(AttributedMarshallingModelGenerationPhases.ManagedToMarshallerType)
                 ? context.GetIdentifiers(info).managed
@@ -685,7 +686,7 @@ namespace Microsoft.Interop
                     ImplicitObjectCreationExpression().AddArgumentListArguments(Argument(_sizeOfElementExpression))));
             }
 
-            if (_generationPhases.HasFlag(AttributedMarshallingModelGenerationPhases.MarshallerTypeToValueProperty)
+            if (setLength && _generationPhases.HasFlag(AttributedMarshallingModelGenerationPhases.MarshallerTypeToValueProperty)
                 && (info.IsByRef || !info.ByValueContentsMarshalKind.HasFlag(ByValueContentsMarshalKind.Out)))
             {
                 yield return ExpressionStatement(
@@ -705,7 +706,7 @@ namespace Microsoft.Interop
             // and set the unmanaged collection length before we marshal back the native data.
             // This ensures that the marshaller object has enough state to successfully set up the ManagedValues
             // and NativeValueStorage spans when the actual collection value is unmarshalled from native to the marshaller.
-            foreach (StatementSyntax statement in GenerateUnmarshallerCollectionInitialization(info, context))
+            foreach (StatementSyntax statement in GenerateUnmarshallerCollectionInitialization(info, context, setLength: true))
             {
                 yield return statement;
             }

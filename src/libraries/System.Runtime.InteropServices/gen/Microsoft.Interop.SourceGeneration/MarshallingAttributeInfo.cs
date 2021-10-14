@@ -477,15 +477,17 @@ namespace Microsoft.Interop
             }
             else if (_contextSymbol is INamedTypeSymbol namedType)
             {
-                foreach (var member in namedType.GetMembers())
+                ImmutableArray<ISymbol> members = namedType.GetMembers();
+                for (int i = 0; i < members.Length; i++)
                 {
+                    ISymbol? member = members[i];
                     if (elementName == member.Name)
                     {
                         if (member is not IFieldSymbol { IsStatic: false, IsConst: false } field)
                         {
                             return null;
                         }
-                        return TypePositionInfo.CreateForField(field, ParseMarshallingInfo(field, field.Type, field.GetAttributes(), inspectedElements), _compilation);
+                        return TypePositionInfo.CreateForField(field, ParseMarshallingInfo(field, field.Type, field.GetAttributes(), inspectedElements), _compilation) with { ManagedIndex = i };
                     }
                 }
             }

@@ -34,8 +34,10 @@ namespace Microsoft.Interop
 
             ImmutableArray<TypePositionInfo>.Builder fieldsBuilder = ImmutableArray.CreateBuilder<TypePositionInfo>();
 
-            foreach (ISymbol member in type.GetMembers())
+            ImmutableArray<ISymbol> members = type.GetMembers();
+            for (int i = 0; i < members.Length; i++)
             {
+                ISymbol member = members[i];
                 if (member is not IFieldSymbol field)
                 {
                     continue;
@@ -50,7 +52,8 @@ namespace Microsoft.Interop
                     TypePositionInfo.CreateForField(
                         field,
                         parser.ParseMarshallingInfo(field, field.Type, field.GetAttributes()),
-                        compilation));
+                        compilation) with
+                    { ManagedIndex = i });
             }
 
             bool found = generatedStructMarshallingCache.TryGetGeneratedStructMarshallingFeatures(type, out GeneratedStructMarshallingFeatures marshallingFeatures);

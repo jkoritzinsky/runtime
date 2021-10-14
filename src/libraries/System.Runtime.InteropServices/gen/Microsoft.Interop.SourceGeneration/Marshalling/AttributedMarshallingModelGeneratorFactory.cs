@@ -262,8 +262,8 @@ namespace Microsoft.Interop
             NativeContiguousCollectionMarshallingInfo collectionInfo,
             ICustomNativeTypeMarshallingStrategy marshallingStrategy)
         {
-            var elementInfo = new TypePositionInfo(collectionInfo.ElementType, collectionInfo.ElementMarshallingInfo) { ManagedIndex = info.ManagedIndex };
-            IMarshallingGenerator elementMarshaller = Create(
+            var elementInfo = new TypePositionInfo(collectionInfo.ElementType, collectionInfo.ElementMarshallingInfo) { ManagedIndex = info.ManagedIndex, RefKind = info.RefKind };
+            IMarshallingGenerator elementMarshaller = ElementMarshallingGeneratorFactory.Create(
                 elementInfo,
                 new ContiguousCollectionElementMarshallingCodeContext(StubCodeContext.Stage.Setup, string.Empty, context));
             TypeSyntax elementType = elementMarshaller.AsNativeType(elementInfo);

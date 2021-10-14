@@ -1386,7 +1386,7 @@ partial class Test
         [MarshalUsing(CountElementName=""arr4"", ElementIndirectionLevel = 4)]
         [MarshalUsing(CountElementName=""arr5"", ElementIndirectionLevel = 5)]
         [MarshalUsing(CountElementName=""arr6"", ElementIndirectionLevel = 6)]
-        [MarshalUsing(CountElementName=""arr7"", ElementIndirectionLevel = 7)]ref int[][][][][][][][][] arr8,
+        [MarshalUsing(CountElementName=""arr7"", ElementIndirectionLevel = 7)]ref int[][][][][][][][] arr8,
         [MarshalUsing(CountElementName=""arr0"", ElementIndirectionLevel = 0)]
         [MarshalUsing(CountElementName=""arr1"", ElementIndirectionLevel = 1)]
         [MarshalUsing(CountElementName=""arr2"", ElementIndirectionLevel = 2)]
