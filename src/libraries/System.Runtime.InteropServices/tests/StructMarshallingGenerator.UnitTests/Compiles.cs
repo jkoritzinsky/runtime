@@ -20,6 +20,7 @@ namespace StructMarshallingGenerator.UnitTests
             yield return CreateTestCase(CodeSnippets.BlittableField);
             yield return CreateTestCase(CodeSnippets.NonBlittableMarshalAsStringField);
             yield return CreateTestCase(CodeSnippets.BlittableFixedBufferField);
+            yield return CreateTestCase(CodeSnippets.NonBlittableFixedBufferField);
             yield return CreateTestCase(CodeSnippets.SimpleGeneratedStructField);
             yield return CreateTestCase(CodeSnippets.GeneratedStructWithFreeNativeField);
             yield return CreateTestCase(CodeSnippets.CustomStructMarshallingWithValueProperty);

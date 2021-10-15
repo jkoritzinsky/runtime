@@ -16,7 +16,7 @@ namespace StructMarshallingGenerator.UnitTests
     {
         public static IEnumerable<object[]> CodeSnippetsToCompile()
         {
-            yield return CreateTestCase(CodeSnippets.NonBlittableFixedBufferField, 0 , 1); // Until we get generalized fixed-buffer support in C#, non-blittable fixed buffers won't work in the language as well.
+            yield break;
         }
 
         private static object[] CreateTestCase(string source, int expectedGeneratorErrors, int expectedCompilerErrors, [CallerArgumentExpression("source")] string snippetName = "")
@@ -24,7 +24,9 @@ namespace StructMarshallingGenerator.UnitTests
             return new object[] { snippetName, source, expectedGeneratorErrors, expectedCompilerErrors };
         }
 
-        [Theory]
+#pragma warning disable xUnit1004 // Test methods should not be skipped. There are no current scenarios to test here.
+        [Theory(Skip = "No current scenarios to test.")]
+#pragma warning restore xUnit1004 // Test methods should not be skipped
         [MemberData(nameof(CodeSnippetsToCompile))]
 #pragma warning disable xUnit1026 // Theory methods should use all of their parameters. The _ parameter is used to get a better IDE test discovery/selection experience
         public async Task ValidateSnippets(string _, string source, int expectedGeneratorErrors, int expectedCompilerErrors)

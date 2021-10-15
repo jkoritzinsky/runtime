@@ -24,8 +24,15 @@ namespace Microsoft.Interop
         public static readonly TypeSyntax SystemIntPtrType = ParseTypeName(TypeNames.System_IntPtr);
 
         public static ForStatementSyntax GetForLoop(string collectionIdentifier, string indexerIdentifier)
+            => GetForLoop(MemberAccessExpression(
+                SyntaxKind.SimpleMemberAccessExpression,
+                IdentifierName(collectionIdentifier),
+                IdentifierName("Length")),
+            indexerIdentifier);
+
+        public static ForStatementSyntax GetForLoop(ExpressionSyntax iterationCountExpression, string indexerIdentifier)
         {
-            // for(int <indexerIdentifier> = 0; <indexerIdentifier> < <collectionIdentifier>.Length; ++<indexerIdentifier>)
+            // for(int <indexerIdentifier> = 0; <indexerIdentifier> < <iterationCountExpression>; ++<indexerIdentifier>)
             //      ;
             return ForStatement(EmptyStatement())
             .WithDeclaration(
@@ -45,10 +52,7 @@ namespace Microsoft.Interop
                 BinaryExpression(
                     SyntaxKind.LessThanExpression,
                     IdentifierName(indexerIdentifier),
-                    MemberAccessExpression(
-                        SyntaxKind.SimpleMemberAccessExpression,
-                        IdentifierName(collectionIdentifier),
-                        IdentifierName("Length"))))
+                    iterationCountExpression))
             .WithIncrementors(
                 SingletonSeparatedList<ExpressionSyntax>(
                     PrefixUnaryExpression(

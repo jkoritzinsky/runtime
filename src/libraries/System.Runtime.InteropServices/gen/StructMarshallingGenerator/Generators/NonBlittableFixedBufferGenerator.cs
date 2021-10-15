@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -11,7 +12,7 @@ using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace Microsoft.Interop.Generators
 {
-    internal class NonBlittableFixedBufferGenerator : IMarshallingGenerator
+    internal class NonBlittableFixedBufferGenerator : IMarshallingGenerator, ICustomNestedTypeGenerator
     {
         private const string IndexerIdentifier = "_i";
         private readonly IMarshallingGenerator _elementMarshaller;
@@ -22,43 +23,30 @@ namespace Microsoft.Interop.Generators
         }
 
         public ArgumentSyntax AsArgument(TypePositionInfo info, StubCodeContext context) => throw new NotImplementedException();
-        public TypeSyntax AsNativeType(TypePositionInfo info) => _elementMarshaller.AsNativeType(new TypePositionInfo(((FixedBufferMarshallingInfo)info.MarshallingAttributeInfo).ElementType, ((FixedBufferMarshallingInfo)info.MarshallingAttributeInfo).ElementMarshallingInfo));
+        public TypeSyntax AsNativeType(TypePositionInfo info) => ParseTypeName(GetFixedBufferTypeName(info));
         public ParameterSyntax AsParameter(TypePositionInfo info) => throw new NotImplementedException();
         public IEnumerable<StatementSyntax> Generate(TypePositionInfo info, StubCodeContext context)
         {
             var marshallingInfo = (FixedBufferMarshallingInfo)info.MarshallingAttributeInfo;
             var (managed, native) = context.GetIdentifiers(info);
             var nativePinned = context.GetAdditionalIdentifier(info, "pinned");
-            var managedSpan = context.GetAdditionalIdentifier(info, "span");
-            var fixedBufferContext = new FixedBufferElementMarshallingCodeContext(context.CurrentStage, managedSpan, IndexerIdentifier, context);
+            var fixedBufferContext = new FixedBufferElementMarshallingCodeContext(context.CurrentStage, $"(({GetElementNativeType(info, marshallingInfo)}*){nativePinned})", IndexerIdentifier, context);
             var elementTypeInfo = new TypePositionInfo(marshallingInfo.ElementType, marshallingInfo.ElementMarshallingInfo)
             {
                 InstanceIdentifier = info.InstanceIdentifier,
                 RefKind = RefKind.Ref
             };
+            LiteralExpressionSyntax loopIterationCountExpression = LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(marshallingInfo.Size));
             switch (context.CurrentStage)
             {
-                case StubCodeContext.Stage.Setup:
-                    yield return LocalDeclarationStatement(
-                        VariableDeclaration(
-                            GenericName(Identifier("global::System.Span"), TypeArgumentList(SingletonSeparatedList(marshallingInfo.ElementType.Syntax))),
-                            SingletonSeparatedList(VariableDeclarator(Identifier(managedSpan))
-                                .WithInitializer(EqualsValueClause(
-                                    ImplicitObjectCreationExpression(ArgumentList(SeparatedList(
-                                        new[]
-                                        {
-                                            Argument(IdentifierName(managed)),
-                                            Argument(LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(marshallingInfo.Size)))
-                                        })),
-                                        initializer: null))))));
-                    break;
                 case StubCodeContext.Stage.Marshal:
                 case StubCodeContext.Stage.Unmarshal:
                     yield return
                         FixedStatement(VariableDeclaration(PointerType(PredefinedType(Token(SyntaxKind.VoidKeyword))),
                             SingletonSeparatedList(
-                                VariableDeclarator(Identifier(nativePinned)).WithInitializer(EqualsValueClause(IdentifierName(native))))),
-                            MarshallerHelpers.GetForLoop(managedSpan, IndexerIdentifier).WithStatement(
+                                VariableDeclarator(Identifier(nativePinned)).WithInitializer(
+                                    EqualsValueClause(PrefixUnaryExpression(SyntaxKind.AddressOfExpression, IdentifierName(native)))))),
+                            MarshallerHelpers.GetForLoop(loopIterationCountExpression, IndexerIdentifier).WithStatement(
                                 Block(_elementMarshaller.Generate(elementTypeInfo, fixedBufferContext))));
                     break;
                 default:
@@ -66,17 +54,41 @@ namespace Microsoft.Interop.Generators
             }
         }
 
+        public IEnumerable<TypeDeclarationSyntax> GetCustomNestedTypeDelcarations(TypePositionInfo info)
+        {
+            var marshallingInfo = (FixedBufferMarshallingInfo)info.MarshallingAttributeInfo;
+            yield return StructDeclaration(GetFixedBufferTypeName(info))
+                .WithMembers(SingletonList<MemberDeclarationSyntax>(
+                    FieldDeclaration(
+                        VariableDeclaration(
+                            GetElementNativeType(info, marshallingInfo),
+                            SeparatedList(Enumerable.Range(0, marshallingInfo.Size).Select(i => VariableDeclarator($"element{i}")))))))
+                .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword)));
+        }
+
+        private TypeSyntax GetElementNativeType(TypePositionInfo info, FixedBufferMarshallingInfo marshallingInfo)
+        {
+            var elementTypeInfo = new TypePositionInfo(marshallingInfo.ElementType, marshallingInfo.ElementMarshallingInfo)
+            {
+                InstanceIdentifier = info.InstanceIdentifier,
+                RefKind = RefKind.Ref
+            };
+            TypeSyntax nativeType = _elementMarshaller.AsNativeType(elementTypeInfo);
+            return nativeType;
+        }
+
+        private static string GetFixedBufferTypeName(TypePositionInfo info) => $"{info.InstanceIdentifier}__Buffer";
+
         public bool SupportsByValueMarshalKind(ByValueContentsMarshalKind marshalKind, StubCodeContext context) => false;
         public bool UsesNativeIdentifier(TypePositionInfo info, StubCodeContext context) => true;
 
         private sealed class FixedBufferElementMarshallingCodeContext : StubCodeContext
         {
-            private readonly string _managedSpanIdentifier;
-
             public override bool SingleFrameSpansNativeContext => false;
 
             public override bool AdditionalTemporaryStateLivesAcrossStages => false;
 
+            public string NativePinnedIdentifier { get; }
             public string IndexerIdentifier { get; }
 
             /// <summary>
@@ -88,12 +100,12 @@ namespace Microsoft.Interop.Generators
             /// <param name="parentContext">The parent context.</param>
             public FixedBufferElementMarshallingCodeContext(
                 Stage currentStage,
-                string managedSpanIdentifier,
+                string nativePinnedIdentifier,
                 string indexerIdentifier,
                 StubCodeContext parentContext)
             {
                 CurrentStage = currentStage;
-                _managedSpanIdentifier = managedSpanIdentifier;
+                NativePinnedIdentifier = nativePinnedIdentifier;
                 IndexerIdentifier = indexerIdentifier;
                 ParentContext = parentContext;
             }
@@ -105,16 +117,16 @@ namespace Microsoft.Interop.Generators
             /// <returns>Managed and native identifiers</returns>
             public override (string managed, string native) GetIdentifiers(TypePositionInfo info)
             {
-                (string _, string native) = ParentContext!.GetIdentifiers(info);
+                (string managed, _) = ParentContext!.GetIdentifiers(info);
                 return (
-                    $"{_managedSpanIdentifier}[{IndexerIdentifier}]",
-                    $"{native}[{IndexerIdentifier}]"
+                    $"{managed}[{IndexerIdentifier}]",
+                    $"{NativePinnedIdentifier}[{IndexerIdentifier}]"
                 );
             }
 
             public override string GetAdditionalIdentifier(TypePositionInfo info, string name)
             {
-                return $"{_managedSpanIdentifier}__{IndexerIdentifier}__{name}";
+                return $"{GetIdentifiers(info).managed}__{IndexerIdentifier}__{name}";
             }
         }
     }

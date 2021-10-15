@@ -87,7 +87,7 @@ namespace Microsoft.Interop
 
             ImmutableArray<BoundGenerator> boundGenerators = ImmutableArray.CreateRange(structToMarshal.Fields.Select(p => CreateGenerator(p, marshallingNotSupportedCallback, managedToMarshalerGeneratorFactory, codeContext)));
 
-            nativeStruct = nativeStruct.AddMembers(CreateFields(boundGenerators));
+            nativeStruct = nativeStruct.AddMembers(CreateFields(boundGenerators)).AddMembers(CreateNestedTypes(boundGenerators));
 
             ImmutableArray<BoundGenerator> dependencySortedFields = MarshallerHelpers.GetTopologicallySortedElements(
                 boundGenerators,
@@ -256,7 +256,6 @@ namespace Microsoft.Interop
             }
 
             // Loop through the ordered elements in reverse to ensure that we free dependent elements after all elements that depend on it
-
             for (int i = orderedElements.Length - 1; i >= 0; i--)
             {
                 freeStatements.AddRange(orderedElements[i].Generator.Generate(orderedElements[i].TypeInfo, freeNativeCodeContext));
@@ -321,30 +320,46 @@ namespace Microsoft.Interop
 
         private static FieldDeclarationSyntax[] CreateFields(ImmutableArray<BoundGenerator> boundGenerators)
         {
-            List<FieldDeclarationSyntax> fieldDeclarationSyntaxes = new();
-            foreach (BoundGenerator gen in boundGenerators)
+            var fieldDeclarationSyntaxes = new FieldDeclarationSyntax[boundGenerators.Length];
+            for (int i = 0; i < boundGenerators.Length; i++)
             {
-                if (gen.TypeInfo.MarshallingAttributeInfo is FixedBufferMarshallingInfo fixedBuffer)
+                BoundGenerator gen = boundGenerators[i];
+                // The fields is a fixed buffer and we aren't going to generate a new type for the native representation,
+                // then generate a fixed buffer field.
+                if (gen.TypeInfo.MarshallingAttributeInfo is FixedBufferMarshallingInfo fixedBuffer && gen.Generator is not ICustomNestedTypeGenerator)
                 {
-                    fieldDeclarationSyntaxes.Add(
-                           FieldDeclaration(
-                               VariableDeclaration(gen.Generator.AsNativeType(gen.TypeInfo),
-                                   SingletonSeparatedList(
-                                       VariableDeclarator(Identifier(gen.TypeInfo.InstanceIdentifier))
-                                        .WithArgumentList(BracketedArgumentList(SingletonSeparatedList(Argument(LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(fixedBuffer.Size)))))))))
-                           .WithModifiers(TokenList(Token(SyntaxKind.InternalKeyword), Token(SyntaxKind.FixedKeyword))));
+                    fieldDeclarationSyntaxes[i] = FieldDeclaration(
+                            VariableDeclaration(gen.Generator.AsNativeType(gen.TypeInfo),
+                                SingletonSeparatedList(
+                                    VariableDeclarator(Identifier(gen.TypeInfo.InstanceIdentifier))
+                                    .WithArgumentList(BracketedArgumentList(SingletonSeparatedList(Argument(LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(fixedBuffer.Size)))))))))
+                        .WithModifiers(TokenList(Token(SyntaxKind.InternalKeyword), Token(SyntaxKind.FixedKeyword)));
                 }
                 else
                 {
-                    fieldDeclarationSyntaxes.Add(
-                        FieldDeclaration(
-                            VariableDeclaration(gen.Generator.AsNativeType(gen.TypeInfo),
-                                SingletonSeparatedList(
-                                    VariableDeclarator(Identifier(gen.TypeInfo.InstanceIdentifier)))))
-                        .WithModifiers(TokenList(Token(SyntaxKind.InternalKeyword))));
+                    fieldDeclarationSyntaxes[i] = FieldDeclaration(
+                        VariableDeclaration(gen.Generator.AsNativeType(gen.TypeInfo),
+                            SingletonSeparatedList(
+                                VariableDeclarator(Identifier(gen.TypeInfo.InstanceIdentifier)))))
+                    .WithModifiers(TokenList(Token(SyntaxKind.InternalKeyword)));
                 }
             }
-            return fieldDeclarationSyntaxes.ToArray();
+            return fieldDeclarationSyntaxes;
         }
+
+        private static TypeDeclarationSyntax[] CreateNestedTypes(ImmutableArray<BoundGenerator> boundGenerators)
+        {
+            List<TypeDeclarationSyntax> nestedTypes = new();
+
+            foreach (BoundGenerator gen in boundGenerators)
+            {
+                if (gen.Generator is ICustomNestedTypeGenerator nestedTypeGen)
+                {
+                    nestedTypes.AddRange(nestedTypeGen.GetCustomNestedTypeDelcarations(gen.TypeInfo));
+                }
+            }
+            return nestedTypes.ToArray();
+        }
+
     }
 }

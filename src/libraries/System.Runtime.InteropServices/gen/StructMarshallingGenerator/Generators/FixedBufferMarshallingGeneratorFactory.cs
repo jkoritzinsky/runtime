@@ -4,12 +4,14 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Microsoft.Interop.Generators
 {
     internal class FixedBufferMarshallingGeneratorFactory : IMarshallingGeneratorFactory
     {
         private readonly IMarshallingGeneratorFactory _innerFactory;
+        private readonly List<StructDeclarationSyntax> _generatedNestedFixedBufferTypes = new();
 
         public FixedBufferMarshallingGeneratorFactory(IMarshallingGeneratorFactory innerFactory)
         {
@@ -35,5 +37,7 @@ namespace Microsoft.Interop.Generators
 
             return new NonBlittableFixedBufferGenerator(elementMarshaller);
         }
+
+        public IEnumerable<StructDeclarationSyntax> GeneratedNestedFixedBufferTypes => _generatedNestedFixedBufferTypes;
     }
 }
