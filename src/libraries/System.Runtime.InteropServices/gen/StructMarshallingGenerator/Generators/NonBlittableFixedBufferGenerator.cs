@@ -42,6 +42,7 @@ namespace Microsoft.Interop.Generators
                 case StubCodeContext.Stage.Marshal:
                 case StubCodeContext.Stage.Unmarshal:
                     yield return
+                        // fixed (void* <nativePinned> = &<native>)
                         FixedStatement(VariableDeclaration(PointerType(PredefinedType(Token(SyntaxKind.VoidKeyword))),
                             SingletonSeparatedList(
                                 VariableDeclarator(Identifier(nativePinned)).WithInitializer(
@@ -54,7 +55,7 @@ namespace Microsoft.Interop.Generators
             }
         }
 
-        public IEnumerable<TypeDeclarationSyntax> GetCustomNestedTypeDelcarations(TypePositionInfo info)
+        public IEnumerable<TypeDeclarationSyntax> GetCustomNestedTypeDeclarations(TypePositionInfo info)
         {
             var marshallingInfo = (FixedBufferMarshallingInfo)info.MarshallingAttributeInfo;
             yield return StructDeclaration(GetFixedBufferTypeName(info))

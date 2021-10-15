@@ -355,7 +355,7 @@ namespace Microsoft.Interop
             {
                 if (gen.Generator is ICustomNestedTypeGenerator nestedTypeGen)
                 {
-                    nestedTypes.AddRange(nestedTypeGen.GetCustomNestedTypeDelcarations(gen.TypeInfo));
+                    nestedTypes.AddRange(nestedTypeGen.GetCustomNestedTypeDeclarations(gen.TypeInfo));
                 }
             }
             return nestedTypes.ToArray();

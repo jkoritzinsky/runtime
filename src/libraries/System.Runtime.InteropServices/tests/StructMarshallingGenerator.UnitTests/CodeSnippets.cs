@@ -358,5 +358,16 @@ struct Native
 
     public void FreeNative() {}
 }";
+
+        public static readonly string ConstSizeByValTStrField = @"
+using System.Runtime.InteropServices;
+[GeneratedMarshalling]
+[StructLayout(LayoutKind.Sequential)]
+partial struct ByValTStr
+{
+    [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 10)]
+    public string s;
+}
+";
     }
 }

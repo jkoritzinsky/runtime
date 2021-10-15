@@ -56,8 +56,8 @@ namespace Microsoft.Interop.Generators
             }
         }
 
-        public IEnumerable<TypeDeclarationSyntax> GetCustomNestedTypeDelcarations(TypePositionInfo info)
-            => _innerGenerator is ICustomNestedTypeGenerator customNestedTypeGenerator ? customNestedTypeGenerator.GetCustomNestedTypeDelcarations(info) : Array.Empty<TypeDeclarationSyntax>();
+        public IEnumerable<TypeDeclarationSyntax> GetCustomNestedTypeDeclarations(TypePositionInfo info)
+            => _innerGenerator is ICustomNestedTypeGenerator customNestedTypeGenerator ? customNestedTypeGenerator.GetCustomNestedTypeDeclarations(info) : Array.Empty<TypeDeclarationSyntax>();
         public bool SupportsByValueMarshalKind(ByValueContentsMarshalKind marshalKind, StubCodeContext context) => _innerGenerator.SupportsByValueMarshalKind(marshalKind, context);
         public bool UsesNativeIdentifier(TypePositionInfo info, StubCodeContext context) => _innerGenerator.UsesNativeIdentifier(info, context);
     }

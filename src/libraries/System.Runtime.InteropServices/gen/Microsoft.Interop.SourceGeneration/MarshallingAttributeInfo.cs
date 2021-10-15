@@ -539,7 +539,7 @@ namespace Microsoft.Interop
                         elementUnmanagedType = (UnmanagedType)namedArg.Value.Value!;
                         break;
                     case nameof(MarshalAsAttribute.SizeConst):
-                        if (!isArrayType)
+                        if (!(isArrayType || unmanagedType == UnmanagedType.ByValTStr))
                         {
                             _diagnostics.ReportConfigurationNotSupported(attrData, $"{attrData.AttributeClass!.Name}{Type.Delimiter}{namedArg.Key}");
                         }
@@ -559,6 +559,15 @@ namespace Microsoft.Interop
                         arraySizeInfo = arraySizeInfo with { ParamAtIndex = paramIndexInfo };
                         break;
                 }
+            }
+
+            if (unmanagedType == UnmanagedType.ByValTStr)
+            {
+                // TODO: validate size.
+                return new FixedBufferMarshallingInfo(
+                    arraySizeInfo.ConstSize,
+                    new SpecialTypeInfo("System.Char", "System.Char", SpecialType.System_Char),
+                    new MarshallingInfoStringSupport(CharEncoding.Utf16));
             }
 
             if (!isArrayType)

@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Microsoft.Interop.Generators
@@ -33,8 +34,10 @@ namespace Microsoft.Interop.Generators
             return (elementMarshaller, info.ManagedType) switch
             {
                 (_, SzArrayType) => new ArrayFixedBufferGenerator(new NonBlittableFixedBufferGenerator(elementMarshaller)),
+                (Utf16CharMarshaller, SpecialTypeInfo(_, _, SpecialType.System_String)) => new Utf16StringFixedBufferGenerator(),
                 (BlittableMarshaller, _) => new BlittableFixedBufferGenerator(),
-                _ => new NonBlittableFixedBufferGenerator(elementMarshaller)
+                (_, PointerTypeInfo) => new NonBlittableFixedBufferGenerator(elementMarshaller),
+                _ => throw new MarshallingNotSupportedException(info, context)
             };
         }
 

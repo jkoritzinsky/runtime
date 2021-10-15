@@ -10,6 +10,6 @@ namespace Microsoft.Interop.Generators
 {
     internal interface ICustomNestedTypeGenerator
     {
-        IEnumerable<TypeDeclarationSyntax> GetCustomNestedTypeDelcarations(TypePositionInfo info);
+        IEnumerable<TypeDeclarationSyntax> GetCustomNestedTypeDeclarations(TypePositionInfo info);
     }
 }
