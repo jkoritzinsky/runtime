@@ -583,6 +583,14 @@ namespace Microsoft.Interop
                 elementMarshallingInfo = GetMarshallingInfo(null, elementType, new Dictionary<int, AttributeData>(), 1, ImmutableHashSet<string>.Empty, ref maxIndirectionLevelUsed);
             }
 
+            if (unmanagedType == UnmanagedType.ByValArray)
+            {
+                // TODO: validate size.
+                return new FixedBufferMarshallingInfo(arraySizeInfo.ConstSize, ManagedTypeInfo.CreateTypeInfoForTypeSymbol(elementType), elementMarshallingInfo);
+            }
+
+            Debug.Assert(unmanagedType == UnmanagedType.LPArray);
+
             INamedTypeSymbol? arrayMarshaller;
 
             if (elementType is IPointerTypeSymbol { PointedAtType: ITypeSymbol pointedAt })

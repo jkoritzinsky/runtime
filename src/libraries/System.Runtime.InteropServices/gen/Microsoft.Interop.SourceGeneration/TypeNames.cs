@@ -77,5 +77,6 @@ namespace Microsoft.Interop
         }
 
         public const string System_Runtime_InteropServices_FieldOffsetAttribute = "System.Runtime.InteropServices.FieldOffsetAttribute";
+        public const string System_ArgumentException = "System.ArgumentException";
     }
 }

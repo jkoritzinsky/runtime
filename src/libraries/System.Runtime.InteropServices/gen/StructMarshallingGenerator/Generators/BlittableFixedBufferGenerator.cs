@@ -10,7 +10,7 @@ using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace Microsoft.Interop.Generators
 {
-    internal class BlittableFixedBufferGenerator : IMarshallingGenerator
+    internal sealed class BlittableFixedBufferGenerator : IMarshallingGenerator
     {
         public ArgumentSyntax AsArgument(TypePositionInfo info, StubCodeContext context) => throw new NotImplementedException();
         public TypeSyntax AsNativeType(TypePositionInfo info) => ((FixedBufferMarshallingInfo)info.MarshallingAttributeInfo).ElementType.Syntax;

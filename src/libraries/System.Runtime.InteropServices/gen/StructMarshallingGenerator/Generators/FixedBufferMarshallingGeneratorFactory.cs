@@ -30,12 +30,12 @@ namespace Microsoft.Interop.Generators
 
             IMarshallingGenerator elementMarshaller = ElementMarshallingGeneratorFactory.Create(new TypePositionInfo(fixedBufferMarshalling.ElementType, fixedBufferMarshalling.ElementMarshallingInfo), context);
 
-            if (elementMarshaller is BlittableMarshaller)
+            return (elementMarshaller, info.ManagedType) switch
             {
-                return new BlittableFixedBufferGenerator();
-            }
-
-            return new NonBlittableFixedBufferGenerator(elementMarshaller);
+                (_, SzArrayType) => new ArrayFixedBufferGenerator(new NonBlittableFixedBufferGenerator(elementMarshaller)),
+                (BlittableMarshaller, _) => new BlittableFixedBufferGenerator(),
+                _ => new NonBlittableFixedBufferGenerator(elementMarshaller)
+            };
         }
 
         public IEnumerable<StructDeclarationSyntax> GeneratedNestedFixedBufferTypes => _generatedNestedFixedBufferTypes;

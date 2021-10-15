@@ -12,7 +12,7 @@ using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace Microsoft.Interop.Generators
 {
-    internal class NonBlittableFixedBufferGenerator : IMarshallingGenerator, ICustomNestedTypeGenerator
+    internal sealed class NonBlittableFixedBufferGenerator : IMarshallingGenerator, ICustomNestedTypeGenerator
     {
         private const string IndexerIdentifier = "_i";
         private readonly IMarshallingGenerator _elementMarshaller;

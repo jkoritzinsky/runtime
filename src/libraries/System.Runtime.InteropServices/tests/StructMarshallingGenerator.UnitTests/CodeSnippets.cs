@@ -317,5 +317,46 @@ partial struct BlittableElementSizeArray
     public int k;
 }
 ";
+
+        public static readonly string BlittableConstSizeByValArrayField = @"
+using System.Runtime.InteropServices;
+[GeneratedMarshalling]
+[StructLayout(LayoutKind.Sequential)]
+partial struct BlittableConstSizeArray
+{
+    [MarshalAs(UnmanagedType.ByValArray, SizeConst = 10)]
+    public int[] i;
+}
+";
+
+        public static readonly string NonBlittableConstSizeByValArrayField = @"
+using System.Runtime.InteropServices;
+[GeneratedMarshalling]
+[StructLayout(LayoutKind.Sequential)]
+partial struct NonBlittableConstSizeArray
+{
+    [MarshalAs(UnmanagedType.ByValArray, SizeConst = 10)]
+    public S[] i;
+}
+
+[NativeMarshalling(typeof(Native))]
+[StructLayout(LayoutKind.Sequential)]
+struct S
+{
+    public bool b;
+}
+
+struct Native
+{
+    private int i;
+    public Native(S s)
+    {
+        i = s.b ? 1 : 0;
+    }
+
+    public S ToManaged() => new S { b = i != 0 };
+
+    public void FreeNative() {}
+}";
     }
 }
