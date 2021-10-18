@@ -215,7 +215,8 @@ namespace Microsoft.Interop.Analyzers
                     marshalUsingAttribute,
                     genericContiguousCollectionMarshallerAttribute,
                     spanOfByte,
-                    context.Compilation.GetTypeByMetadataName(TypeNames.System_Runtime_InteropServices_StructLayoutAttribute)!);
+                    context.Compilation.GetTypeByMetadataName(TypeNames.System_Runtime_InteropServices_StructLayoutAttribute)!,
+                    context.Compilation.CreateStructMarshallingFeatureCache());
                 context.RegisterSymbolAction(context => perCompilationAnalyzer.AnalyzeTypeDefinition(context), SymbolKind.NamedType);
                 context.RegisterSymbolAction(context => perCompilationAnalyzer.AnalyzeElement(context), SymbolKind.Parameter, SymbolKind.Field);
                 context.RegisterSymbolAction(context => perCompilationAnalyzer.AnalyzeReturnType(context), SymbolKind.Method);
@@ -231,6 +232,7 @@ namespace Microsoft.Interop.Analyzers
             private readonly INamedTypeSymbol _genericContiguousCollectionMarshallerAttribute;
             private readonly INamedTypeSymbol _spanOfByte;
             private readonly INamedTypeSymbol _structLayoutAttribute;
+            private readonly StructMarshallingFeatureCache _structFeatureCache;
 
             public PerCompilationAnalyzer(INamedTypeSymbol generatedMarshallingAttribute,
                                           INamedTypeSymbol blittableTypeAttribute,
@@ -238,7 +240,8 @@ namespace Microsoft.Interop.Analyzers
                                           INamedTypeSymbol marshalUsingAttribute,
                                           INamedTypeSymbol genericContiguousCollectionMarshallerAttribute,
                                           INamedTypeSymbol spanOfByte,
-                                          INamedTypeSymbol structLayoutAttribute)
+                                          INamedTypeSymbol structLayoutAttribute,
+                                          StructMarshallingFeatureCache structFeatureCache)
             {
                 _generatedMarshallingAttribute = generatedMarshallingAttribute;
                 _blittableTypeAttribute = blittableTypeAttribute;
@@ -247,6 +250,7 @@ namespace Microsoft.Interop.Analyzers
                 _genericContiguousCollectionMarshallerAttribute = genericContiguousCollectionMarshallerAttribute;
                 _spanOfByte = spanOfByte;
                 _structLayoutAttribute = structLayoutAttribute;
+                _structFeatureCache = structFeatureCache;
             }
 
             public void AnalyzeTypeDefinition(SymbolAnalysisContext context)
@@ -280,7 +284,7 @@ namespace Microsoft.Interop.Analyzers
                             CannotHaveMultipleMarshallingAttributesRule,
                             type.ToDisplayString()));
                 }
-                else if (blittableTypeAttributeData is not null && (!type.HasOnlyBlittableFields() || type.IsAutoLayout(_structLayoutAttribute)))
+                else if (blittableTypeAttributeData is not null && !_structFeatureCache.SpeculativeTypeIsBlittable(type, allowExposureOutsideOfCompilation: true))
                 {
                     context.ReportDiagnostic(
                         blittableTypeAttributeData.CreateDiagnostic(
@@ -495,13 +499,13 @@ namespace Microsoft.Interop.Analyzers
                     }
                 }
 
-                if (!nativeType.IsConsideredBlittable())
+                if (!nativeType.IsTypeConsideredBlittable(_structFeatureCache, SymbolEqualityComparer.Default.Equals(nativeType.ContainingModule, context.Compilation.SourceModule)))
                 {
                     context.ReportDiagnostic(
-                        GetDiagnosticLocations(context, nativeTypeDiagnosticsTargetSymbol, nativeMarshalerAttributeData).CreateDiagnostic(
-                            NativeTypeMustBeBlittableRule,
-                            nativeType.ToDisplayString(),
-                            type.ToDisplayString()));
+                                    GetDiagnosticLocations(context, nativeTypeDiagnosticsTargetSymbol, nativeMarshalerAttributeData).CreateDiagnostic(
+                                        NativeTypeMustBeBlittableRule,
+                                        nativeType.ToDisplayString(),
+                                        type.ToDisplayString()));
                 }
 
                 // Use a tuple here instead of an anonymous type so we can do the reassignment and pattern matching below.
@@ -513,7 +517,8 @@ namespace Microsoft.Interop.Analyzers
 
                 if (getPinnableReferenceMethods.Managed is not null)
                 {
-                    if (!getPinnableReferenceMethods.Managed.ReturnType.IsConsideredBlittable())
+                    ITypeSymbol returnType = getPinnableReferenceMethods.Managed.ReturnType;
+                    if (!returnType.IsTypeConsideredBlittable(_structFeatureCache, SymbolEqualityComparer.Default.Equals(returnType.ContainingModule, context.Compilation.SourceModule)))
                     {
                         context.ReportDiagnostic(getPinnableReferenceMethods.Managed.CreateDiagnostic(GetPinnableReferenceReturnTypeBlittableRule));
                     }

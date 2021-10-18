@@ -126,7 +126,7 @@ namespace Microsoft.Interop
 
             IncrementalValueProvider<(string, ImmutableArray<Diagnostic>)> methodSourceAndDiagnostics = methodsToGenerate
                 .Combine(stubEnvironment)
-                .Combine(context.CreateGeneratedStructMarshallingFeatureCacheProvider())
+                .Combine(context.CreateStructMarshallingFeatureCacheProvider())
                 .Select(static (data, ct) => new
                 {
                     data.Left.Left.Syntax,
@@ -384,7 +384,7 @@ namespace Microsoft.Interop
             };
         }
 
-        private static IncrementalStubGenerationContext CalculateStubInformation(MethodDeclarationSyntax syntax, IMethodSymbol symbol, StubEnvironment environment, GeneratedStructMarshallingFeatureCache generatedStructMarshallingCache, CancellationToken ct)
+        private static IncrementalStubGenerationContext CalculateStubInformation(MethodDeclarationSyntax syntax, IMethodSymbol symbol, StubEnvironment environment, StructMarshallingFeatureCache generatedStructMarshallingCache, CancellationToken ct)
         {
             INamedTypeSymbol? lcidConversionAttrType = environment.Compilation.GetTypeByMetadataName(TypeNames.LCIDConversionAttribute);
             INamedTypeSymbol? suppressGCTransitionAttrType = environment.Compilation.GetTypeByMetadataName(TypeNames.SuppressGCTransitionAttribute);

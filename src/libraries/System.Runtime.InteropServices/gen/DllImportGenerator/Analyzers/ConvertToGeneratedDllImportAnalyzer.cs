@@ -47,11 +47,12 @@ namespace Microsoft.Interop.Analyzers
                     if (dllImportAttrType == null)
                         return;
 
-                    compilationContext.RegisterSymbolAction(symbolContext => AnalyzeSymbol(symbolContext, dllImportAttrType), SymbolKind.Method);
+                    StructMarshallingFeatureCache structMarshallingCache = compilationContext.Compilation.CreateStructMarshallingFeatureCache();
+                    compilationContext.RegisterSymbolAction(symbolContext => AnalyzeSymbol(symbolContext, dllImportAttrType, structMarshallingCache), SymbolKind.Method);
                 });
         }
 
-        private static void AnalyzeSymbol(SymbolAnalysisContext context, INamedTypeSymbol dllImportAttrType)
+        private static void AnalyzeSymbol(SymbolAnalysisContext context, INamedTypeSymbol dllImportAttrType, StructMarshallingFeatureCache structMarshallingCache)
         {
             var method = (IMethodSymbol)context.Symbol;
 
@@ -64,20 +65,21 @@ namespace Microsoft.Interop.Analyzers
             if (dllImportData.ModuleName == "QCall")
                 return;
 
-            if (RequiresMarshalling(method, dllImportData, dllImportAttrType))
+            if (RequiresMarshalling(method, dllImportData, dllImportAttrType, structMarshallingCache))
             {
                 context.ReportDiagnostic(method.CreateDiagnostic(ConvertToGeneratedDllImport, method.Name));
             }
         }
 
-        private static bool RequiresMarshalling(IMethodSymbol method, DllImportData dllImportData, INamedTypeSymbol dllImportAttrType)
+        private static bool RequiresMarshalling(IMethodSymbol method, DllImportData dllImportData, INamedTypeSymbol dllImportAttrType, StructMarshallingFeatureCache structMarshallingCache)
         {
             // SetLastError=true requires marshalling
             if (dllImportData.SetLastError)
                 return true;
 
             // Check if return value requires marshalling
-            if (!method.ReturnsVoid && !method.ReturnType.IsConsideredBlittable())
+            if (!method.ReturnsVoid
+                && !method.ReturnType.IsTypeConsideredBlittable(structMarshallingCache, SymbolEqualityComparer.Default.Equals(method.ReturnType.ContainingModule, method.ContainingModule)))
                 return true;
 
             // Check if parameters require marshalling
@@ -86,7 +88,7 @@ namespace Microsoft.Interop.Analyzers
                 if (paramType.RefKind != RefKind.None)
                     return true;
 
-                if (!paramType.Type.IsConsideredBlittable())
+                if (!paramType.Type.IsTypeConsideredBlittable(structMarshallingCache, SymbolEqualityComparer.Default.Equals(method.ReturnType.ContainingModule, method.ContainingModule)))
                     return true;
             }
 

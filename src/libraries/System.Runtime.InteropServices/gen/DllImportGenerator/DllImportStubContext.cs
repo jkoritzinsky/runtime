@@ -70,7 +70,7 @@ namespace Microsoft.Interop
             GeneratedDllImportData dllImportData,
             StubEnvironment env,
             GeneratorDiagnostics diagnostics,
-            GeneratedStructMarshallingFeatureCache generatedStructMarshallingCache,
+            StructMarshallingFeatureCache generatedStructMarshallingCache,
             CancellationToken token)
         {
             // Cancel early if requested
@@ -133,7 +133,7 @@ namespace Microsoft.Interop
             };
         }
 
-        private static (ImmutableArray<TypePositionInfo>, IMarshallingGeneratorFactory) GenerateTypeInformation(IMethodSymbol method, GeneratedDllImportData dllImportData, GeneratorDiagnostics diagnostics, StubEnvironment env, GeneratedStructMarshallingFeatureCache generatedStructMarshallingCache)
+        private static (ImmutableArray<TypePositionInfo>, IMarshallingGeneratorFactory) GenerateTypeInformation(IMethodSymbol method, GeneratedDllImportData dllImportData, GeneratorDiagnostics diagnostics, StubEnvironment env, StructMarshallingFeatureCache generatedStructMarshallingCache)
         {
             // Compute the current default string encoding value.
             CharEncoding defaultEncoding = CharEncoding.Undefined;

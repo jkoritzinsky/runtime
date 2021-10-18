@@ -1,57 +1,52 @@
 // Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 
+using System;
 using System.Collections.Immutable;
+using System.Linq;
 using System.Runtime.InteropServices;
 
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.Diagnostics;
 
 namespace Microsoft.Interop
 {
     public static class TypeSymbolExtensions
     {
-        public static bool HasOnlyBlittableFields(this ITypeSymbol type) => HasOnlyBlittableFields(type, ImmutableHashSet.Create<ITypeSymbol>(SymbolEqualityComparer.Default));
-
-        private static bool HasOnlyBlittableFields(this ITypeSymbol type, ImmutableHashSet<ITypeSymbol> seenTypes)
+        public static bool IsTypeConsideredBlittable(this ITypeSymbol type, StructMarshallingFeatureCache structFeatureCache, bool typeDefinedInSource)
         {
-            if (seenTypes.Contains(type))
+            if (typeDefinedInSource
+                && type is INamedTypeSymbol namedTypeInSource)
             {
-                // A recursive struct type isn't blittable.
-                // It's also illegal in C#, but I believe that source generators run
-                // before that is detected, so we check here to avoid a stack overflow.
-                return false;
+                return structFeatureCache.TryGetGeneratedStructMarshallingFeatures(namedTypeInSource, out GeneratedStructMarshallingFeatures marshallingFeatures)
+                    && marshallingFeatures.IsBlittable;
             }
-
-            foreach (IFieldSymbol field in type.GetMembers().OfType<IFieldSymbol>())
+            else if (type.GetAttributes().Any(attr => attr.AttributeClass.ToDisplayString() == TypeNames.BlittableTypeAttribute))
             {
-                if (!field.IsStatic)
-                {
-                    bool fieldBlittable = field switch
-                    {
-                        { Type: { IsReferenceType: true } } => false,
-                        { Type: IPointerTypeSymbol ptr } => IsConsideredBlittable(ptr.PointedAtType),
-                        { Type: IFunctionPointerTypeSymbol } => true,
-                        not { Type: { SpecialType: SpecialType.None } } => IsSpecialTypeBlittable(field.Type.SpecialType),
-                        // Assume that type parameters that can be blittable are blittable.
-                        // We'll re-evaluate blittability for generic fields of generic types at instantation time.
-                        { Type: ITypeParameterSymbol } => true,
-                        { Type: { IsValueType: false } } => false,
-                        _ => IsConsideredBlittable(field.Type, seenTypes.Add(type))
-                    };
-
-                    if (!fieldBlittable)
-                    {
-                        return false;
-                    }
-                }
+                return true;
             }
-
-            return true;
+            return type.IsUnattributedReferencedTypeBlittable();
         }
 
-        private static bool IsSpecialTypeBlittable(SpecialType specialType)
+        public static bool IsUnattributedReferencedTypeBlittable(this ITypeSymbol type)
+        {
+            return type switch
+            {
+                { IsReferenceType: true } => false,
+                { TypeKind: TypeKind.Pointer or TypeKind.FunctionPointer } => true,
+                { SpecialType: not SpecialType.None } => type.SpecialType.IsSpecialTypeBlittable(),
+                // Assume that type parameters that can be blittable are blittable.
+                // We'll re-evaluate blittability for generic fields of generic types at instantation time.
+                { TypeKind: TypeKind.TypeParameter } => true,
+                { IsValueType: false } => false,
+                INamedTypeSymbol { TypeKind: TypeKind.Enum, EnumUnderlyingType: { SpecialType: SpecialType enumUnderlyingType } } => enumUnderlyingType.IsSpecialTypeBlittable(),
+                _ => false
+            };
+        }
+
+        public static bool IsSpecialTypeBlittable(this SpecialType specialType)
             => specialType switch
             {
                 SpecialType.System_Void
@@ -70,80 +65,19 @@ namespace Microsoft.Interop
                 _ => false
             };
 
-        public static bool IsConsideredBlittable(this ITypeSymbol type) => IsConsideredBlittable(type, ImmutableHashSet.Create<ITypeSymbol>(SymbolEqualityComparer.Default));
-
-        private static bool IsConsideredBlittable(this ITypeSymbol type, ImmutableHashSet<ITypeSymbol> seenTypes)
-        {
-            if (type.SpecialType != SpecialType.None)
-            {
-                return IsSpecialTypeBlittable(type.SpecialType);
-            }
-
-            if (type.TypeKind is TypeKind.FunctionPointer or TypeKind.Pointer)
-            {
-                return true;
-            }
-
-            if (type.IsReferenceType)
-            {
-                return false;
-            }
-
-            if (type is INamedTypeSymbol { TypeKind: TypeKind.Enum, EnumUnderlyingType: ITypeSymbol underlyingType })
-            {
-                return underlyingType.IsConsideredBlittable(seenTypes);
-            }
-
-            bool hasNativeMarshallingAttribute = false;
-            bool hasGeneratedMarshallingAttribute = false;
-            // [TODO]: Match attributes on full name or symbol, not just on type name.
-            foreach (AttributeData attr in type.GetAttributes())
-            {
-                if (attr.AttributeClass is null)
-                {
-                    continue;
-                }
-                if (attr.AttributeClass.Name == "BlittableTypeAttribute")
-                {
-                    if (type is INamedTypeSymbol { IsGenericType: true } generic)
-                    {
-                        // If the type is generic, we inspect the fields again
-                        // to determine blittability of this instantiation
-                        // since we are guaranteed that if a type has generic fields,
-                        // they will be present in the contract assembly to ensure
-                        // that recursive structs can be identified at build time.
-                        return generic.HasOnlyBlittableFields(seenTypes);
-                    }
-                    return true;
-                }
-                else if (attr.AttributeClass.Name == "GeneratedMarshallingAttribute")
-                {
-                    hasGeneratedMarshallingAttribute = true;
-                }
-                else if (attr.AttributeClass.Name == "NativeMarshallingAttribute")
-                {
-                    hasNativeMarshallingAttribute = true;
-                }
-            }
-
-            if (hasGeneratedMarshallingAttribute && !hasNativeMarshallingAttribute)
-            {
-                // The struct type has generated marshalling via a source generator.
-                // We can't guarantee that we can see the results of the struct source generator,
-                // so we re-calculate if the type is blittable here.
-                return type.HasOnlyBlittableFields(seenTypes);
-            }
-
-            if (type is INamedTypeSymbol namedType
-                && namedType.DeclaringSyntaxReferences.Length != 0
-                && !namedType.IsExposedOutsideOfCurrentCompilation())
-            {
-                // If a type is declared in the current compilation and not exposed outside of it,
-                // we will allow it to be considered blittable if its fields are considered blittable.
-                return type.HasOnlyBlittableFields(seenTypes);
-            }
-            return false;
-        }
+        public static bool SpecialTypeWithMarshalAsIsBlittable(this SpecialType specialType, UnmanagedType unmanagedType)
+            => (specialType, unmanagedType) is (SpecialType.System_SByte, UnmanagedType.I1)
+                or (SpecialType.System_Byte, UnmanagedType.U1)
+                or (SpecialType.System_Int16, UnmanagedType.I2)
+                or (SpecialType.System_UInt16, UnmanagedType.U2)
+                or (SpecialType.System_Int32, UnmanagedType.I4)
+                or (SpecialType.System_UInt32, UnmanagedType.U4)
+                or (SpecialType.System_Int64, UnmanagedType.I8)
+                or (SpecialType.System_UInt64, UnmanagedType.U8)
+                or (SpecialType.System_IntPtr, UnmanagedType.SysInt)
+                or (SpecialType.System_UIntPtr, UnmanagedType.SysUInt)
+                or (SpecialType.System_Single, UnmanagedType.R4)
+                or (SpecialType.System_Double, UnmanagedType.R8);
 
         public static bool IsAutoLayout(this INamedTypeSymbol type, ITypeSymbol structLayoutAttributeType)
         {

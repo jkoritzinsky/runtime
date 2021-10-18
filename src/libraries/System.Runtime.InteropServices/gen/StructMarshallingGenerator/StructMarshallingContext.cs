@@ -26,7 +26,7 @@ namespace Microsoft.Interop
                 && Fields.SequenceEqual(other.Fields);
         }
 
-        public static StructMarshallingContext Create(INamedTypeSymbol type, Compilation compilation, GeneratedStructMarshallingFeatureCache generatedStructMarshallingCache)
+        public static StructMarshallingContext Create(INamedTypeSymbol type, Compilation compilation, StructMarshallingFeatureCache generatedStructMarshallingCache)
         {
             GeneratorDiagnostics diagnostics = new();
 

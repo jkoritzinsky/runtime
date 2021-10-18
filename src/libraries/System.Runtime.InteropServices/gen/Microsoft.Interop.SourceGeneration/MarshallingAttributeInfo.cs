@@ -160,7 +160,7 @@ namespace Microsoft.Interop
     {
         private readonly Compilation _compilation;
         private readonly IGeneratorDiagnostics _diagnostics;
-        private readonly GeneratedStructMarshallingFeatureCache _generatedStructMarshallingFeatureCache;
+        private readonly StructMarshallingFeatureCache _structMarshallingFeatureCache;
         private readonly DefaultMarshallingInfo _defaultInfo;
         private readonly ISymbol _contextSymbol;
         private readonly ITypeSymbol _marshalAsAttribute;
@@ -169,13 +169,13 @@ namespace Microsoft.Interop
         public MarshallingAttributeInfoParser(
             Compilation compilation,
             IGeneratorDiagnostics diagnostics,
-            GeneratedStructMarshallingFeatureCache generatedStructMarshallingFeatureCache,
+            StructMarshallingFeatureCache generatedStructMarshallingFeatureCache,
             DefaultMarshallingInfo defaultInfo,
             ISymbol contextSymbol)
         {
             _compilation = compilation;
             _diagnostics = diagnostics;
-            _generatedStructMarshallingFeatureCache = generatedStructMarshallingFeatureCache;
+            _structMarshallingFeatureCache = generatedStructMarshallingFeatureCache;
             _defaultInfo = defaultInfo;
             _contextSymbol = contextSymbol;
             _marshalAsAttribute = compilation.GetTypeByMetadataName(TypeNames.System_Runtime_InteropServices_MarshalAsAttribute)!;
@@ -294,8 +294,11 @@ namespace Microsoft.Interop
 
                 if (SymbolEqualityComparer.Default.Equals(_compilation.GetTypeByMetadataName(TypeNames.BlittableTypeAttribute), attributeClass))
                 {
+                    INamedTypeSymbol namedType = (INamedTypeSymbol)type;
                     // If type is generic, then we need to re-evaluate that it is blittable at usage time.
-                    if (type is INamedTypeSymbol { IsGenericType: false } || type.HasOnlyBlittableFields())
+                    if (!namedType.IsGenericType
+                        || (_structMarshallingFeatureCache.TryGetGeneratedStructMarshallingFeatures(namedType, out GeneratedStructMarshallingFeatures marshallingFeatures)
+                            && marshallingFeatures.IsBlittable))
                     {
                         return new BlittableTypeAttributeInfo();
                     }
@@ -315,13 +318,13 @@ namespace Microsoft.Interop
                 }
                 else if (SymbolEqualityComparer.Default.Equals(_compilation.GetTypeByMetadataName(TypeNames.GeneratedMarshallingAttribute), attributeClass))
                 {
-                    if (type.IsConsideredBlittable())
+                    if (type is INamedTypeSymbol named && _structMarshallingFeatureCache.TryGetGeneratedStructMarshallingFeatures(named, out GeneratedStructMarshallingFeatures marshallingFeatures))
                     {
-                        return new BlittableTypeAttributeInfo();
-                    }
+                        if (marshallingFeatures.IsBlittable)
+                        {
+                            return new BlittableTypeAttributeInfo();
+                        }
 
-                    if (type is INamedTypeSymbol named && _generatedStructMarshallingFeatureCache.TryGetGeneratedStructMarshallingFeatures(named, out GeneratedStructMarshallingFeatures marshallingFeatures))
-                    {
                         string marshallerName = MarshallerHelpers.GetFullyQualifiedGeneratedNativeStructNameForStruct(named);
                         string? valuePropertyTypeName = marshallingFeatures.HasValueProperty ? MarshallerHelpers.GetFullyQualifiedGeneratedNativeValuePropertyTypeNameForStruct(named) : null;
                         return new NativeMarshallingAttributeInfo(
@@ -843,10 +846,10 @@ namespace Microsoft.Interop
             }
 
             if (type is INamedTypeSymbol { IsValueType: true } valueType
-                && !valueType.IsExposedOutsideOfCurrentCompilation()
-                && valueType.IsConsideredBlittable())
+                && _structMarshallingFeatureCache.TryGetGeneratedStructMarshallingFeatures(valueType, out GeneratedStructMarshallingFeatures nonAttributedTypeMarshallingFeatures)
+                && nonAttributedTypeMarshallingFeatures.IsBlittable)
             {
-                // Allow implicit [BlittableType] on internal value types.
+                // Allow implicit [BlittableType] on internal value types with all blittable fields.
                 marshallingInfo = new BlittableTypeAttributeInfo();
                 return true;
             }

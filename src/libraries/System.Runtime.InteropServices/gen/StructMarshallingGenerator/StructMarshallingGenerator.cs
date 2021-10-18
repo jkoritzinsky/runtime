@@ -24,7 +24,7 @@ namespace Microsoft.Interop
                 context.SyntaxProvider.CreateSyntaxProvider(ShouldVisitNode, (context, ct) => (Syntax: (StructDeclarationSyntax)context.Node, Symbol: (INamedTypeSymbol)context.SemanticModel.GetDeclaredSymbol(context.Node, ct)))
                     .Where(syntaxAndSymbol => HasTriggerAttribute(syntaxAndSymbol.Symbol))
                     .Combine(context.CompilationProvider)
-                    .Combine(context.CreateGeneratedStructMarshallingFeatureCacheProvider())
+                    .Combine(context.CreateStructMarshallingFeatureCacheProvider())
                     .Select((data, ct) => (data.Left.Left.Syntax, Context: CreateStructMarshallingContext(data.Left.Left.Symbol, data.Left.Right, data.Right)))
                     .Select((syntaxAndContext, ct) => GenerateSyntaxAndDiagnosticsFromContext(syntaxAndContext.Syntax, syntaxAndContext.Context))
                     .Select((syntaxAndDiagnostics, ct) => (syntaxAndDiagnostics.Syntax.NormalizeWhitespace().ToFullString(), syntaxAndDiagnostics.Diagnostics))
@@ -117,7 +117,7 @@ namespace Microsoft.Interop
             }
         }
 
-        private static StructMarshallingContext CreateStructMarshallingContext(INamedTypeSymbol symbol, Compilation compilation, GeneratedStructMarshallingFeatureCache generatedStructMarshallingCache)
+        private static StructMarshallingContext CreateStructMarshallingContext(INamedTypeSymbol symbol, Compilation compilation, StructMarshallingFeatureCache generatedStructMarshallingCache)
         {
             return StructMarshallingContext.Create(symbol, compilation, generatedStructMarshallingCache);
         }
