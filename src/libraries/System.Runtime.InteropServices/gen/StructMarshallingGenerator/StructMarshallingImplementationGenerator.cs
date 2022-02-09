@@ -64,16 +64,14 @@ namespace Microsoft.Interop
 
             AttributedMarshallingModelGeneratorFactory managedToMarshalerGeneratorFactory = new(
                 generatorFactory,
+                generatorFactory.ElementMarshallingGeneratorFactory,
                 new AttributedMarshallingModelGeneratorFactoryOptions(
                     false,
                     false,
                     ValidateScenarioSupport: false,
                     structToMarshal.MarshallingFeatures.HasValueProperty
                     ? AttributedMarshallingModelGenerationPhases.ManagedToMarshallerType
-                    : AttributedMarshallingModelGenerationPhases.All))
-            {
-                ElementMarshallingGeneratorFactory = generatorFactory.ElementMarshallingGeneratorFactory
-            };
+                    : AttributedMarshallingModelGenerationPhases.All));
 
             StructDeclarationSyntax nativeStruct = StructDeclaration(MarshallerHelpers.GeneratedNativeStructName)
                 .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.UnsafeKeyword)));
@@ -157,16 +155,14 @@ namespace Microsoft.Interop
         {
             AttributedMarshallingModelGeneratorFactory marshallerToValuePropertyGeneratorFactory = new(
                 generatorFactory,
+                generatorFactory.ElementMarshallingGeneratorFactory,
                 new AttributedMarshallingModelGeneratorFactoryOptions(
                     false,
                     false,
                     ValidateScenarioSupport: false,
                     structToMarshal.MarshallingFeatures.HasValueProperty
                     ? AttributedMarshallingModelGenerationPhases.MarshallerTypeToValueProperty
-                    : AttributedMarshallingModelGenerationPhases.All))
-            {
-                ElementMarshallingGeneratorFactory = generatorFactory.ElementMarshallingGeneratorFactory
-            };
+                    : AttributedMarshallingModelGenerationPhases.All));
 
             ValuePropertyStubCodeContext codeContext = new ValuePropertyStubCodeContext().WithStage(StubCodeContext.Stage.Setup);
 

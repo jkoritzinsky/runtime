@@ -203,5 +203,9 @@ namespace Microsoft.Interop.Generators
 
         public bool SupportsByValueMarshalKind(ByValueContentsMarshalKind marshalKind, StubCodeContext context) => false;
         public bool UsesNativeIdentifier(TypePositionInfo info, StubCodeContext context) => true;
+        public bool IsSupported(TargetFramework target, Version version)
+        {
+            return target is TargetFramework.Net && version.Major >= 6;
+        }
     }
 }

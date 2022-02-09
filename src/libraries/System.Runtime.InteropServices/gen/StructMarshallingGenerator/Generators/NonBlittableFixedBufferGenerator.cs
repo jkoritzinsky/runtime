@@ -28,7 +28,7 @@ namespace Microsoft.Interop.Generators
         public IEnumerable<StatementSyntax> Generate(TypePositionInfo info, StubCodeContext context)
         {
             var marshallingInfo = (FixedBufferMarshallingInfo)info.MarshallingAttributeInfo;
-            var (managed, native) = context.GetIdentifiers(info);
+            var (_, native) = context.GetIdentifiers(info);
             var nativePinned = context.GetAdditionalIdentifier(info, "pinned");
             var fixedBufferContext = new FixedBufferElementMarshallingCodeContext(context.CurrentStage, $"(({GetElementNativeType(info, marshallingInfo)}*){nativePinned})", IndexerIdentifier, context);
             var elementTypeInfo = new TypePositionInfo(marshallingInfo.ElementType, marshallingInfo.ElementMarshallingInfo)
@@ -82,6 +82,11 @@ namespace Microsoft.Interop.Generators
 
         public bool SupportsByValueMarshalKind(ByValueContentsMarshalKind marshalKind, StubCodeContext context) => false;
         public bool UsesNativeIdentifier(TypePositionInfo info, StubCodeContext context) => true;
+
+        public bool IsSupported(TargetFramework target, Version version)
+        {
+            return target is TargetFramework.Net && version.Major >= 6 && _elementMarshaller.IsSupported(target, version);
+        }
 
         private sealed class FixedBufferElementMarshallingCodeContext : StubCodeContext
         {

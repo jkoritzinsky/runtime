@@ -433,11 +433,8 @@ namespace System.Security.Cryptography.Pkcs
             }
         }
 
-        public void RemoveCounterSignature(SignerInfo counterSignerInfo)
+        public void RemoveCounterSignature(SignerInfo counterSignerInfo!!)
         {
-            if (counterSignerInfo == null)
-                throw new ArgumentNullException(nameof(counterSignerInfo));
-
             SignerInfoCollection docSigners = _document.SignerInfos;
             int index = docSigners.FindIndexForSigner(this);
 
@@ -460,11 +457,8 @@ namespace System.Security.Cryptography.Pkcs
         public void CheckSignature(bool verifySignatureOnly) =>
             CheckSignature(new X509Certificate2Collection(), verifySignatureOnly);
 
-        public void CheckSignature(X509Certificate2Collection extraStore, bool verifySignatureOnly)
+        public void CheckSignature(X509Certificate2Collection extraStore!!, bool verifySignatureOnly)
         {
-            if (extraStore == null)
-                throw new ArgumentNullException(nameof(extraStore));
-
             X509Certificate2? certificate = Certificate;
 
             if (certificate == null)
@@ -690,7 +684,11 @@ namespace System.Security.Cryptography.Pkcs
             X509Certificate2 certificate,
             bool verifySignatureOnly)
         {
-            CmsSignature? signatureProcessor = CmsSignature.ResolveAndVerifyKeyType(SignatureAlgorithm.Value!, key: null);
+            // SignatureAlgorithm always 'wins' so we don't need to pass in an rsaSignaturePadding
+            CmsSignature? signatureProcessor = CmsSignature.ResolveAndVerifyKeyType(
+                SignatureAlgorithm.Value!,
+                key: null,
+                rsaSignaturePadding: null);
 
             if (signatureProcessor == null)
             {

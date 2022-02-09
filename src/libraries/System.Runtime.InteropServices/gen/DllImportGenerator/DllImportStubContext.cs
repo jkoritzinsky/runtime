@@ -18,10 +18,27 @@ namespace Microsoft.Interop
 {
     internal record StubEnvironment(
         Compilation Compilation,
-        bool SupportedTargetFramework,
+        TargetFramework TargetFramework,
         Version TargetFrameworkVersion,
         bool ModuleSkipLocalsInit,
-        DllImportGeneratorOptions Options);
+        DllImportGeneratorOptions Options)
+    {
+        /// <summary>
+        /// Override for determining if two StubEnvironment instances are
+        /// equal. This intentionally excludes the Compilation instance
+        /// since that represents the actual compilation and not just the settings.
+        /// </summary>
+        /// <param name="env1">The first StubEnvironment</param>
+        /// <param name="env2">The second StubEnvironment</param>
+        /// <returns>True if the settings are equal, otherwise false.</returns>
+        public static bool AreCompilationSettingsEqual(StubEnvironment env1, StubEnvironment env2)
+        {
+            return env1.TargetFramework == env2.TargetFramework
+                && env1.TargetFrameworkVersion == env2.TargetFrameworkVersion
+                && env1.ModuleSkipLocalsInit == env2.ModuleSkipLocalsInit
+                && env1.Options.Equals(env2.Options);
+        }
+    }
 
     internal sealed class DllImportStubContext : IEquatable<DllImportStubContext>
     {
@@ -165,7 +182,6 @@ namespace Microsoft.Interop
                     NativeIndex = typeInfos.Count
                 };
                 typeInfos.Add(typeInfo);
-
             }
 
             TypePositionInfo retTypeInfo = new(ManagedTypeInfo.CreateTypeInfoForTypeSymbol(method.ReturnType), marshallingAttributeParser.ParseMarshallingInfo(null, method.ReturnType, method.GetReturnTypeAttributes()));
@@ -185,8 +201,11 @@ namespace Microsoft.Interop
             else
             {
                 generatorFactory = new DefaultMarshallingGeneratorFactory(options);
-                AttributedMarshallingModelGeneratorFactory attributedMarshallingFactory = new(generatorFactory, new AttributedMarshallingModelGeneratorFactoryOptions(options.UseMarshalType, options.UseInternalUnsafeType));
-                generatorFactory = attributedMarshallingFactory;
+                AttributedMarshallingModelGeneratorFactoryOptions attributedOptions = new(options.UseMarshalType, options.UseInternalUnsafeType);
+                IMarshallingGeneratorFactory elementFactory = new AttributedMarshallingModelGeneratorFactory(generatorFactory, attributedOptions);
+                // We don't need to include the later generator factories for collection elements
+                // as the later generator factories only apply to parameters or to the synthetic return value for PreserveSig support.
+                generatorFactory = new AttributedMarshallingModelGeneratorFactory(generatorFactory, elementFactory, attributedOptions);
                 if (!dllImportData.PreserveSig)
                 {
                     // Create type info for native out param
@@ -216,7 +235,6 @@ namespace Microsoft.Interop
                 }
 
                 generatorFactory = new ByValueContentsMarshalKindValidator(generatorFactory);
-                attributedMarshallingFactory.ElementMarshallingGeneratorFactory = generatorFactory;
             }
             typeInfos.Add(retTypeInfo);
 
@@ -235,9 +253,9 @@ namespace Microsoft.Interop
             return other is not null
                 && StubTypeNamespace == other.StubTypeNamespace
                 && ElementTypeInformation.SequenceEqual(other.ElementTypeInformation)
-                && StubContainingTypes.SequenceEqual(other.StubContainingTypes, (IEqualityComparer<TypeDeclarationSyntax>)new SyntaxEquivalentComparer())
+                && StubContainingTypes.SequenceEqual(other.StubContainingTypes, (IEqualityComparer<TypeDeclarationSyntax>)SyntaxEquivalentComparer.Instance)
                 && StubReturnType.IsEquivalentTo(other.StubReturnType)
-                && AdditionalAttributes.SequenceEqual(other.AdditionalAttributes, (IEqualityComparer<AttributeListSyntax>)new SyntaxEquivalentComparer())
+                && AdditionalAttributes.SequenceEqual(other.AdditionalAttributes, (IEqualityComparer<AttributeListSyntax>)SyntaxEquivalentComparer.Instance)
                 && Options.Equals(other.Options);
         }
 

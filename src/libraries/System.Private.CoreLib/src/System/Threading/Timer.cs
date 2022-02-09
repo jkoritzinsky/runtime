@@ -515,14 +515,14 @@ namespace System.Threading
             }
         }
 
-        internal bool Change(uint dueTime, uint period)
+        internal bool Change(uint dueTime, uint period, bool throwIfDisposed = true)
         {
             bool success;
 
             lock (_associatedTimerQueue)
             {
                 if (_canceled)
-                    throw new ObjectDisposedException(null, SR.ObjectDisposed_Generic);
+                    return throwIfDisposed ? throw new ObjectDisposedException(null, SR.ObjectDisposed_Generic) : false;
 
                 _period = period;
 
@@ -882,15 +882,12 @@ namespace System.Threading
         }
 
         [MemberNotNull(nameof(_timer))]
-        private void TimerSetup(TimerCallback callback,
+        private void TimerSetup(TimerCallback callback!!,
                                 object? state,
                                 uint dueTime,
                                 uint period,
                                 bool flowExecutionContext = true)
         {
-            if (callback == null)
-                throw new ArgumentNullException(nameof(callback));
-
             _timer = new TimerHolder(new TimerQueueTimer(callback, state, dueTime, period, flowExecutionContext));
         }
 
@@ -949,11 +946,8 @@ namespace System.Threading
             }
         }
 
-        public bool Dispose(WaitHandle notifyObject)
+        public bool Dispose(WaitHandle notifyObject!!)
         {
-            if (notifyObject == null)
-                throw new ArgumentNullException(nameof(notifyObject));
-
             return _timer.Close(notifyObject);
         }
 

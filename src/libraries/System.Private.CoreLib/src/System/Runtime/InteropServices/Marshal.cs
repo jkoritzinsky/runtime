@@ -104,32 +104,20 @@ namespace System.Runtime.InteropServices
             return string.CreateStringFromEncoding((byte*)ptr, byteLen, Encoding.UTF8);
         }
 
-        public static int SizeOf(object structure)
+        [RequiresDynamicCode("Marshalling code for the object might not be available. Use the SizeOf<T> overload instead.")]
+        public static int SizeOf(object structure!!)
         {
-            if (structure is null)
-            {
-                throw new ArgumentNullException(nameof(structure));
-            }
-
             return SizeOfHelper(structure.GetType(), throwIfNotMarshalable: true);
         }
 
-        public static int SizeOf<T>(T structure)
+        public static int SizeOf<T>(T structure!!)
         {
-            if (structure is null)
-            {
-                throw new ArgumentNullException(nameof(structure));
-            }
-
             return SizeOfHelper(structure.GetType(), throwIfNotMarshalable: true);
         }
 
-        public static int SizeOf(Type t)
+        [RequiresDynamicCode("Marshalling code for the object might not be available. Use the SizeOf<T> overload instead.")]
+        public static int SizeOf(Type t!!)
         {
-            if (t is null)
-            {
-                throw new ArgumentNullException(nameof(t));
-            }
             if (t is not RuntimeType)
             {
                 throw new ArgumentException(SR.Argument_MustBeRuntimeType, nameof(t));
@@ -186,20 +174,14 @@ namespace System.Runtime.InteropServices
         /// It must be used with EXTREME CAUTION since passing in invalid index or
         /// an array that is not pinned can cause unexpected results.
         /// </summary>
-        public static unsafe IntPtr UnsafeAddrOfPinnedArrayElement(Array arr, int index)
+        public static unsafe IntPtr UnsafeAddrOfPinnedArrayElement(Array arr!!, int index)
         {
-            if (arr is null)
-                throw new ArgumentNullException(nameof(arr));
-
             void* pRawData = Unsafe.AsPointer(ref MemoryMarshal.GetArrayDataReference(arr));
             return (IntPtr)((byte*)pRawData + (uint)index * (nuint)arr.GetElementSize());
         }
 
-        public static unsafe IntPtr UnsafeAddrOfPinnedArrayElement<T>(T[] arr, int index)
+        public static unsafe IntPtr UnsafeAddrOfPinnedArrayElement<T>(T[] arr!!, int index)
         {
-            if (arr is null)
-                throw new ArgumentNullException(nameof(arr));
-
             void* pRawData = Unsafe.AsPointer(ref MemoryMarshal.GetArrayDataReference(arr));
             return (IntPtr)((byte*)pRawData + (uint)index * (nuint)Unsafe.SizeOf<T>());
         }
@@ -246,15 +228,11 @@ namespace System.Runtime.InteropServices
             CopyToNative(source, startIndex, destination, length);
         }
 
-        private static unsafe void CopyToNative<T>(T[] source, int startIndex, IntPtr destination, int length)
+        private static unsafe void CopyToNative<T>(T[] source!!, int startIndex, IntPtr destination, int length)
         {
-            if (source is null)
-                throw new ArgumentNullException(nameof(source));
-            if (destination == IntPtr.Zero)
-                throw new ArgumentNullException(nameof(destination));
+            ArgumentNullException.ThrowIfNull(destination);
 
             // The rest of the argument validation is done by CopyTo
-
             new Span<T>(source, startIndex, length).CopyTo(new Span<T>((void*)destination, length));
         }
 
@@ -298,12 +276,9 @@ namespace System.Runtime.InteropServices
             CopyToManaged(source, destination, startIndex, length);
         }
 
-        private static unsafe void CopyToManaged<T>(IntPtr source, T[] destination, int startIndex, int length)
+        private static unsafe void CopyToManaged<T>(IntPtr source, T[] destination!!, int startIndex, int length)
         {
-            if (source == IntPtr.Zero)
-                throw new ArgumentNullException(nameof(source));
-            if (destination is null)
-                throw new ArgumentNullException(nameof(destination));
+            ArgumentNullException.ThrowIfNull(source);
             if (startIndex < 0)
                 throw new ArgumentOutOfRangeException(nameof(startIndex), SR.ArgumentOutOfRange_StartIndex);
             if (length < 0)
@@ -378,6 +353,7 @@ namespace System.Runtime.InteropServices
 
         public static int ReadInt32(IntPtr ptr) => ReadInt32(ptr, 0);
 
+        [RequiresDynamicCode("Marshalling code for the object might not be available")]
         public static IntPtr ReadIntPtr(object ptr, int ofs)
         {
 #if TARGET_64BIT
@@ -464,6 +440,7 @@ namespace System.Runtime.InteropServices
 
         public static void WriteInt16(IntPtr ptr, int ofs, char val) => WriteInt16(ptr, ofs, (short)val);
 
+        [RequiresDynamicCode("Marshalling code for the object might not be available")]
         public static void WriteInt16([In, Out]object ptr, int ofs, char val) => WriteInt16(ptr, ofs, (short)val);
 
         public static void WriteInt16(IntPtr ptr, char val) => WriteInt16(ptr, 0, (short)val);
@@ -501,6 +478,7 @@ namespace System.Runtime.InteropServices
 #endif
         }
 
+        [RequiresDynamicCode("Marshalling code for the object might not be available")]
         public static void WriteIntPtr(object ptr, int ofs, IntPtr val)
         {
 #if TARGET_64BIT
@@ -536,25 +514,15 @@ namespace System.Runtime.InteropServices
 
         public static void WriteInt64(IntPtr ptr, long val) => WriteInt64(ptr, 0, val);
 
-        public static void Prelink(MethodInfo m)
+        public static void Prelink(MethodInfo m!!)
         {
-            if (m is null)
-            {
-                throw new ArgumentNullException(nameof(m));
-            }
-
             PrelinkCore(m);
         }
 
         [UnconditionalSuppressMessage("ReflectionAnalysis", "IL2070:UnrecognizedReflectionPattern",
             Justification = "This only needs to prelink methods that are actually used")]
-        public static void PrelinkAll(Type c)
+        public static void PrelinkAll(Type c!!)
         {
-            if (c is null)
-            {
-                throw new ArgumentNullException(nameof(c));
-            }
-
             MethodInfo[] mi = c.GetMethods();
 
             for (int i = 0; i < mi.Length; i++)
@@ -563,6 +531,8 @@ namespace System.Runtime.InteropServices
             }
         }
 
+        [UnconditionalSuppressMessage("AotAnalysis", "IL3050:AotUnfriendlyApi",
+            Justification = "AOT compilers can see the T.")]
         public static void StructureToPtr<T>([DisallowNull] T structure, IntPtr ptr, bool fDeleteOld)
         {
             StructureToPtr((object)structure!, ptr, fDeleteOld);
@@ -572,19 +542,16 @@ namespace System.Runtime.InteropServices
         /// Creates a new instance of "structuretype" and marshals data from a
         /// native memory block to it.
         /// </summary>
+        [RequiresDynamicCode("Marshalling code for the object might not be available")]
         public static object? PtrToStructure(IntPtr ptr,
             [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.NonPublicConstructors)]
-            Type structureType)
+            Type structureType!!)
         {
             if (ptr == IntPtr.Zero)
             {
                 return null;
             }
 
-            if (structureType is null)
-            {
-                throw new ArgumentNullException(nameof(structureType));
-            }
             if (structureType.IsGenericType)
             {
                 throw new ArgumentException(SR.Argument_NeedNonGenericType, nameof(structureType));
@@ -602,6 +569,7 @@ namespace System.Runtime.InteropServices
         /// <summary>
         /// Marshals data from a native memory block to a preallocated structure class.
         /// </summary>
+        [RequiresDynamicCode("Marshalling code for the object might not be available")]
         public static void PtrToStructure(IntPtr ptr, object structure)
         {
             PtrToStructureHelper(ptr, structure, allowValueClasses: false);
@@ -633,6 +601,8 @@ namespace System.Runtime.InteropServices
             return (T)structure;
         }
 
+        [UnconditionalSuppressMessage("AotAnalysis", "IL3050:AotUnfriendlyApi",
+            Justification = "AOT compilers can see the T.")]
         public static void DestroyStructure<T>(IntPtr ptr) => DestroyStructure(ptr, typeof(T));
 
 // CoreCLR has a different implementation for Windows only
@@ -1107,12 +1077,8 @@ namespace System.Runtime.InteropServices
         /// metadata then it is returned otherwise a stable guid is generated based
         /// on the fully qualified name of the type.
         /// </summary>
-        public static Guid GenerateGuidForType(Type type)
+        public static Guid GenerateGuidForType(Type type!!)
         {
-            if (type is null)
-            {
-                throw new ArgumentNullException(nameof(type));
-            }
             if (type is not RuntimeType)
             {
                 throw new ArgumentException(SR.Argument_MustBeRuntimeType, nameof(type));
@@ -1126,12 +1092,8 @@ namespace System.Runtime.InteropServices
         /// a PROGID in the metadata then it is returned otherwise a stable PROGID
         /// is generated based on the fully qualified name of the type.
         /// </summary>
-        public static string? GenerateProgIdForType(Type type)
+        public static string? GenerateProgIdForType(Type type!!)
         {
-            if (type is null)
-            {
-                throw new ArgumentNullException(nameof(type));
-            }
             if (type.IsImport)
             {
                 throw new ArgumentException(SR.Argument_TypeMustNotBeComImport, nameof(type));
@@ -1151,16 +1113,10 @@ namespace System.Runtime.InteropServices
             return type.FullName;
         }
 
-        public static Delegate GetDelegateForFunctionPointer(IntPtr ptr, Type t)
+        [RequiresDynamicCode("Marshalling code for the delegate might not be available. Use the GetDelegateForFunctionPointer<TDelegate> overload instead.")]
+        public static Delegate GetDelegateForFunctionPointer(IntPtr ptr, Type t!!)
         {
-            if (ptr == IntPtr.Zero)
-            {
-                throw new ArgumentNullException(nameof(ptr));
-            }
-            if (t is null)
-            {
-                throw new ArgumentNullException(nameof(t));
-            }
+            ArgumentNullException.ThrowIfNull(ptr);
             if (t is not RuntimeType)
             {
                 throw new ArgumentException(SR.Argument_MustBeRuntimeType, nameof(t));
@@ -1205,16 +1161,14 @@ namespace System.Runtime.InteropServices
             return (TDelegate)(object)GetDelegateForFunctionPointerInternal(ptr, t);
         }
 
-        public static IntPtr GetFunctionPointerForDelegate(Delegate d)
+        [RequiresDynamicCode("Marshalling code for the delegate might not be available. Use the GetFunctionPointerForDelegate<TDelegate> overload instead.")]
+        public static IntPtr GetFunctionPointerForDelegate(Delegate d!!)
         {
-            if (d is null)
-            {
-                throw new ArgumentNullException(nameof(d));
-            }
-
             return GetFunctionPointerForDelegateInternal(d);
         }
 
+        [UnconditionalSuppressMessage("AotAnalysis", "IL3050:AotUnfriendlyApi",
+            Justification = "AOT compilers can see the T.")]
         public static IntPtr GetFunctionPointerForDelegate<TDelegate>(TDelegate d) where TDelegate : notnull
         {
             return GetFunctionPointerForDelegate((Delegate)(object)d);

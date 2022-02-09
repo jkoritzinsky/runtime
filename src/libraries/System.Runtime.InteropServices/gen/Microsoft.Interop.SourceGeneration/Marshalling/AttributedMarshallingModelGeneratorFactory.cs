@@ -28,23 +28,31 @@ namespace Microsoft.Interop
     public class AttributedMarshallingModelGeneratorFactory : IMarshallingGeneratorFactory
     {
         private static readonly BlittableMarshaller s_blittable = new BlittableMarshaller();
+        private static readonly Forwarder s_forwarder = new Forwarder();
 
         private readonly IMarshallingGeneratorFactory _innerMarshallingGenerator;
+        private readonly IMarshallingGeneratorFactory _elementMarshallingGenerator;
 
         public AttributedMarshallingModelGeneratorFactory(IMarshallingGeneratorFactory innerMarshallingGenerator, AttributedMarshallingModelGeneratorFactoryOptions options)
         {
             Options = options;
             _innerMarshallingGenerator = innerMarshallingGenerator;
-            ElementMarshallingGeneratorFactory = this;
+            // Unless overridden, default to using this generator factory for creating generators for collection elements.
+            _elementMarshallingGenerator = this;
+        }
+
+        public AttributedMarshallingModelGeneratorFactory(
+            IMarshallingGeneratorFactory innerMarshallingGenerator,
+            IMarshallingGeneratorFactory elementMarshallingGenerator,
+            AttributedMarshallingModelGeneratorFactoryOptions options)
+        {
+            Options = options;
+            _innerMarshallingGenerator = innerMarshallingGenerator;
+
+            _elementMarshallingGenerator = elementMarshallingGenerator;
         }
 
         public AttributedMarshallingModelGeneratorFactoryOptions Options { get; }
-
-        /// <summary>
-        /// The <see cref="IMarshallingGeneratorFactory"/> to use for collection elements.
-        /// This property is settable to enable decorating factories to ensure that element marshalling also goes through the decorator support.
-        /// </summary>
-        public IMarshallingGeneratorFactory ElementMarshallingGeneratorFactory { get; set; }
 
         public IMarshallingGenerator Create(TypePositionInfo info, StubCodeContext context)
         {
@@ -52,6 +60,7 @@ namespace Microsoft.Interop
             {
                 NativeMarshallingAttributeInfo marshalInfo => CreateCustomNativeTypeMarshaller(info, context, marshalInfo),
                 BlittableTypeAttributeInfo => s_blittable,
+                MissingSupportMarshallingInfo => s_forwarder,
                 _ => _innerMarshallingGenerator.Create(info, context)
             };
         }
@@ -263,7 +272,7 @@ namespace Microsoft.Interop
             ICustomNativeTypeMarshallingStrategy marshallingStrategy)
         {
             var elementInfo = new TypePositionInfo(collectionInfo.ElementType, collectionInfo.ElementMarshallingInfo) { ManagedIndex = info.ManagedIndex, RefKind = info.RefKind };
-            IMarshallingGenerator elementMarshaller = ElementMarshallingGeneratorFactory.Create(
+            IMarshallingGenerator elementMarshaller = _elementMarshallingGenerator.Create(
                 elementInfo,
                 new ContiguousCollectionElementMarshallingCodeContext(StubCodeContext.Stage.Setup, string.Empty, context));
             TypeSyntax elementType = elementMarshaller.AsNativeType(elementInfo);

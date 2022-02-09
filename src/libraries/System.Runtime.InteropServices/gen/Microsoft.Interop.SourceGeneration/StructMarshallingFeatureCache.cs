@@ -86,6 +86,11 @@ namespace Microsoft.Interop
 
             IEnumerable<int> GetStructTypeDependencies(INamedTypeSymbol generatedStructType)
             {
+                if (generatedStructType.SpecialType.IsSpecialTypePrimitive() || generatedStructType.TypeKind == TypeKind.Enum)
+                {
+                    yield break;
+                }
+
                 foreach (ISymbol member in generatedStructType.GetMembers())
                 {
                     if (member is not IFieldSymbol { IsStatic: false } field)
@@ -141,9 +146,13 @@ namespace Microsoft.Interop
             INamedTypeSymbol type,
             bool allowExposureOutsideOfCompilation)
         {
-            if (!allowExposureOutsideOfCompilation && type.IsExposedOutsideOfCurrentCompilation())
+            if (type.SpecialType.IsSpecialTypeBlittable())
             {
-                return new GeneratedStructMarshallingFeatures(CustomMarshallingFeatures.None, HasValueProperty: false, MarshallerMustBeRefStruct: false, IsBlittable: false);
+                return new GeneratedStructMarshallingFeatures(
+                    CustomMarshallingFeatures.ManagedToNative | CustomMarshallingFeatures.NativeToManaged,
+                    HasValueProperty: false,
+                    MarshallerMustBeRefStruct: false,
+                    IsBlittable: true);
             }
 
             if (type is INamedTypeSymbol { TypeKind: TypeKind.Enum, EnumUnderlyingType: { SpecialType: SpecialType enumUnderlyingType } } && enumUnderlyingType.IsSpecialTypeBlittable())
@@ -154,6 +163,12 @@ namespace Microsoft.Interop
                     MarshallerMustBeRefStruct: false,
                     IsBlittable: true);
             }
+
+            if (!allowExposureOutsideOfCompilation && type.IsExposedOutsideOfCurrentCompilation())
+            {
+                return new GeneratedStructMarshallingFeatures(CustomMarshallingFeatures.None, HasValueProperty: false, MarshallerMustBeRefStruct: false, IsBlittable: false);
+            }
+
 
             if (type.IsAutoLayout(_structLayoutAttributeType))
             {
@@ -343,7 +358,7 @@ namespace Microsoft.Interop
             public override void VisitNamedType(INamedTypeSymbol symbol)
             {
                 // If we haven't already visited this type, record it and visit its members.
-                if (_seenTypes.Add(symbol))
+                if (_seenTypes.Add(symbol.OriginalDefinition))
                 {
                     if (symbol.IsValueType)
                     {
@@ -359,7 +374,7 @@ namespace Microsoft.Interop
             public override void VisitField(IFieldSymbol symbol)
             {
                 // Only visit generics as the only interesting non-generic types are covered in VisitNamedType
-                if (symbol.Type is INamedTypeSymbol { IsGenericType: true })
+                if (symbol is { IsStatic: false, Type: INamedTypeSymbol { IsValueType: true, IsGenericType: true }})
                 {
                     Visit(symbol.Type);
                 }
@@ -368,13 +383,13 @@ namespace Microsoft.Interop
             public override void VisitMethod(IMethodSymbol symbol)
             {
                 // Only visit generics as the only interesting non-generic types are covered in VisitNamedType
-                if (symbol.ReturnType is INamedTypeSymbol { IsGenericType: true })
+                if (symbol.ReturnType is INamedTypeSymbol { IsValueType: true, IsGenericType: true })
                 {
                     Visit(symbol.ReturnType);
                 }
                 foreach (IParameterSymbol param in symbol.Parameters)
                 {
-                    if (param.Type is INamedTypeSymbol { IsGenericType: true })
+                    if (param.Type is INamedTypeSymbol { IsValueType: true, IsGenericType: true })
                     {
                         Visit(param.Type);
                     }

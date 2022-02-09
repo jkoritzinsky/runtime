@@ -286,22 +286,16 @@ namespace System
         public static string? GetName<TEnum>(TEnum value) where TEnum : struct, Enum
             => GetEnumName((RuntimeType)typeof(TEnum), ToUInt64(value));
 
-        public static string? GetName(Type enumType, object value)
+        public static string? GetName(Type enumType!!, object value)
         {
-            if (enumType is null)
-                throw new ArgumentNullException(nameof(enumType));
-
             return enumType.GetEnumName(value);
         }
 
         public static string[] GetNames<TEnum>() where TEnum : struct, Enum
             => new ReadOnlySpan<string>(InternalGetNames((RuntimeType)typeof(TEnum))).ToArray();
 
-        public static string[] GetNames(Type enumType)
+        public static string[] GetNames(Type enumType!!)
         {
-            if (enumType is null)
-                throw new ArgumentNullException(nameof(enumType));
-
             return enumType.GetEnumNames();
         }
 
@@ -319,22 +313,20 @@ namespace System
             return enumType.GetEnumUnderlyingType();
         }
 
+#if !CORERT
         public static TEnum[] GetValues<TEnum>() where TEnum : struct, Enum
             => (TEnum[])GetValues(typeof(TEnum));
+#endif
 
-        public static Array GetValues(Type enumType)
+        [RequiresDynamicCode("It might not be possible to create an array of the enum type at runtime. Use the GetValues<TEnum> overload instead.")]
+        public static Array GetValues(Type enumType!!)
         {
-            if (enumType is null)
-                throw new ArgumentNullException(nameof(enumType));
-
             return enumType.GetEnumValues();
         }
 
         [Intrinsic]
-        public bool HasFlag(Enum flag)
+        public bool HasFlag(Enum flag!!)
         {
-            if (flag is null)
-                throw new ArgumentNullException(nameof(flag));
             if (GetType() != flag.GetType() && !GetType().IsEquivalentTo(flag.GetType()))
                 throw new ArgumentException(SR.Format(SR.Argument_EnumTypeDoesNotMatch, flag.GetType(), GetType()));
 
@@ -415,11 +407,8 @@ namespace System
                 SpanHelpers.BinarySearch(ref start, ulValuesLength, ulValue);
         }
 
-        public static bool IsDefined(Type enumType, object value)
+        public static bool IsDefined(Type enumType!!, object value)
         {
-            if (enumType is null)
-                throw new ArgumentNullException(nameof(enumType));
-
             return enumType.IsEnumDefined(value);
         }
 
@@ -948,7 +937,7 @@ namespace System
                 // Find the next separator.
                 ReadOnlySpan<char> subvalue;
                 int endIndex = value.IndexOf(EnumSeparatorChar);
-                if (endIndex == -1)
+                if (endIndex < 0)
                 {
                     // No next separator; use the remainder as the next value.
                     subvalue = value.Trim();
@@ -1019,11 +1008,8 @@ namespace System
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static bool StartsNumber(char c) => char.IsInRange(c, '0', '9') || c == '-' || c == '+';
 
-        public static object ToObject(Type enumType, object value)
+        public static object ToObject(Type enumType, object value!!)
         {
-            if (value == null)
-                throw new ArgumentNullException(nameof(value));
-
             // Delegate rest of error checking to the other functions
             TypeCode typeCode = Convert.GetTypeCode(value);
 
@@ -1043,15 +1029,9 @@ namespace System
             };
         }
 
-        public static string Format(Type enumType, object value, string format)
+        public static string Format(Type enumType, object value!!, string format!!)
         {
             RuntimeType rtType = ValidateRuntimeType(enumType);
-
-            if (value == null)
-                throw new ArgumentNullException(nameof(value));
-
-            if (format == null)
-                throw new ArgumentNullException(nameof(format));
 
             // If the value is an Enum then we need to extract the underlying value from it
             Type valueType = value.GetType();
@@ -1504,7 +1484,7 @@ namespace System
             if (enumType is not RuntimeType rtType)
                 throw new ArgumentException(SR.Arg_MustBeType, nameof(enumType));
 #if CORERT
-            // Check for the unfortunate "typeof(Outer<>).InnerEnum" corner case.
+            // Check for the unfortunate "typeof(Outer<>.InnerEnum)" corner case.
             // https://github.com/dotnet/runtime/issues/7976
             if (enumType.ContainsGenericParameters)
                 throw new InvalidOperationException(SR.Format(SR.Arg_OpenType, enumType.ToString()));

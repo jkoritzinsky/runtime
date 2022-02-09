@@ -1102,12 +1102,8 @@ namespace System.DirectoryServices.ActiveDirectory
             _disposed = true;
         }
 
-        private static void ValidateArgument(DirectoryContext context, string siteName)
+        private static void ValidateArgument(DirectoryContext context!!, string siteName)
         {
-            // basic validation first
-            if (context == null)
-                throw new ArgumentNullException(nameof(context));
-
             // if target is not specified, then we determin the target from the logon credential, so if it is a local user context, it should fail
             if ((context.Name == null) && (!context.isRootDomain()))
             {
@@ -1306,7 +1302,7 @@ namespace System.DirectoryServices.ActiveDirectory
 
                 IntPtr info = (IntPtr)0;
                 // call DsReplicaSyncAllW
-                IntPtr functionPtr = UnsafeNativeMethods.GetProcAddress(DirectoryContext.ADHandle, "DsListDomainsInSiteW");
+                IntPtr functionPtr = global::Interop.Kernel32.GetProcAddress(DirectoryContext.ADHandle, "DsListDomainsInSiteW");
                 if (functionPtr == (IntPtr)0)
                 {
                     throw ExceptionHelper.GetExceptionFromErrorCode(Marshal.GetLastWin32Error());
@@ -1348,7 +1344,7 @@ namespace System.DirectoryServices.ActiveDirectory
                 finally
                 {
                     // call DsFreeNameResultW
-                    functionPtr = UnsafeNativeMethods.GetProcAddress(DirectoryContext.ADHandle, "DsFreeNameResultW");
+                    functionPtr = global::Interop.Kernel32.GetProcAddress(DirectoryContext.ADHandle, "DsFreeNameResultW");
                     if (functionPtr == (IntPtr)0)
                     {
                         throw ExceptionHelper.GetExceptionFromErrorCode(Marshal.GetLastWin32Error());

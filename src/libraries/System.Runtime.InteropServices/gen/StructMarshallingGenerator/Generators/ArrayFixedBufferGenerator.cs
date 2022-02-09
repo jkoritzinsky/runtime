@@ -60,5 +60,9 @@ namespace Microsoft.Interop.Generators
             => _innerGenerator is ICustomNestedTypeGenerator customNestedTypeGenerator ? customNestedTypeGenerator.GetCustomNestedTypeDeclarations(info) : Array.Empty<TypeDeclarationSyntax>();
         public bool SupportsByValueMarshalKind(ByValueContentsMarshalKind marshalKind, StubCodeContext context) => _innerGenerator.SupportsByValueMarshalKind(marshalKind, context);
         public bool UsesNativeIdentifier(TypePositionInfo info, StubCodeContext context) => _innerGenerator.UsesNativeIdentifier(info, context);
+        public bool IsSupported(TargetFramework target, Version version)
+        {
+            return target is TargetFramework.Net && version.Major >= 6;
+        }
     }
 }

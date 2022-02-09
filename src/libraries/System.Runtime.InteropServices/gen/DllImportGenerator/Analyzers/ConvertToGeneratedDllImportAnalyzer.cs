@@ -3,7 +3,6 @@
 
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Diagnostics;
 using System.Runtime.InteropServices;
 
 using Microsoft.CodeAnalysis;
@@ -17,6 +16,13 @@ namespace Microsoft.Interop.Analyzers
     public class ConvertToGeneratedDllImportAnalyzer : DiagnosticAnalyzer
     {
         private const string Category = "Interoperability";
+
+        private static readonly string[] s_unsupportedTypeNames = new string[]
+        {
+            "System.Runtime.InteropServices.CriticalHandle",
+            "System.Runtime.InteropServices.HandleRef",
+            "System.Text.StringBuilder"
+        };
 
         public static readonly DiagnosticDescriptor ConvertToGeneratedDllImport =
             new DiagnosticDescriptor(
@@ -43,16 +49,24 @@ namespace Microsoft.Interop.Analyzers
                     if (generatedDllImportAttrType == null)
                         return;
 
-                    INamedTypeSymbol? dllImportAttrType = compilationContext.Compilation.GetTypeByMetadataName(typeof(DllImportAttribute).FullName);
-                    if (dllImportAttrType == null)
-                        return;
+                    INamedTypeSymbol? marshalAsAttrType = compilationContext.Compilation.GetTypeByMetadataName(TypeNames.System_Runtime_InteropServices_MarshalAsAttribute);
 
                     StructMarshallingFeatureCache structMarshallingCache = compilationContext.Compilation.CreateStructMarshallingFeatureCache();
-                    compilationContext.RegisterSymbolAction(symbolContext => AnalyzeSymbol(symbolContext, dllImportAttrType, structMarshallingCache), SymbolKind.Method);
+
+                    var knownUnsupportedTypes = new List<ITypeSymbol>(s_unsupportedTypeNames.Length);
+                    foreach (string typeName in s_unsupportedTypeNames)
+                    {
+                        INamedTypeSymbol? unsupportedType = compilationContext.Compilation.GetTypeByMetadataName(typeName);
+                        if (unsupportedType != null)
+                        {
+                            knownUnsupportedTypes.Add(unsupportedType);
+                        }
+                    }
+                    compilationContext.RegisterSymbolAction(symbolContext => AnalyzeSymbol(symbolContext, structMarshallingCache, knownUnsupportedTypes, marshalAsAttrType), SymbolKind.Method);
                 });
         }
 
-        private static void AnalyzeSymbol(SymbolAnalysisContext context, INamedTypeSymbol dllImportAttrType, StructMarshallingFeatureCache structMarshallingCache)
+        private static void AnalyzeSymbol(SymbolAnalysisContext context, StructMarshallingFeatureCache structMarshallingCache, List<ITypeSymbol> knownUnsupportedTypes, INamedTypeSymbol? marshalAsAttrType)
         {
             var method = (IMethodSymbol)context.Symbol;
 
@@ -61,21 +75,32 @@ namespace Microsoft.Interop.Analyzers
             if (dllImportData == null)
                 return;
 
-            // Ignore QCalls
-            if (dllImportData.ModuleName == "QCall")
-                return;
-
-            if (RequiresMarshalling(method, dllImportData, dllImportAttrType, structMarshallingCache))
+            if (SupportedAndRequiresMarshalling(method, dllImportData, structMarshallingCache, knownUnsupportedTypes, marshalAsAttrType))
             {
                 context.ReportDiagnostic(method.CreateDiagnostic(ConvertToGeneratedDllImport, method.Name));
             }
         }
 
-        private static bool RequiresMarshalling(IMethodSymbol method, DllImportData dllImportData, INamedTypeSymbol dllImportAttrType, StructMarshallingFeatureCache structMarshallingCache)
+        private static bool SupportedAndRequiresMarshalling(IMethodSymbol method, DllImportData dllImportData, StructMarshallingFeatureCache structMarshallingCache, List<ITypeSymbol> knownUnsupportedTypes, INamedTypeSymbol? marshalAsAttrType)
         {
+            foreach (AttributeData attr in method.GetAttributes())
+            {
+                if (attr.AttributeClass?.ToDisplayString() == TypeNames.GeneratedDllImportAttribute)
+                {
+                    return false;
+                }
+            }
+
             // SetLastError=true requires marshalling
             if (dllImportData.SetLastError)
                 return true;
+
+            // Ignore methods with unsupported returns
+            if (method.ReturnsByRef || method.ReturnsByRefReadonly)
+                return false;
+
+            if (knownUnsupportedTypes.Contains(method.ReturnType) || HasUnsupportedUnmanagedTypeValue(method.GetReturnTypeAttributes(), marshalAsAttrType))
+                return false;
 
             // Check if return value requires marshalling
             if (!method.ReturnsVoid
@@ -83,38 +108,54 @@ namespace Microsoft.Interop.Analyzers
                 return true;
 
             // Check if parameters require marshalling
-            foreach (IParameterSymbol paramType in method.Parameters)
+            foreach (IParameterSymbol parameter in method.Parameters)
             {
-                if (paramType.RefKind != RefKind.None)
+                if (parameter.RefKind != RefKind.None)
                     return true;
 
-                if (!paramType.Type.IsTypeConsideredBlittable(structMarshallingCache, SymbolEqualityComparer.Default.Equals(method.ReturnType.ContainingModule, method.ContainingModule)))
-                    return true;
-            }
+                if (knownUnsupportedTypes.Contains(parameter.Type)
+                    || HasUnsupportedUnmanagedTypeValue(parameter.GetAttributes(), marshalAsAttrType))
+                {
+                    return false;
+                }
 
-            // DllImportData does not expose all information (e.g. PreserveSig), so we still need to get the attribute data
-            AttributeData? dllImportAttr = null;
-            foreach (AttributeData attr in method.GetAttributes())
-            {
-                if (!SymbolEqualityComparer.Default.Equals(attr.AttributeClass, dllImportAttrType))
-                    continue;
-
-                dllImportAttr = attr;
-                break;
-            }
-
-            Debug.Assert(dllImportAttr != null);
-            foreach (KeyValuePair<string, TypedConstant> namedArg in dllImportAttr!.NamedArguments)
-            {
-                if (namedArg.Key != nameof(DllImportAttribute.PreserveSig))
-                    continue;
-
-                // PreserveSig=false requires marshalling
-                if (!(bool)namedArg.Value.Value!)
+                if (!parameter.Type.IsTypeConsideredBlittable(structMarshallingCache, SymbolEqualityComparer.Default.Equals(parameter.Type.ContainingModule, method.ContainingModule)))
                     return true;
             }
 
             return false;
+        }
+
+        private static bool HasUnsupportedUnmanagedTypeValue(ImmutableArray<AttributeData> attributes, INamedTypeSymbol? marshalAsAttrType)
+        {
+            if (marshalAsAttrType == null)
+                return false;
+
+            AttributeData? marshalAsAttr = null;
+            foreach (AttributeData attr in attributes)
+            {
+                if (SymbolEqualityComparer.Default.Equals(attr.AttributeClass, marshalAsAttrType))
+                {
+                    marshalAsAttr = attr;
+                    break;
+                }
+            }
+
+            if (marshalAsAttr == null || marshalAsAttr.ConstructorArguments.IsEmpty)
+                return false;
+
+            object unmanagedTypeObj = marshalAsAttr.ConstructorArguments[0].Value!;
+            UnmanagedType unmanagedType = unmanagedTypeObj is short unmanagedTypeAsShort
+                ? (UnmanagedType)unmanagedTypeAsShort
+                : (UnmanagedType)unmanagedTypeObj;
+
+            return !System.Enum.IsDefined(typeof(UnmanagedType), unmanagedType)
+                || unmanagedType == UnmanagedType.CustomMarshaler
+                || unmanagedType == UnmanagedType.Interface
+                || unmanagedType == UnmanagedType.IDispatch
+                || unmanagedType == UnmanagedType.IInspectable
+                || unmanagedType == UnmanagedType.IUnknown
+                || unmanagedType == UnmanagedType.SafeArray;
         }
     }
 }

@@ -577,7 +577,7 @@ namespace System.Xml.Schema
 
         internal override Exception? TryParseValue(object value, XmlNameTable? nameTable, IXmlNamespaceResolver? namespaceResolver, out object? typedValue)
         {
-            Exception? exception = null;
+            Exception? exception;
             typedValue = null;
 
             if (value == null)
@@ -1040,14 +1040,9 @@ namespace System.Xml.Schema
         }
         internal DatatypeImplementation ItemType { get { return _itemType; } }
 
-        internal override Exception? TryParseValue(object value, XmlNameTable? nameTable, IXmlNamespaceResolver? namespaceResolver, out object? typedValue)
+        internal override Exception? TryParseValue(object value!!, XmlNameTable? nameTable, IXmlNamespaceResolver? namespaceResolver, out object? typedValue)
         {
             Exception? exception;
-            if (value == null)
-            {
-                throw new ArgumentNullException(nameof(value));
-            }
-
             string? s = value as string;
             typedValue = null;
             if (s != null)
@@ -1304,13 +1299,9 @@ namespace System.Xml.Schema
             return exception;
         }
 
-        internal override Exception? TryParseValue(object value, XmlNameTable? nameTable, IXmlNamespaceResolver? nsmgr, out object? typedValue)
+        internal override Exception? TryParseValue(object value!!, XmlNameTable? nameTable, IXmlNamespaceResolver? nsmgr, out object? typedValue)
         {
             Exception? exception;
-            if (value == null)
-            {
-                throw new ArgumentNullException(nameof(value));
-            }
             typedValue = null;
             string? s = value as string;
             if (s != null)
@@ -2093,7 +2084,7 @@ namespace System.Xml.Schema
                 goto Error;
             }
 
-            DateTime dateTimeValue = DateTime.MinValue;
+            DateTime dateTimeValue;
             try
             {
                 dateTimeValue = (DateTime)dateTime;
@@ -2472,7 +2463,7 @@ namespace System.Xml.Schema
             exception = binaryFacetsChecker.CheckLexicalFacets(ref s, this);
             if (exception != null) goto Error;
 
-            byte[]? byteArrayValue = null;
+            byte[]? byteArrayValue;
             try
             {
                 byteArrayValue = XmlConvert.FromBinHexString(s, false);
@@ -2573,7 +2564,7 @@ namespace System.Xml.Schema
             exception = binaryFacetsChecker.CheckLexicalFacets(ref s, this);
             if (exception != null) goto Error;
 
-            byte[]? byteArrayValue = null;
+            byte[]? byteArrayValue;
             try
             {
                 byteArrayValue = Convert.FromBase64String(s);
@@ -2773,7 +2764,7 @@ namespace System.Xml.Schema
             exception = qnameFacetsChecker.CheckLexicalFacets(ref s, this);
             if (exception != null) goto Error;
 
-            XmlQualifiedName? qname = null;
+            XmlQualifiedName? qname;
             try
             {
                 string prefix;
@@ -3109,7 +3100,7 @@ namespace System.Xml.Schema
             exception = qnameFacetsChecker.CheckLexicalFacets(ref s, this);
             if (exception != null) goto Error;
 
-            XmlQualifiedName? qname = null;
+            XmlQualifiedName? qname;
             try
             {
                 string prefix;
@@ -3822,10 +3813,8 @@ namespace System.Xml.Schema
             {
                 throw new XmlSchemaException(SR.Sch_EmptyAttributeValue, string.Empty);
             }
-            if (nsmgr == null)
-            {
-                throw new ArgumentNullException(nameof(nsmgr));
-            }
+            ArgumentNullException.ThrowIfNull(nsmgr);
+
             string prefix;
             try
             {

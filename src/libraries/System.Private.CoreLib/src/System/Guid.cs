@@ -91,12 +91,8 @@ namespace System
         }
 
         // Creates a new GUID initialized to the value represented by the arguments.
-        public Guid(int a, short b, short c, byte[] d)
+        public Guid(int a, short b, short c, byte[] d!!)
         {
-            if (d == null)
-            {
-                throw new ArgumentNullException(nameof(d));
-            }
             if (d.Length != 8)
             {
                 throw new ArgumentException(SR.Format(SR.Arg_GuidArrayCtor, "8"), nameof(d));
@@ -213,13 +209,8 @@ namespace System
         // The string must be of the form dddddddd-dddd-dddd-dddd-dddddddddddd. where
         // d is a hex digit. (That is 8 hex digits, followed by 4, then 4, then 4,
         // then 12) such as: "CA761232-ED42-11CE-BACD-00AA0057B223"
-        public Guid(string g)
+        public Guid(string g!!)
         {
-            if (g == null)
-            {
-                throw new ArgumentNullException(nameof(g));
-            }
-
             var result = new GuidResult(GuidParseThrowStyle.All);
             bool success = TryParseGuid(g, ref result);
             Debug.Assert(success, "GuidParseThrowStyle.All means throw on all failures");
@@ -434,7 +425,7 @@ namespace System
             // We continue to support these but expect them to be incredibly rare.  As such, we
             // optimize for correctly formed strings where all the digits are valid hex, and only
             // fall back to supporting these other forms if parsing fails.
-            if (guidString.IndexOfAny('X', 'x', '+') != -1 && TryCompatParsing(guidString, ref result))
+            if (guidString.IndexOfAny('X', 'x', '+') >= 0 && TryCompatParsing(guidString, ref result))
             {
                 return true;
             }
@@ -1234,7 +1225,7 @@ namespace System
         // IComparisonOperators
         //
 
-        [RequiresPreviewFeatures]
+        [RequiresPreviewFeatures(Number.PreviewFeatureMessage, Url = Number.PreviewFeatureUrl)]
         static bool IComparisonOperators<Guid, Guid>.operator <(Guid left, Guid right)
         {
             if (left._a != right._a)
@@ -1295,7 +1286,7 @@ namespace System
             return false;
         }
 
-        [RequiresPreviewFeatures]
+        [RequiresPreviewFeatures(Number.PreviewFeatureMessage, Url = Number.PreviewFeatureUrl)]
         static bool IComparisonOperators<Guid, Guid>.operator <=(Guid left, Guid right)
         {
             if (left._a != right._a)
@@ -1356,7 +1347,7 @@ namespace System
             return true;
         }
 
-        [RequiresPreviewFeatures]
+        [RequiresPreviewFeatures(Number.PreviewFeatureMessage, Url = Number.PreviewFeatureUrl)]
         static bool IComparisonOperators<Guid, Guid>.operator >(Guid left, Guid right)
         {
             if (left._a != right._a)
@@ -1417,7 +1408,7 @@ namespace System
             return false;
         }
 
-        [RequiresPreviewFeatures]
+        [RequiresPreviewFeatures(Number.PreviewFeatureMessage, Url = Number.PreviewFeatureUrl)]
         static bool IComparisonOperators<Guid, Guid>.operator >=(Guid left, Guid right)
         {
             if (left._a != right._a)
@@ -1482,11 +1473,11 @@ namespace System
         // IEqualityOperators
         //
 
-        [RequiresPreviewFeatures]
+        [RequiresPreviewFeatures(Number.PreviewFeatureMessage, Url = Number.PreviewFeatureUrl)]
         static bool IEqualityOperators<Guid, Guid>.operator ==(Guid left, Guid right)
             => left == right;
 
-        [RequiresPreviewFeatures]
+        [RequiresPreviewFeatures(Number.PreviewFeatureMessage, Url = Number.PreviewFeatureUrl)]
         static bool IEqualityOperators<Guid, Guid>.operator !=(Guid left, Guid right)
             => left != right;
 
@@ -1494,11 +1485,11 @@ namespace System
         // IParseable
         //
 
-        [RequiresPreviewFeatures]
+        [RequiresPreviewFeatures(Number.PreviewFeatureMessage, Url = Number.PreviewFeatureUrl)]
         static Guid IParseable<Guid>.Parse(string s, IFormatProvider? provider)
             => Parse(s);
 
-        [RequiresPreviewFeatures]
+        [RequiresPreviewFeatures(Number.PreviewFeatureMessage, Url = Number.PreviewFeatureUrl)]
         static bool IParseable<Guid>.TryParse([NotNullWhen(true)] string? s, IFormatProvider? provider, out Guid result)
             => TryParse(s, out result);
 
@@ -1506,11 +1497,11 @@ namespace System
         // ISpanParseable
         //
 
-        [RequiresPreviewFeatures]
+        [RequiresPreviewFeatures(Number.PreviewFeatureMessage, Url = Number.PreviewFeatureUrl)]
         static Guid ISpanParseable<Guid>.Parse(ReadOnlySpan<char> s, IFormatProvider? provider)
             => Parse(s);
 
-        [RequiresPreviewFeatures]
+        [RequiresPreviewFeatures(Number.PreviewFeatureMessage, Url = Number.PreviewFeatureUrl)]
         static bool ISpanParseable<Guid>.TryParse(ReadOnlySpan<char> s, IFormatProvider? provider, out Guid result)
             => TryParse(s, out result);
 #endif // FEATURE_GENERIC_MATH

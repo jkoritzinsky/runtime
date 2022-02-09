@@ -12,6 +12,7 @@
 ===========================================================*/
 
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 
 namespace System.Collections
 {
@@ -59,11 +60,8 @@ namespace System.Collections
         // size and capacity of the new list will both be equal to the size of the
         // given collection.
         //
-        public ArrayList(ICollection c)
+        public ArrayList(ICollection c!!)
         {
-            if (c == null)
-                throw new ArgumentNullException(nameof(c), SR.ArgumentNull_Collection);
-
             int count = c.Count;
             if (count == 0)
             {
@@ -151,10 +149,8 @@ namespace System.Collections
         // However, since these methods are generic, the performance may not be
         // nearly as good for some operations as they would be on the IList itself.
         //
-        public static ArrayList Adapter(IList list)
+        public static ArrayList Adapter(IList list!!)
         {
-            if (list == null)
-                throw new ArgumentNullException(nameof(list));
             return new IListWrapper(list);
         }
 
@@ -323,20 +319,16 @@ namespace System.Collections
         // Returns a list wrapper that is fixed at the current size.  Operations
         // that add or remove items will fail, however, replacing items is allowed.
         //
-        public static IList FixedSize(IList list)
+        public static IList FixedSize(IList list!!)
         {
-            if (list == null)
-                throw new ArgumentNullException(nameof(list));
             return new FixedSizeList(list);
         }
 
         // Returns a list wrapper that is fixed at the current size.  Operations
         // that add or remove items will fail, however, replacing items is allowed.
         //
-        public static ArrayList FixedSize(ArrayList list)
+        public static ArrayList FixedSize(ArrayList list!!)
         {
-            if (list == null)
-                throw new ArgumentNullException(nameof(list));
             return new FixedSizeArrayList(list);
         }
 
@@ -436,10 +428,8 @@ namespace System.Collections
         // capacity or the new size, whichever is larger.  Ranges may be added
         // to the end of the list by setting index to the ArrayList's size.
         //
-        public virtual void InsertRange(int index, ICollection c)
+        public virtual void InsertRange(int index, ICollection c!!)
         {
-            if (c == null)
-                throw new ArgumentNullException(nameof(c), SR.ArgumentNull_Collection);
             if (index < 0 || index > _size) throw new ArgumentOutOfRangeException(nameof(index), SR.ArgumentOutOfRange_Index);
 
             int count = c.Count;
@@ -514,19 +504,15 @@ namespace System.Collections
 
         // Returns a read-only IList wrapper for the given IList.
         //
-        public static IList ReadOnly(IList list)
+        public static IList ReadOnly(IList list!!)
         {
-            if (list == null)
-                throw new ArgumentNullException(nameof(list));
             return new ReadOnlyList(list);
         }
 
         // Returns a read-only ArrayList wrapper for the given ArrayList.
         //
-        public static ArrayList ReadOnly(ArrayList list)
+        public static ArrayList ReadOnly(ArrayList list!!)
         {
-            if (list == null)
-                throw new ArgumentNullException(nameof(list));
             return new ReadOnlyArrayList(list);
         }
 
@@ -623,10 +609,8 @@ namespace System.Collections
         // Sets the elements starting at the given index to the elements of the
         // given collection.
         //
-        public virtual void SetRange(int index, ICollection c)
+        public virtual void SetRange(int index, ICollection c!!)
         {
-            if (c == null) throw new ArgumentNullException(nameof(c), SR.ArgumentNull_Collection);
-
             int count = c.Count;
             if (index < 0 || index > _size - count) throw new ArgumentOutOfRangeException(nameof(index), SR.ArgumentOutOfRange_Index);
 
@@ -683,19 +667,15 @@ namespace System.Collections
 
         // Returns a thread-safe wrapper around an IList.
         //
-        public static IList Synchronized(IList list)
+        public static IList Synchronized(IList list!!)
         {
-            if (list == null)
-                throw new ArgumentNullException(nameof(list));
             return new SyncIList(list);
         }
 
         // Returns a thread-safe wrapper around a ArrayList.
         //
-        public static ArrayList Synchronized(ArrayList list)
+        public static ArrayList Synchronized(ArrayList list!!)
         {
-            if (list == null)
-                throw new ArgumentNullException(nameof(list));
             return new SyncArrayList(list);
         }
 
@@ -716,6 +696,7 @@ namespace System.Collections
         // downcasting all elements.  This copy may fail and is an O(n) operation.
         // Internally, this implementation calls Array.Copy.
         //
+        [RequiresDynamicCode("The native code for the array might not be available at runtime.")]
         public virtual Array ToArray(Type type)
         {
             if (type == null)
@@ -854,10 +835,8 @@ namespace System.Collections
                 _list.CopyTo(array, index);
             }
 
-            public override void CopyTo(int index, Array array, int arrayIndex, int count)
+            public override void CopyTo(int index, Array array!!, int arrayIndex, int count)
             {
-                if (array == null)
-                    throw new ArgumentNullException(nameof(array));
                 if (index < 0 || arrayIndex < 0)
                     throw new ArgumentOutOfRangeException(index < 0 ? nameof(index) : nameof(arrayIndex), SR.ArgumentOutOfRange_NeedNonNegNum);
                 if (count < 0)
@@ -928,10 +907,8 @@ namespace System.Collections
                 _version++;
             }
 
-            public override void InsertRange(int index, ICollection c)
+            public override void InsertRange(int index, ICollection c!!)
             {
-                if (c == null)
-                    throw new ArgumentNullException(nameof(c), SR.ArgumentNull_Collection);
                 if (index < 0 || index > Count) throw new ArgumentOutOfRangeException(nameof(index), SR.ArgumentOutOfRange_Index);
 
                 if (c.Count > 0)
@@ -1040,13 +1017,8 @@ namespace System.Collections
                 _version++;
             }
 
-            public override void SetRange(int index, ICollection c)
+            public override void SetRange(int index, ICollection c!!)
             {
-                if (c == null)
-                {
-                    throw new ArgumentNullException(nameof(c), SR.ArgumentNull_Collection);
-                }
-
                 if (index < 0 || index > _list.Count - c.Count)
                 {
                     throw new ArgumentOutOfRangeException(nameof(index), SR.ArgumentOutOfRange_Index);
@@ -1099,6 +1071,7 @@ namespace System.Collections
                 return array;
             }
 
+            [RequiresDynamicCode("The native code for the array might not be available at runtime.")]
             public override Array ToArray(Type type)
             {
                 if (type == null)
@@ -1492,6 +1465,7 @@ namespace System.Collections
                 }
             }
 
+            [RequiresDynamicCode("The native code for the array might not be available at runtime.")]
             public override Array ToArray(Type type)
             {
                 lock (_root)
@@ -1874,6 +1848,7 @@ namespace System.Collections
                 return _list.ToArray();
             }
 
+            [RequiresDynamicCode("The native code for the array might not be available at runtime.")]
             public override Array ToArray(Type type)
             {
                 return _list.ToArray(type);
@@ -2125,6 +2100,7 @@ namespace System.Collections
                 return _list.ToArray();
             }
 
+            [RequiresDynamicCode("The native code for the array might not be available at runtime.")]
             public override Array ToArray(Type type)
             {
                 return _list.ToArray(type);
@@ -2237,13 +2213,8 @@ namespace System.Collections
                 return _baseSize++;
             }
 
-            public override void AddRange(ICollection c)
+            public override void AddRange(ICollection c!!)
             {
-                if (c == null)
-                {
-                    throw new ArgumentNullException(nameof(c));
-                }
-
                 InternalUpdateRange();
                 int count = c.Count;
                 if (count > 0)
@@ -2317,10 +2288,8 @@ namespace System.Collections
                 }
             }
 
-            public override void CopyTo(Array array, int index)
+            public override void CopyTo(Array array!!, int index)
             {
-                if (array == null)
-                    throw new ArgumentNullException(nameof(array));
                 if (array.Rank != 1)
                     throw new ArgumentException(SR.Arg_RankMultiDimNotSupported, nameof(array));
                 if (index < 0)
@@ -2332,10 +2301,8 @@ namespace System.Collections
                 _baseList.CopyTo(_baseIndex, array, index, _baseSize);
             }
 
-            public override void CopyTo(int index, Array array, int arrayIndex, int count)
+            public override void CopyTo(int index, Array array!!, int arrayIndex, int count)
             {
-                if (array == null)
-                    throw new ArgumentNullException(nameof(array));
                 if (array.Rank != 1)
                     throw new ArgumentException(SR.Arg_RankMultiDimNotSupported, nameof(array));
                 if (index < 0 || count < 0)
@@ -2442,10 +2409,7 @@ namespace System.Collections
             public override void InsertRange(int index, ICollection c)
             {
                 if (index < 0 || index > _baseSize) throw new ArgumentOutOfRangeException(nameof(index), SR.ArgumentOutOfRange_Index);
-                if (c == null)
-                {
-                    throw new ArgumentNullException(nameof(c));
-                }
+                ArgumentNullException.ThrowIfNull(c);
 
                 InternalUpdateRange();
                 int count = c.Count;
@@ -2578,6 +2542,7 @@ namespace System.Collections
                 return array;
             }
 
+            [RequiresDynamicCode("The native code for the array might not be available at runtime.")]
             public override Array ToArray(Type type)
             {
                 if (type == null)
@@ -2690,11 +2655,8 @@ namespace System.Collections
         {
             private readonly ArrayList _arrayList;
 
-            public ArrayListDebugView(ArrayList arrayList)
+            public ArrayListDebugView(ArrayList arrayList!!)
             {
-                if (arrayList == null)
-                    throw new ArgumentNullException(nameof(arrayList));
-
                 _arrayList = arrayList;
             }
 

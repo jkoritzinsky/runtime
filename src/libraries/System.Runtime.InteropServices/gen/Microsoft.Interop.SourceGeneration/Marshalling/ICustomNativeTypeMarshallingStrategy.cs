@@ -319,7 +319,10 @@ namespace Microsoft.Interop
         {
             var subContext = GetSubContext(context);
 
-            yield return GenerateAssignmentToValueProperty(info, context, subContext);
+            if (info.IsManagedReturnPosition || (info.IsByRef && info.RefKind != RefKind.In))
+            {
+                yield return GenerateAssignmentFromValueProperty(info, context, subContext);
+            }
 
             foreach (StatementSyntax statement in _innerMarshaller.GenerateUnmarshalStatements(info, subContext))
             {
@@ -364,7 +367,7 @@ namespace Microsoft.Interop
         {
             if (StackAllocOptimizationValid(info, context))
             {
-                // byte* <managedIdentifier>__stackptr = stackalloc byte[<_nativeLocalType>.StackBufferSize];
+                // byte* <managedIdentifier>__stackptr = stackalloc byte[<_nativeLocalType>.BufferSize];
                 yield return LocalDeclarationStatement(
                 VariableDeclaration(
                     PointerType(PredefinedType(Token(SyntaxKind.ByteKeyword))),
@@ -377,7 +380,7 @@ namespace Microsoft.Interop
                                             SingletonList(ArrayRankSpecifier(SingletonSeparatedList<ExpressionSyntax>(
                                                 MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
                                                     AsNativeType(info),
-                                                    IdentifierName(ManualTypeMarshallingHelper.StackBufferSizeFieldName))
+                                                    IdentifierName(ManualTypeMarshallingHelper.BufferSizeFieldName))
                                             ))))))))));
             }
 
@@ -431,7 +434,7 @@ namespace Microsoft.Interop
                             Argument(IdentifierName(GetStackAllocPointerIdentifier(info, context))),
                             Argument(MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
                                     AsNativeType(info),
-                                    IdentifierName(ManualTypeMarshallingHelper.StackBufferSizeFieldName)))
+                                    IdentifierName(ManualTypeMarshallingHelper.BufferSizeFieldName)))
                         }))));
             }
         }
@@ -511,7 +514,7 @@ namespace Microsoft.Interop
     }
 
     /// <summary>
-    /// Marshaller that enables support for a GetPinnableReference method on a native type, with a Value property fallback.
+    /// Marshaller that calls the GetPinnableReference method on the marshaller value and enables support for the Value property.
     /// </summary>
     internal sealed class PinnableMarshallerTypeMarshalling : ValuePropertyMarshallingStrategyBase
     {
@@ -539,7 +542,7 @@ namespace Microsoft.Interop
         {
             var subContext = new CustomNativeTypeWithValuePropertyStubContext(context);
 
-            if (!CanPinMarshaller(info, context) && !context.AdditionalTemporaryStateLivesAcrossStages)
+            if (!context.AdditionalTemporaryStateLivesAcrossStages)
             {
                 // <marshalerIdentifier>.Value = <nativeIdentifier>;
                 yield return GenerateAssignmentToValueProperty(info, context, subContext);
@@ -561,7 +564,6 @@ namespace Microsoft.Interop
 
             if (!CanPinMarshaller(info, context))
             {
-                // <nativeIdentifier> = <marshalerIdentifier>.Value;
                 yield return GenerateAssignmentFromValueProperty(info, context, subContext);
             }
         }
@@ -574,22 +576,17 @@ namespace Microsoft.Interop
                 VariableDeclaration(
                 _valuePropertyType,
                 SingletonSeparatedList(
-                    VariableDeclarator(context.GetIdentifiers(info).native)
+                    VariableDeclarator(Identifier(context.GetAdditionalIdentifier(info, "ignored")))
                         .WithInitializer(EqualsValueClause(
-                            PrefixUnaryExpression(SyntaxKind.AddressOfExpression,
-                                InvocationExpression(
-                                    MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
-                                        IdentifierName(subContext.GetIdentifiers(info).native),
-                                        IdentifierName(ManualTypeMarshallingHelper.GetPinnableReferenceName)),
-                                    ArgumentList())))))),
-                EmptyStatement());
+                            IdentifierName(subContext.GetIdentifiers(info).native))))),
+                GenerateAssignmentFromValueProperty(info, context, subContext));
         }
 
         public override IEnumerable<StatementSyntax> GenerateUnmarshalStatements(TypePositionInfo info, StubCodeContext context)
         {
             var subContext = GetSubContext(context);
 
-            if (!CanPinMarshaller(info, context))
+            if (info.IsManagedReturnPosition || (info.IsByRef && info.RefKind != RefKind.In))
             {
                 // <marshalerIdentifier>.Value = <nativeIdentifier>;
                 yield return GenerateAssignmentToValueProperty(info, context, subContext);
@@ -603,10 +600,6 @@ namespace Microsoft.Interop
 
         public override bool UsesNativeIdentifier(TypePositionInfo info, StubCodeContext context)
         {
-            if (CanPinMarshaller(info, context))
-            {
-                return false;
-            }
             return _innerMarshaller.UsesNativeIdentifier(info, context);
         }
     }
@@ -1000,6 +993,18 @@ namespace Microsoft.Interop
             if (!info.IsByRef && info.ByValueContentsMarshalKind == ByValueContentsMarshalKind.Out)
             {
                 // If the parameter is marshalled by-value [Out], then we don't marshal the contents of the collection.
+                // We do clear the span, so that if the invoke target doesn't fill it, we aren't left with undefined content.
+                // <nativeIdentifier>.NativeValueStorage.Clear();
+                string nativeIdentifier = context.GetIdentifiers(info).native;
+                yield return ExpressionStatement(
+                    InvocationExpression(
+                        MemberAccessExpression(
+                            SyntaxKind.SimpleMemberAccessExpression,
+                            MemberAccessExpression(
+                                SyntaxKind.SimpleMemberAccessExpression,
+                                IdentifierName(nativeIdentifier),
+                                IdentifierName(ManualTypeMarshallingHelper.NativeValueStoragePropertyName)),
+                            IdentifierName("Clear"))));
                 yield break;
             }
 

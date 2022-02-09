@@ -289,11 +289,8 @@ namespace System
                 return Utc;
             }
 
-            if (id == null)
-            {
-                throw new ArgumentNullException(nameof(id));
-            }
-            else if (id.Length == 0 || id.Contains('\0'))
+            ArgumentNullException.ThrowIfNull(id);
+            if (id.Length == 0 || id.Contains('\0'))
             {
                 throw new TimeZoneNotFoundException(SR.Format(SR.TimeZoneNotFound_MissingData, id));
             }
@@ -333,9 +330,8 @@ namespace System
         // DateTime.Now fast path that avoids allocating an historically accurate TimeZoneInfo.Local and just creates a 1-year (current year) accurate time zone
         internal static TimeSpan GetDateTimeNowUtcOffsetFromUtc(DateTime time, out bool isAmbiguousLocalDst)
         {
-            bool isDaylightSavings;
             // Use the standard code path for Unix since there isn't a faster way of handling current-year-only time zones
-            return GetUtcOffsetFromUtc(time, Local, out isDaylightSavings, out isAmbiguousLocalDst);
+            return GetUtcOffsetFromUtc(time, Local, out _, out isAmbiguousLocalDst);
         }
 
         // TZFILE(5)                   BSD File Formats Manual                  TZFILE(5)
@@ -676,7 +672,7 @@ namespace System
         private static AdjustmentRule? TZif_CreateAdjustmentRuleForPosixFormat(string posixFormat, DateTime startTransitionDate, TimeSpan timeZoneBaseUtcOffset)
         {
             if (TZif_ParsePosixFormat(posixFormat,
-                out ReadOnlySpan<char> standardName,
+                out _,
                 out ReadOnlySpan<char> standardOffset,
                 out ReadOnlySpan<char> daylightSavingsName,
                 out ReadOnlySpan<char> daylightSavingsOffset,
@@ -982,9 +978,6 @@ namespace System
             out ReadOnlySpan<char> end,
             out ReadOnlySpan<char> endTime)
         {
-            standardName = null;
-            standardOffset = null;
-            daylightSavingsName = null;
             daylightSavingsOffset = null;
             start = null;
             startTime = null;
@@ -1123,13 +1116,6 @@ namespace System
         private static void TZif_ParseRaw(byte[] data, out TZifHead t, out DateTime[] dts, out byte[] typeOfLocalTime, out TZifType[] transitionType,
                                           out string zoneAbbreviations, out bool[] StandardTime, out bool[] GmtTime, out string? futureTransitionsPosixFormat)
         {
-            // initialize the out parameters in case the TZifHead ctor throws
-            dts = null!;
-            typeOfLocalTime = null!;
-            transitionType = null!;
-            zoneAbbreviations = string.Empty;
-            StandardTime = null!;
-            GmtTime = null!;
             futureTransitionsPosixFormat = null;
 
             // read in the 44-byte TZ header containing the count/length fields
@@ -1154,7 +1140,6 @@ namespace System
             dts = new DateTime[t.TimeCount];
             typeOfLocalTime = new byte[t.TimeCount];
             transitionType = new TZifType[t.TypeCount];
-            zoneAbbreviations = string.Empty;
             StandardTime = new bool[t.TypeCount];
             GmtTime = new bool[t.TypeCount];
 
