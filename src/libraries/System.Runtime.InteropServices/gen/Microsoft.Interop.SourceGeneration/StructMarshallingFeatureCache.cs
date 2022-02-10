@@ -61,14 +61,14 @@ namespace Microsoft.Interop
                 }
                 else if (attributeKind == StructAttribute.None)
                 {
-                    cacheBuilder.Add(type, GenerateMarshallingInfoForPossiblyBlittableType(compilation, cacheBuilder, type, allowExposureOutsideOfCompilation: false));
+                    cacheBuilder.Add(type, GenerateMarshallingInfoForPossiblyBlittableType(compilation, cacheBuilder, type));
                 }
                 else if (attributeKind == StructAttribute.Blittable)
                 {
                     if (type.IsGenericType && !SymbolEqualityComparer.Default.Equals(type, type.ConstructedFrom))
                     {
                         // For generic types, we will recalculate if the blittable type is actually blittable
-                        cacheBuilder.Add(type, GenerateMarshallingInfoForPossiblyBlittableType(compilation, cacheBuilder, type, allowExposureOutsideOfCompilation: true));
+                        cacheBuilder.Add(type, GenerateMarshallingInfoForPossiblyBlittableType(compilation, cacheBuilder, type));
                     }
                     else
                     {
@@ -105,20 +105,6 @@ namespace Microsoft.Interop
             }
         }
 
-        /// <summary>
-        /// Checks if the type is blittable without considering any attributes on the current type.
-        /// Requires the cache to already contain all type information required to determine if the fields are blittable, otherwise returns false.
-        /// </summary>
-        /// <param name="namedType">The type to check if blittable.</param>
-        /// <param name="allowExposureOutsideOfCompilation">Allow the type to be blittable if it is exposed outside of the assembly.</param>
-        /// <returns>If the type is blittable, true. Otherwise, false.</returns>
-        public bool SpeculativeTypeIsBlittable(INamedTypeSymbol namedType, bool allowExposureOutsideOfCompilation)
-        {
-            return namedType.TypeKind is TypeKind.Struct or TypeKind.Enum
-                ? GenerateMarshallingInfoForPossiblyBlittableType(_compilation, _cache, namedType, allowExposureOutsideOfCompilation).IsBlittable
-                : false;
-        }
-
         private static StructAttribute GetStructMarshallingAttributeKind(INamedTypeSymbol type)
         {
             foreach (AttributeData attr in type.GetAttributes())
@@ -131,10 +117,6 @@ namespace Microsoft.Interop
                 {
                     return StructAttribute.NativeMarshalling;
                 }
-                else if (attr.AttributeClass.ToDisplayString() == TypeNames.BlittableTypeAttribute)
-                {
-                    return StructAttribute.Blittable;
-                }
             }
 
             return StructAttribute.None;
@@ -143,10 +125,9 @@ namespace Microsoft.Interop
         private GeneratedStructMarshallingFeatures GenerateMarshallingInfoForPossiblyBlittableType(
             Compilation compilation,
             IDictionary<INamedTypeSymbol, GeneratedStructMarshallingFeatures> cache,
-            INamedTypeSymbol type,
-            bool allowExposureOutsideOfCompilation)
+            INamedTypeSymbol type)
         {
-            if (type.SpecialType.IsSpecialTypeBlittable())
+            if (type.SpecialType.IsSpecialTypePrimitive())
             {
                 return new GeneratedStructMarshallingFeatures(
                     CustomMarshallingFeatures.ManagedToNative | CustomMarshallingFeatures.NativeToManaged,
@@ -155,7 +136,7 @@ namespace Microsoft.Interop
                     IsBlittable: true);
             }
 
-            if (type is INamedTypeSymbol { TypeKind: TypeKind.Enum, EnumUnderlyingType: { SpecialType: SpecialType enumUnderlyingType } } && enumUnderlyingType.IsSpecialTypeBlittable())
+            if (type is INamedTypeSymbol { TypeKind: TypeKind.Enum, EnumUnderlyingType.SpecialType: SpecialType enumUnderlyingType } && enumUnderlyingType.IsSpecialTypeBlittable())
             {
                 return new GeneratedStructMarshallingFeatures(
                     CustomMarshallingFeatures.ManagedToNative | CustomMarshallingFeatures.NativeToManaged,
@@ -164,13 +145,7 @@ namespace Microsoft.Interop
                     IsBlittable: true);
             }
 
-            if (!allowExposureOutsideOfCompilation && type.IsExposedOutsideOfCurrentCompilation())
-            {
-                return new GeneratedStructMarshallingFeatures(CustomMarshallingFeatures.None, HasValueProperty: false, MarshallerMustBeRefStruct: false, IsBlittable: false);
-            }
-
-
-            if (type.IsAutoLayout(_structLayoutAttributeType))
+            if (type.IsAutoLayout())
             {
                 return new GeneratedStructMarshallingFeatures(CustomMarshallingFeatures.None, HasValueProperty: false, MarshallerMustBeRefStruct: false, IsBlittable: false);
             }
@@ -201,7 +176,7 @@ namespace Microsoft.Interop
                     }
                     else if (marshallingInfo is MarshalAsInfo(UnmanagedType unmanagedType, _)
                         && field.Type is { SpecialType: not SpecialType.None } specialType
-                        && specialType.SpecialType.IsSpecialTypeBlittable())
+                        && specialType.SpecialType.IsSpecialTypePrimitive())
                     {
                         isBlittable &= specialType.SpecialType.SpecialTypeWithMarshalAsIsBlittable(unmanagedType);
                     }
@@ -373,8 +348,7 @@ namespace Microsoft.Interop
 
             public override void VisitField(IFieldSymbol symbol)
             {
-                // Only visit generics as the only interesting non-generic types are covered in VisitNamedType
-                if (symbol is { IsStatic: false, Type: INamedTypeSymbol { IsValueType: true, IsGenericType: true }})
+                if (symbol is { IsStatic: false, Type.IsUnmanagedType: true })
                 {
                     Visit(symbol.Type);
                 }
@@ -382,14 +356,13 @@ namespace Microsoft.Interop
 
             public override void VisitMethod(IMethodSymbol symbol)
             {
-                // Only visit generics as the only interesting non-generic types are covered in VisitNamedType
-                if (symbol.ReturnType is INamedTypeSymbol { IsValueType: true, IsGenericType: true })
+                if (symbol.ReturnType.IsUnmanagedType)
                 {
                     Visit(symbol.ReturnType);
                 }
                 foreach (IParameterSymbol param in symbol.Parameters)
                 {
-                    if (param.Type is INamedTypeSymbol { IsValueType: true, IsGenericType: true })
+                    if (param.Type.IsUnmanagedType)
                     {
                         Visit(param.Type);
                     }

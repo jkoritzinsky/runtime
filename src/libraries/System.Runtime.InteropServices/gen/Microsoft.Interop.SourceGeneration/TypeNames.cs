@@ -16,8 +16,6 @@ namespace Microsoft.Interop
 
         public const string GeneratedMarshallingAttribute = "System.Runtime.InteropServices.GeneratedMarshallingAttribute";
 
-        public const string BlittableTypeAttribute = "System.Runtime.InteropServices.BlittableTypeAttribute";
-
         public const string NativeMarshallingAttribute = "System.Runtime.InteropServices.NativeMarshallingAttribute";
 
         public const string MarshalUsingAttribute = "System.Runtime.InteropServices.MarshalUsingAttribute";
@@ -80,5 +78,6 @@ namespace Microsoft.Interop
         public const string System_ArgumentException = "System.ArgumentException";
         public const string System_Math = "System.Math";
         public const string System_MemoryExtensions = "System.MemoryExtensions";
+        public const string System_Runtime_CompilerServices_DisableRuntimeMarshallingAttribute = "System.Runtime.CompilerServices.DisableRuntimeMarshallingAttribute";
     }
 }

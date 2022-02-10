@@ -22,8 +22,12 @@ namespace Microsoft.Interop
     public record AttributedMarshallingModelGeneratorFactoryOptions(
         bool UseMarshalType,
         bool UseInternalUnsafeType,
+        bool RuntimeMarshallingDisabled,
         bool ValidateScenarioSupport = true,
-        AttributedMarshallingModelGenerationPhases GenerationPhases = AttributedMarshallingModelGenerationPhases.All) : InteropGenerationOptions(UseMarshalType, UseInternalUnsafeType);
+        AttributedMarshallingModelGenerationPhases GenerationPhases = AttributedMarshallingModelGenerationPhases.All)
+    {
+        public InteropGenerationOptions InteropOptions { get; } = new InteropGenerationOptions(UseMarshalType, UseInternalUnsafeType);
+    }
 
     public class AttributedMarshallingModelGeneratorFactory : IMarshallingGeneratorFactory
     {
@@ -59,7 +63,7 @@ namespace Microsoft.Interop
             return info.MarshallingAttributeInfo switch
             {
                 NativeMarshallingAttributeInfo marshalInfo => CreateCustomNativeTypeMarshaller(info, context, marshalInfo),
-                BlittableTypeAttributeInfo => s_blittable,
+                UnmanagedBlittableMarshallingInfo => s_blittable,
                 MissingSupportMarshallingInfo => s_forwarder,
                 _ => _innerMarshallingGenerator.Create(info, context)
             };
@@ -301,7 +305,7 @@ namespace Microsoft.Interop
                     new CustomNativeTypeMarshallingGenerator(marshallingStrategy, enableByValueContentsMarshalling: true),
                     elementType,
                     isBlittable,
-                    Options);
+                    Options.InteropOptions);
             }
 
             IMarshallingGenerator marshallingGenerator = new CustomNativeTypeMarshallingGenerator(marshallingStrategy, enableByValueContentsMarshalling: false);

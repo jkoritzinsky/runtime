@@ -5,7 +5,6 @@
 
 //
 // Types in this file are used for generated p/invokes (docs/design/features/source-generator-pinvokes.md).
-// See the DllImportGenerator experiment in https://github.com/dotnet/runtimelab.
 //
 using System.Diagnostics;
 
@@ -19,16 +18,6 @@ namespace System.Runtime.InteropServices
     internal
 #endif
     sealed class GeneratedMarshallingAttribute : Attribute
-    {
-    }
-
-    [AttributeUsage(AttributeTargets.Struct)]
-#if DLLIMPORT_GENERATOR_TEST
-    public
-#else
-    internal
-#endif
-    sealed class BlittableTypeAttribute : Attribute
     {
     }
 

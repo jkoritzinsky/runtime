@@ -68,6 +68,7 @@ namespace Microsoft.Interop
                 new AttributedMarshallingModelGeneratorFactoryOptions(
                     false,
                     false,
+                    RuntimeMarshallingDisabled: true,
                     ValidateScenarioSupport: false,
                     structToMarshal.MarshallingFeatures.HasValueProperty
                     ? AttributedMarshallingModelGenerationPhases.ManagedToMarshallerType
@@ -159,6 +160,7 @@ namespace Microsoft.Interop
                 new AttributedMarshallingModelGeneratorFactoryOptions(
                     false,
                     false,
+                    RuntimeMarshallingDisabled: true,
                     ValidateScenarioSupport: false,
                     structToMarshal.MarshallingFeatures.HasValueProperty
                     ? AttributedMarshallingModelGenerationPhases.MarshallerTypeToValueProperty

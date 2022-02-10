@@ -23,47 +23,30 @@ namespace Microsoft.Interop
                 return structFeatureCache.TryGetGeneratedStructMarshallingFeatures(namedTypeInSource, out GeneratedStructMarshallingFeatures marshallingFeatures)
                     && marshallingFeatures.IsBlittable;
             }
-            else if (type.GetAttributes().Any(attr => attr.AttributeClass.ToDisplayString() == TypeNames.BlittableTypeAttribute))
-            {
-                return true;
-            }
             return type.IsUnattributedReferencedTypeBlittable();
         }
 
         public static bool IsUnattributedReferencedTypeBlittable(this ITypeSymbol type)
         {
-            return type switch
-            {
-                { IsReferenceType: true } => false,
-                { TypeKind: TypeKind.Pointer or TypeKind.FunctionPointer } => true,
-                { SpecialType: not SpecialType.None } => type.SpecialType.IsSpecialTypeBlittable(),
-                // Assume that type parameters that can be blittable are blittable.
-                // We'll re-evaluate blittability for generic fields of generic types at instantation time.
-                { TypeKind: TypeKind.TypeParameter } => true,
-                { IsValueType: false } => false,
-                INamedTypeSymbol { TypeKind: TypeKind.Enum, EnumUnderlyingType: { SpecialType: SpecialType enumUnderlyingType } } => enumUnderlyingType.IsSpecialTypeBlittable(),
-                _ => false
-            };
+            return type is ITypeParameterSymbol { IsReferenceType: false } or { IsUnmanagedType: true };
         }
 
-        public static bool IsSpecialTypeBlittable(this SpecialType specialType)
-            => specialType switch
-            {
-                SpecialType.System_Void
-                or SpecialType.System_SByte
-                or SpecialType.System_Byte
-                or SpecialType.System_Int16
-                or SpecialType.System_UInt16
-                or SpecialType.System_Int32
-                or SpecialType.System_UInt32
-                or SpecialType.System_Int64
-                or SpecialType.System_UInt64
-                or SpecialType.System_Single
-                or SpecialType.System_Double
-                or SpecialType.System_IntPtr
-                or SpecialType.System_UIntPtr => true,
-                _ => false
-            };
+        public static bool IsSpecialTypeBlittable(this SpecialType type)
+        {
+            return type is SpecialType.System_Void
+                    or SpecialType.System_SByte
+                    or SpecialType.System_Byte
+                    or SpecialType.System_Int16
+                    or SpecialType.System_UInt16
+                    or SpecialType.System_Int32
+                    or SpecialType.System_UInt32
+                    or SpecialType.System_Int64
+                    or SpecialType.System_UInt64
+                    or SpecialType.System_IntPtr
+                    or SpecialType.System_UIntPtr
+                    or SpecialType.System_Single
+                    or SpecialType.System_Double;
+        }
 
         public static bool IsSpecialTypePrimitive(this SpecialType specialType)
             => specialType switch
@@ -100,13 +83,13 @@ namespace Microsoft.Interop
                 or (SpecialType.System_Single, UnmanagedType.R4)
                 or (SpecialType.System_Double, UnmanagedType.R8);
 
-        public static bool IsAutoLayout(this INamedTypeSymbol type, ITypeSymbol structLayoutAttributeType)
+        public static bool IsAutoLayout(this ITypeSymbol type)
         {
             foreach (AttributeData attr in type.GetAttributes())
             {
-                if (SymbolEqualityComparer.Default.Equals(structLayoutAttributeType, attr.AttributeClass))
+                if (attr.AttributeClass.ToDisplayString() == "System.Runtime.InteropServices.StructLayoutAttribute")
                 {
-                    return (LayoutKind)(int)attr.ConstructorArguments[0].Value! == LayoutKind.Auto;
+                    return attr.ConstructorArguments.Length == 1 && (LayoutKind)(int)attr.ConstructorArguments[0].Value! == LayoutKind.Auto;
                 }
             }
             return type.IsReferenceType;
@@ -119,9 +102,7 @@ namespace Microsoft.Interop
 
         public static bool IsIntegralType(this SpecialType type)
         {
-            return type switch
-            {
-                SpecialType.System_SByte
+            return type is SpecialType.System_SByte
                 or SpecialType.System_Byte
                 or SpecialType.System_Int16
                 or SpecialType.System_UInt16
@@ -130,23 +111,7 @@ namespace Microsoft.Interop
                 or SpecialType.System_Int64
                 or SpecialType.System_UInt64
                 or SpecialType.System_IntPtr
-                or SpecialType.System_UIntPtr => true,
-                _ => false
-            };
-        }
-
-        public static bool IsExposedOutsideOfCurrentCompilation(this INamedTypeSymbol type)
-        {
-            for (; type is not null; type = type.ContainingType)
-            {
-                Accessibility accessibility = type.DeclaredAccessibility;
-
-                if (accessibility is Accessibility.Internal or Accessibility.ProtectedAndInternal or Accessibility.Private or Accessibility.Friend or Accessibility.ProtectedAndFriend)
-                {
-                    return false;
-                }
-            }
-            return true;
+                or SpecialType.System_UIntPtr;
         }
     }
 }

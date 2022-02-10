@@ -222,4 +222,7 @@
   <data name="GeneratedMarshallingAttributeInfoMissingMessage" xml:space="preserve">
     <value>The marshalling information for type '{0}' with a 'GeneratedMarshallingAttribute' could not be calculated.</value>
   </data>
+  <data name="RuntimeMarshallingMustBeDisabled" xml:space="preserve">
+    <value>Runtime marshalling must be disabled in this project by applying the 'System.Runtime.InteropServices.DisableRuntimeMarshallingAttribute' to the assembly to enable marshalling this type.</value>
+  </data>
 </root>

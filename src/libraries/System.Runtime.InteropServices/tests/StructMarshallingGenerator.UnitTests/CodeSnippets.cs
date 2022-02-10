@@ -87,7 +87,41 @@ partial struct Outer
 [StructLayout(LayoutKind.Sequential)]
 partial struct Inner
 {
+    public S s;
+}
+
+[NativeMarshalling(typeof(Native))]
+struct S
+{
     public bool b;
+}
+
+struct Native
+{
+    private int i;
+    public Native(S s)
+    {
+        i = s.b ? 1 : 0;
+    }
+
+    public S ToManaged() => new S { b = i != 0 };
+}
+";
+
+        public static readonly string SimpleBlittableGeneratedStructField = @"
+using System.Runtime.InteropServices;
+[GeneratedMarshalling]
+[StructLayout(LayoutKind.Sequential)]
+partial struct Outer
+{
+    public Inner b;
+}
+
+[GeneratedMarshalling]
+[StructLayout(LayoutKind.Sequential)]
+partial struct Inner
+{
+    public int b;
 }
 ";
 
