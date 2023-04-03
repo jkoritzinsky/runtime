@@ -12,10 +12,11 @@
 #define __MDInternalRO__h__
 
 #include "metamodel.h"
+#include "../enumcommon.h"
 
 #ifdef FEATURE_METADATA_INTERNAL_APIS
 
-class MDInternalRO : public IMDInternalImport, IMDCommon
+class MDInternalRO : public IMDInternalImport, IMDCommon, private HENUMInternalManipulator
 {
 public:
 
@@ -97,10 +98,6 @@ public:
         mdTypeDef       td,                 // [IN] TypeDef over which to scope the enumeration.
         HENUMInternal   *phEnumBody,        // [OUT] buffer to fill for enumerator data for MethodBody tokens.
         HENUMInternal   *phEnumDecl);       // [OUT] buffer to fill for enumerator data for MethodDecl tokens.
-
-    STDMETHODIMP_(ULONG) EnumMethodImplGetCount(
-        HENUMInternal   *phEnumBody,        // [IN] MethodBody enumerator.
-        HENUMInternal   *phEnumDecl);       // [IN] MethodDecl enumerator.
 
     STDMETHODIMP_(void) EnumMethodImplReset(
         HENUMInternal   *phEnumBody,        // [IN] MethodBody enumerator.
@@ -789,6 +786,34 @@ public:
     {
         m_LiteWeightStgdb.m_MiniMd.SetVerifiedByTrustedSource(fVerified);
         return S_OK;
+    }
+public:
+    STDMETHOD_(ULONG, EnumMethodImplGetCount)(
+        HENUMInternal   *phEnumBody,        // [IN] MethodBody enumerator.
+        HENUMInternal   *phEnumDecl)        // [IN] MethodDecl enumerator.
+    {
+        return HENUMInternalManipulator::EnumMethodImplGetCount(phEnumBody, phEnumDecl);
+    }
+    STDMETHOD_(bool, EnumNext)(
+        HENUMInternal *phEnum,              // [IN] the enumerator to retrieve information
+        mdToken     *ptk)                   // [OUT] token to scope the search
+    {
+        return HENUMInternalManipulator::EnumNext(phEnum, ptk);
+    }
+    STDMETHOD_(ULONG, EnumGetCount)(
+        HENUMInternal *phEnum)        // [IN] the enumerator to retrieve information
+    {
+        return HENUMInternalManipulator::EnumGetCount(phEnum);
+    }
+    STDMETHOD_(void, EnumReset)(
+        HENUMInternal *phEnum)        // [IN] the enumerator to retrieve information
+    {
+        return HENUMInternalManipulator::EnumReset(phEnum);
+    }
+    STDMETHOD_(void, EnumClose)(
+        HENUMInternal *phEnum)        // [IN] the enumerator to retrieve information
+    {
+        return HENUMInternalManipulator::EnumClose(phEnum);
     }
 };  // class MDInternalRO
 

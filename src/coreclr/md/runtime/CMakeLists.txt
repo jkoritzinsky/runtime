@@ -34,6 +34,7 @@ set(MDRUNTIME_HEADERS
   metamodelcolumndefs.h
   mdinternaldisp.h
   mdinternalro.h
+  ../enumcommon.h
 )
 
 convert_to_absolute_path(MDRUNTIME_HEADERS ${MDRUNTIME_HEADERS})

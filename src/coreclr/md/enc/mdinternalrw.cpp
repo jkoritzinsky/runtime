@@ -847,23 +847,6 @@ ErrExit:
 } // MDInternalRW::EnumMethodImplInit
 
 //*****************************************************************************
-// get the number of MethodImpls in a scope
-//*****************************************************************************
-ULONG MDInternalRW::EnumMethodImplGetCount(
-    HENUMInternal   *phEnumBody,        // [IN] MethodBody enumerator.
-    HENUMInternal   *phEnumDecl)        // [IN] MethodDecl enumerator.
-{
-    _ASSERTE((phEnumBody->m_tkKind >> 24) == TBL_MethodImpl  &&
-             (phEnumDecl->m_tkKind >> 24) == TBL_MethodImpl);
-    _ASSERTE(phEnumBody->m_EnumType == MDDynamicArrayEnum &&
-             phEnumDecl->m_EnumType == MDDynamicArrayEnum);
-    _ASSERTE(phEnumBody->m_ulCount == phEnumDecl->m_ulCount);
-
-    return phEnumBody->m_ulCount;
-} // MDInternalRW::EnumMethodImplGetCount
-
-
-//*****************************************************************************
 // enumerator for MethodImpl.
 //*****************************************************************************
 __checkReturn
