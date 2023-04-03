@@ -74,6 +74,36 @@ ErrExit:
     return (hr);
 }
 
+static HMODULE GetDNMDModule()
+{
+    CONTRACTL {
+        NOTHROW;
+        GC_NOTRIGGER;
+    } CONTRACTL_END;
+
+    static HMODULE hMod = NULL;
+    WStringHolder dnmdPath = nullptr;
+    if (hMod != INVALID_HANDLE_VALUE && CLRConfig::GetConfigValue(CLRConfig::INTERNAL_MD_DNMDPath, &dnmdPath) == S_OK)
+    {
+        if (dnmdPath != nullptr)
+        {
+            hMod = WszLoadLibraryEx(dnmdPath, NULL, LOAD_WITH_ALTERED_SEARCH_PATH);
+            if (hMod == NULL)
+            {
+                DWORD dwLastError = GetLastError();
+                if (dwLastError == ERROR_MOD_NOT_FOUND)
+                {
+                    // If the module is not found, then we should not try to load it again.
+                    // So, we set the handle to INVALID_HANDLE_VALUE
+                    hMod = (HMODULE)INVALID_HANDLE_VALUE;
+                }
+            }
+        }
+    }
+
+    return hMod == INVALID_HANDLE_VALUE ? NULL : hMod;
+}
+
 // ---------------------------------------------------------------------------
 // %%Function: GetMetaDataInternalInterface
 // This function gets the IMDInternalImport given the metadata on memory.
@@ -92,6 +122,18 @@ STDAPI DLLEXPORT GetMetaDataInternalInterface(
         PRECONDITION(CheckPointer(pData));
         PRECONDITION(CheckPointer(ppv));
     } CONTRACTL_END;
+
+    HMODULE dnmdModule = GetDNMDModule();
+    if (dnmdModule && riid == IID_IMDInternalImport)
+    {
+        typedef HRESULT (*CreateInternalImportOnMemoryPtr)(void const*, ULONG, IMDInternalImport** ppInternalImport);
+        CreateInternalImportOnMemoryPtr pfnCreateInternalImportOnMemory = (CreateInternalImportOnMemoryPtr)GetProcAddress(dnmdModule, "CreateInternalImportOnMemory");
+        _ASSERTE(pfnCreateInternalImportOnMemory != NULL);
+        if (pfnCreateInternalImportOnMemory != NULL)
+        {
+            return pfnCreateInternalImportOnMemory(pData, cbData, (IMDInternalImport**)ppv);
+        }
+    }
 
     return GetMDInternalInterface(pData, cbData, flags, riid, ppv);
 }
