@@ -28,3 +28,6 @@ EXPORTS
 
         ; Used by profilers
         MetaDataGetDispenser
+
+        ; Used by DNMD testing
+        GetMetaDataInternalInterface
