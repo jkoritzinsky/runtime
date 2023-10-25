@@ -468,9 +468,9 @@ unsigned UnwindCodesBase::GetCodeSizeFromUnwindCodes(bool isProlog)
         BYTE b1 = *pCodes;
         if (IsEndCode(b1))
         {
-            break; // We hit an "end" code; we're done
+            break;                          // We hit an "end" code; we're done
         }
-        size += 4; // All codes represent 4 byte instructions.
+        size += 4;                          // All codes represent 4 byte instructions.
         pCodes += GetUnwindSizeFromUnwindHeader(b1);
         assert(pCodes - pCodesStart < 256); // 255 is the absolute maximum number of code bytes allowed
     }
@@ -516,7 +516,7 @@ void DumpUnwindInfo(Compiler*         comp,
     // pHeader is not guaranteed to be aligned. We put four 0xFF end codes at the end
     // to provide padding, and round down to get a multiple of 4 bytes in size.
     DWORD UNALIGNED* pdw = (DWORD UNALIGNED*)pHeader;
-    DWORD dw;
+    DWORD            dw;
 
     dw = *pdw++;
 
@@ -1094,7 +1094,7 @@ void UnwindPrologCodes::SetFinalSize(int headerBytes, int epilogBytes)
 
     int prologBytes = Size();
 
-    EnsureSize(headerBytes + prologBytes + epilogBytes + 3); // 3 = padding bytes for alignment
+    EnsureSize(headerBytes + prologBytes + epilogBytes + 3);      // 3 = padding bytes for alignment
 
     upcUnwindBlockSlot = upcCodeSlot - headerBytes - epilogBytes; // Index of the first byte of the unwind header
 
@@ -1149,9 +1149,9 @@ void UnwindPrologCodes::AppendEpilog(UnwindEpilogInfo* pEpi)
 
     int epiSize = pEpi->Size();
     memcpy_s(&upcMem[upcEpilogSlot], upcMemSize - upcEpilogSlot - 3, pEpi->GetCodes(),
-             epiSize); // -3 to avoid writing to the alignment padding
-    assert(pEpi->GetStartIndex() ==
-           upcEpilogSlot - upcCodeSlot); // Make sure we copied it where we expected to copy it.
+             epiSize);                                            // -3 to avoid writing to the alignment padding
+    assert(pEpi->GetStartIndex() == upcEpilogSlot - upcCodeSlot); // Make sure we copied it where we expected to copy
+                                                                  // it.
 
     upcEpilogSlot += epiSize;
     assert(upcEpilogSlot <= upcMemSize - 3);
@@ -1681,7 +1681,7 @@ void UnwindFragmentInfo::MergeCodes()
                                                                       // Words or Extended Epilog Count?
                          + epilogScopes                               // One DWORD per epilog scope, for EBit = 0
                          ) *
-                        sizeof(DWORD); // convert it to bytes
+                        sizeof(DWORD);                                // convert it to bytes
 
     DWORD finalSize = headerBytes + codeBytes; // Size of actual unwind codes, aligned up to 4-byte words,
                                                // including end padding if necessary
@@ -1738,8 +1738,8 @@ void UnwindFragmentInfo::Finalize(UNATIVE_OFFSET functionLength)
     noway_assert((functionLength & 3) == 0);
     DWORD headerFunctionLength = functionLength / 4;
 
-    DWORD headerVers = 0; // Version of the unwind info is zero. No other version number is currently defined.
-    DWORD headerXBit = 0; // We never generate "exception data", but the VM might add some.
+    DWORD headerVers = 0;    // Version of the unwind info is zero. No other version number is currently defined.
+    DWORD headerXBit = 0;    // We never generate "exception data", but the VM might add some.
     DWORD headerEBit;
     DWORD headerEpilogCount; // This depends on how we set headerEBit.
     DWORD headerCodeWords;
@@ -1772,8 +1772,8 @@ void UnwindFragmentInfo::Finalize(UNATIVE_OFFSET functionLength)
 
     // Start writing the header
 
-    noway_assert(headerFunctionLength <=
-                 0x3FFFFU); // We create fragments to prevent this from firing, so if it hits, we have an internal error
+    noway_assert(headerFunctionLength <= 0x3FFFFU); // We create fragments to prevent this from firing, so if it hits,
+                                                    // we have an internal error
 
     if ((headerEpilogCount > UW_MAX_EPILOG_COUNT) || (headerCodeWords > UW_MAX_CODE_WORDS_COUNT))
     {

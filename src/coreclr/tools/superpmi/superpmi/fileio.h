@@ -4,20 +4,14 @@
 #ifndef _FileIO
 #define _FileIO
 
-template<typename HandleSpec>
+template <typename HandleSpec>
 struct HandleWrapper
 {
     using HandleType = typename HandleSpec::Type;
 
-    HandleWrapper()
-        : m_handle(HandleSpec::Invalid())
-    {
-    }
+    HandleWrapper() : m_handle(HandleSpec::Invalid()) {}
 
-    explicit HandleWrapper(HandleType handle)
-        : m_handle(handle)
-    {
-    }
+    explicit HandleWrapper(HandleType handle) : m_handle(handle) {}
 
     ~HandleWrapper()
     {
@@ -28,11 +22,10 @@ struct HandleWrapper
         }
     }
 
-    HandleWrapper(const HandleWrapper&) = delete;
+    HandleWrapper(const HandleWrapper&)      = delete;
     HandleWrapper& operator=(HandleWrapper&) = delete;
 
-    HandleWrapper(HandleWrapper&& hw) noexcept
-        : m_handle(hw.m_handle)
+    HandleWrapper(HandleWrapper&& hw) noexcept : m_handle(hw.m_handle)
     {
         hw.m_handle = HandleSpec::Invalid();
     }
@@ -42,13 +35,19 @@ struct HandleWrapper
         if (m_handle != HandleSpec::Invalid())
             HandleSpec::Close(m_handle);
 
-        m_handle = hw.m_handle;
+        m_handle    = hw.m_handle;
         hw.m_handle = HandleSpec::Invalid();
         return *this;
     }
 
-    bool IsValid() { return m_handle != HandleSpec::Invalid(); }
-    HandleType Get() { return m_handle; }
+    bool IsValid()
+    {
+        return m_handle != HandleSpec::Invalid();
+    }
+    HandleType Get()
+    {
+        return m_handle;
+    }
 
 private:
     HandleType m_handle;
@@ -57,41 +56,54 @@ private:
 struct FileHandleSpec
 {
     using Type = HANDLE;
-    static HANDLE Invalid() { return INVALID_HANDLE_VALUE; }
-    static void Close(HANDLE h) { CloseHandle(h); }
+    static HANDLE Invalid()
+    {
+        return INVALID_HANDLE_VALUE;
+    }
+    static void Close(HANDLE h)
+    {
+        CloseHandle(h);
+    }
 };
 
 struct FileMappingHandleSpec
 {
     using Type = HANDLE;
-    static HANDLE Invalid() { return nullptr; }
-    static void Close(HANDLE h) { CloseHandle(h); }
+    static HANDLE Invalid()
+    {
+        return nullptr;
+    }
+    static void Close(HANDLE h)
+    {
+        CloseHandle(h);
+    }
 };
 
 struct FileViewHandleSpec
 {
     using Type = LPVOID;
-    static LPVOID Invalid() { return nullptr; }
-    static void Close(LPVOID p) { UnmapViewOfFile(p); }
+    static LPVOID Invalid()
+    {
+        return nullptr;
+    }
+    static void Close(LPVOID p)
+    {
+        UnmapViewOfFile(p);
+    }
 };
 
-typedef HandleWrapper<FileHandleSpec> FileHandle;
+typedef HandleWrapper<FileHandleSpec>        FileHandle;
 typedef HandleWrapper<FileMappingHandleSpec> FileMappingHandle;
-typedef HandleWrapper<FileViewHandleSpec> FileViewHandle;
+typedef HandleWrapper<FileViewHandleSpec>    FileViewHandle;
 
 class FileWriter
 {
     FileHandle m_file;
 
-    FileWriter(FileHandle file)
-        : m_file(std::move(file))
-    {
-    }
+    FileWriter(FileHandle file) : m_file(std::move(file)) {}
 
 public:
-    FileWriter()
-    {
-    }
+    FileWriter() {}
 
     bool Printf(const char* fmt, ...);
 
@@ -100,12 +112,12 @@ public:
 
 class FileLineReader
 {
-    FileHandle m_file;
+    FileHandle        m_file;
     FileMappingHandle m_fileMapping;
-    FileViewHandle m_view;
+    FileViewHandle    m_view;
 
-    char* m_cur;
-    char* m_end;
+    char*             m_cur;
+    char*             m_end;
     std::vector<char> m_currentLine;
 
     FileLineReader(FileHandle file, FileMappingHandle fileMapping, FileViewHandle view, size_t size)
@@ -118,14 +130,13 @@ class FileLineReader
     }
 
 public:
-    FileLineReader()
-        : m_cur(nullptr)
-        , m_end(nullptr)
-    {
-    }
+    FileLineReader() : m_cur(nullptr), m_end(nullptr) {}
 
-    bool AdvanceLine();
-    const char* GetCurrentLine() { return m_currentLine.data(); }
+    bool        AdvanceLine();
+    const char* GetCurrentLine()
+    {
+        return m_currentLine.data();
+    }
 
     static bool Open(const char* path, FileLineReader* fr);
 };

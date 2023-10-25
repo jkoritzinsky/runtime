@@ -37,7 +37,7 @@ XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 #ifndef DEBUGGABLE_GENTREE
 #ifdef DEBUG
 #define DEBUGGABLE_GENTREE 1
-#else // !DEBUG
+#else  // !DEBUG
 #define DEBUGGABLE_GENTREE 0
 #endif // !DEBUG
 #endif // !DEBUGGABLE_GENTREE
@@ -71,10 +71,10 @@ enum SpecialCodeKind
 //
 enum GenTreeOperKind
 {
-    GTK_SPECIAL = 0x00, // special operator
-    GTK_LEAF    = 0x01, // leaf    operator
-    GTK_UNOP    = 0x02, // unary   operator
-    GTK_BINOP   = 0x04, // binary  operator
+    GTK_SPECIAL = 0x00,                                             // special operator
+    GTK_LEAF    = 0x01,                                             // leaf    operator
+    GTK_UNOP    = 0x02,                                             // unary   operator
+    GTK_BINOP   = 0x04,                                             // binary  operator
 
     GTK_KINDMASK = (GTK_SPECIAL | GTK_LEAF | GTK_UNOP | GTK_BINOP), // operator kind mask
     GTK_SMPOP    = (GTK_UNOP | GTK_BINOP),
@@ -112,7 +112,7 @@ enum gtCallTypes : BYTE
     CT_HELPER,    // Jit-helper
     CT_INDIRECT,  // Indirect call
 
-    CT_COUNT // fake entry (must be last)
+    CT_COUNT      // fake entry (must be last)
 };
 
 enum class ExceptionSetFlags : uint32_t
@@ -156,10 +156,10 @@ inline ExceptionSetFlags& operator&=(ExceptionSetFlags& a, ExceptionSetFlags b)
 
 #ifdef DEBUG
 /*****************************************************************************
-*
-*  TargetHandleTypes are used to determine the type of handle present inside GenTreeIntCon node.
-*  The values are such that they don't overlap with helper's or user function's handle.
-*/
+ *
+ *  TargetHandleTypes are used to determine the type of handle present inside GenTreeIntCon node.
+ *  The values are such that they don't overlap with helper's or user function's handle.
+ */
 enum TargetHandleType : BYTE
 {
     THT_Unknown                   = 2,
@@ -206,13 +206,9 @@ class AssertionInfo
     }
 
 public:
-    AssertionInfo() : AssertionInfo(false, 0)
-    {
-    }
+    AssertionInfo() : AssertionInfo(false, 0) {}
 
-    AssertionInfo(AssertionIndex assertionIndex) : AssertionInfo(false, assertionIndex)
-    {
-    }
+    AssertionInfo(AssertionIndex assertionIndex) : AssertionInfo(false, assertionIndex) {}
 
     static AssertionInfo ForNextEdge(AssertionIndex assertionIndex)
     {
@@ -314,9 +310,7 @@ class FieldSeqStore
     JitHashTable<CORINFO_FIELD_HANDLE, JitPtrKeyFuncs<CORINFO_FIELD_STRUCT_>, FieldSeq> m_map;
 
 public:
-    FieldSeqStore(CompAllocator alloc) : m_map(alloc)
-    {
-    }
+    FieldSeqStore(CompAllocator alloc) : m_map(alloc) {}
 
     FieldSeq* Create(CORINFO_FIELD_HANDLE fieldHnd, ssize_t offset, FieldSeq::FieldKind fieldKind);
 
@@ -725,8 +719,8 @@ struct GenTree
 #define GET_CSE_INDEX(x) (((x) > 0) ? x : -(x))
 #define TO_CSE_DEF(x) (-(x))
 
-    signed char gtCSEnum; // 0 or the CSE index (negated if def)
-                          // valid only for CSE expressions
+    signed char gtCSEnum;     // 0 or the CSE index (negated if def)
+                              // valid only for CSE expressions
 
     unsigned char gtLIRFlags; // Used for nodes that are in LIR. See LIR::Flags in lir.h for the various flags.
 
@@ -841,7 +835,7 @@ public:
 private:
     genRegTag gtRegTag; // What is in _gtRegNum?
 
-#endif // DEBUG
+#endif                  // DEBUG
 
 private:
     // This stores the register assigned to the node. If a register is not assigned, _gtRegNum is set to REG_NA.
@@ -967,7 +961,7 @@ public:
 
     regMaskSmall gtRsvdRegs; // set of fixed trashed  registers
 
-    unsigned AvailableTempRegCount(regMaskTP mask = (regMaskTP)-1) const;
+    unsigned  AvailableTempRegCount(regMaskTP mask = (regMaskTP)-1) const;
     regNumber GetSingleTempReg(regMaskTP mask = (regMaskTP)-1);
     regNumber ExtractTempReg(regMaskTP mask = (regMaskTP)-1);
 
@@ -1016,7 +1010,7 @@ public:
     unsigned gtTreeID;
     unsigned gtSeqNum; // liveness traversal order within the current statement
 
-    int gtUseNum; // use-ordered traversal within the function
+    int gtUseNum;      // use-ordered traversal within the function
 #endif
 
     static const unsigned char gtOperKindTable[];
@@ -1525,7 +1519,7 @@ public:
 #if !defined(TARGET_64BIT)
                 || (gtOper == GT_ADD_HI) || (gtOper == GT_SUB_HI)
 #endif
-                    );
+        );
     }
 
     bool OperMayOverflow() const
@@ -1760,9 +1754,9 @@ public:
         return (DebugOperKind() & DBK_NOTLIR) == 0;
     }
 
-    bool OperSupportsReverseOpEvalOrder(Compiler* comp) const;
+    bool        OperSupportsReverseOpEvalOrder(Compiler* comp) const;
     static bool RequiresNonNullOp2(genTreeOps oper);
-    bool IsValidCallArgument();
+    bool        IsValidCallArgument();
 #endif // DEBUG
 
     inline bool IsIntegralConst(ssize_t constVal) const;
@@ -1863,7 +1857,7 @@ public:
     bool OperRequiresCallFlag(Compiler* comp) const;
 
     ExceptionSetFlags OperExceptions(Compiler* comp);
-    bool OperMayThrow(Compiler* comp);
+    bool              OperMayThrow(Compiler* comp);
 
     bool OperRequiresGlobRefFlag(Compiler* comp) const;
 
@@ -1900,7 +1894,7 @@ public:
 
     static bool Compare(GenTree* op1, GenTree* op2, bool swapOK = false);
 
-//---------------------------------------------------------------------
+    //---------------------------------------------------------------------
 
 #if defined(DEBUG) || CALL_ARG_STATS || COUNT_BASIC_BLOCKS || COUNT_LOOPS || EMITTER_STATS || MEASURE_MEM_ALLOC ||     \
     NODEBASH_STATS || MEASURE_NODE_SIZE || COUNT_AST_OPERS || DUMP_FLOWGRAPHS
@@ -1944,8 +1938,8 @@ public:
     }
 
     template <typename T>
-    void BashToConst(T value, var_types type = TYP_UNDEF);
-    void BashToZeroConst(var_types type);
+    void           BashToConst(T value, var_types type = TYP_UNDEF);
+    void           BashToZeroConst(var_types type);
     GenTreeLclVar* BashToLclVar(Compiler* comp, unsigned lclNum);
 
 #if NODEBASH_STATS
@@ -1983,7 +1977,7 @@ public:
                       unsigned*             pSize     = nullptr);
 
     GenTreeLclVarCommon* IsImplicitByrefParameterValuePreMorph(Compiler* compiler);
-    GenTreeLclVar* IsImplicitByrefParameterValuePostMorph(Compiler* compiler, GenTree** addr);
+    GenTreeLclVar*       IsImplicitByrefParameterValuePostMorph(Compiler* compiler, GenTree** addr);
 
     // Determine whether this is an assignment tree of the form X = X (op) Y,
     // where Y is an arbitrary tree, and X is a lclVar.
@@ -2251,9 +2245,7 @@ public:
     // we can't synthesize an assignment operator.
     // TODO-Cleanup: Could change this w/o liveset on tree nodes
     // (This is also necessary for the VTable trick.)
-    GenTree()
-    {
-    }
+    GenTree() {}
 
     // Returns an iterator that will produce the use edge to each operand of this node. Differs
     // from the sequence of nodes produced by a loop over `GetChild` in its handling of call, phi,
@@ -2345,14 +2337,12 @@ private:
 
 #if DEBUGGABLE_GENTREE
     // In DEBUG builds, add a dummy virtual method, to give the debugger run-time type information.
-    virtual void DummyVirt()
-    {
-    }
+    virtual void DummyVirt() {}
 
     typedef void* VtablePtr;
 
     VtablePtr GetVtableForOper(genTreeOps oper);
-    void SetVtableForOper(genTreeOps oper);
+    void      SetVtableForOper(genTreeOps oper);
 
     static VtablePtr s_vtablesForOpers[GT_COUNT];
     static VtablePtr s_vtableForOp;
@@ -2424,9 +2414,7 @@ struct GenTreePhi final : public GenTree
         Use* m_use;
 
     public:
-        UseIterator(Use* use) : m_use(use)
-        {
-        }
+        UseIterator(Use* use) : m_use(use) {}
 
         Use& operator*() const
         {
@@ -2460,9 +2448,7 @@ struct GenTreePhi final : public GenTree
         Use* m_uses;
 
     public:
-        UseList(Use* uses) : m_uses(uses)
-        {
-        }
+        UseList(Use* uses) : m_uses(uses) {}
 
         UseIterator begin() const
         {
@@ -2477,9 +2463,7 @@ struct GenTreePhi final : public GenTree
 
     Use* gtUses;
 
-    GenTreePhi(var_types type) : GenTree(GT_PHI, type), gtUses(nullptr)
-    {
-    }
+    GenTreePhi(var_types type) : GenTree(GT_PHI, type), gtUses(nullptr) {}
 
     UseList Uses()
     {
@@ -2526,9 +2510,7 @@ struct GenTreePhi final : public GenTree
     }
 
 #if DEBUGGABLE_GENTREE
-    GenTreePhi() : GenTree()
-    {
-    }
+    GenTreePhi() : GenTree() {}
 #endif
 };
 
@@ -2605,9 +2587,7 @@ struct GenTreeFieldList : public GenTree
         Use* use;
 
     public:
-        UseIterator(Use* use) : use(use)
-        {
-        }
+        UseIterator(Use* use) : use(use) {}
 
         Use& operator*()
         {
@@ -2641,9 +2621,7 @@ struct GenTreeFieldList : public GenTree
         Use* m_tail;
 
     public:
-        UseList() : m_head(nullptr), m_tail(nullptr)
-        {
-        }
+        UseList() : m_head(nullptr), m_tail(nullptr) {}
 
         Use* GetHead() const
         {
@@ -2826,12 +2804,12 @@ class GenTreeUseEdgeIterator final
     void AdvanceConditional();
 
     template <bool ReverseOperands>
-    void           AdvanceBinOp();
-    void           SetEntryStateForBinOp();
+    void AdvanceBinOp();
+    void SetEntryStateForBinOp();
 
     // The advance function for call nodes
     template <int state>
-    void          AdvanceCall();
+    void AdvanceCall();
 
 #if defined(FEATURE_SIMD) || defined(FEATURE_HW_INTRINSICS)
     void AdvanceMultiOp();
@@ -2890,14 +2868,10 @@ class GenTreeOperandIterator final
 
     GenTreeUseEdgeIterator m_useEdges;
 
-    GenTreeOperandIterator(GenTree* node) : m_useEdges(node)
-    {
-    }
+    GenTreeOperandIterator(GenTree* node) : m_useEdges(node) {}
 
 public:
-    GenTreeOperandIterator() : m_useEdges()
-    {
-    }
+    GenTreeOperandIterator() : m_useEdges() {}
 
     inline GenTree* operator*()
     {
@@ -2953,9 +2927,7 @@ protected:
     }
 
 #if DEBUGGABLE_GENTREE
-    GenTreeUnOp() : GenTree(), gtOp1(nullptr)
-    {
-    }
+    GenTreeUnOp() : GenTree(), gtOp1(nullptr) {}
 #endif
 };
 
@@ -3011,9 +2983,7 @@ struct GenTreeOp : public GenTreeUnOp
 #endif
 
 #if DEBUGGABLE_GENTREE
-    GenTreeOp() : GenTreeUnOp(), gtOp2(nullptr)
-    {
-    }
+    GenTreeOp() : GenTreeUnOp(), gtOp2(nullptr) {}
 #endif
 };
 
@@ -3021,24 +2991,20 @@ struct GenTreeVal : public GenTree
 {
     size_t gtVal1;
 
-    GenTreeVal(genTreeOps oper, var_types type, ssize_t val) : GenTree(oper, type), gtVal1(val)
-    {
-    }
+    GenTreeVal(genTreeOps oper, var_types type, ssize_t val) : GenTree(oper, type), gtVal1(val) {}
 #if DEBUGGABLE_GENTREE
-    GenTreeVal() : GenTree()
-    {
-    }
+    GenTreeVal() : GenTree() {}
 #endif
 };
 
 struct GenTreeIntConCommon : public GenTree
 {
-    inline INT64 LngValue() const;
-    inline void SetLngValue(INT64 val);
+    inline INT64   LngValue() const;
+    inline void    SetLngValue(INT64 val);
     inline ssize_t IconValue() const;
-    inline void SetIconValue(ssize_t val);
-    inline INT64 IntegralValue() const;
-    inline void SetIntegralValue(int64_t value);
+    inline void    SetIconValue(ssize_t val);
+    inline INT64   IntegralValue() const;
+    inline void    SetIntegralValue(int64_t value);
 
     template <typename T>
     inline void SetValueTruncating(T value);
@@ -3081,9 +3047,7 @@ struct GenTreeIntConCommon : public GenTree
 #endif
 
 #if DEBUGGABLE_GENTREE
-    GenTreeIntConCommon() : GenTree()
-    {
-    }
+    GenTreeIntConCommon() : GenTree() {}
 #endif
 };
 
@@ -3094,13 +3058,9 @@ struct GenTreePhysReg : public GenTree
     // GetRegNum() indicates the destination (and can be changed)
     // whereas reg indicates the source
     regNumber gtSrcReg;
-    GenTreePhysReg(regNumber r, var_types type = TYP_I_IMPL) : GenTree(GT_PHYSREG, type), gtSrcReg(r)
-    {
-    }
+    GenTreePhysReg(regNumber r, var_types type = TYP_I_IMPL) : GenTree(GT_PHYSREG, type), gtSrcReg(r) {}
 #if DEBUGGABLE_GENTREE
-    GenTreePhysReg() : GenTree()
-    {
-    }
+    GenTreePhysReg() : GenTree() {}
 #endif
 };
 
@@ -3157,9 +3117,7 @@ struct GenTreeIntCon : public GenTreeIntConCommon
     void FixupInitBlkValue(var_types type);
 
 #if DEBUGGABLE_GENTREE
-    GenTreeIntCon() : GenTreeIntConCommon()
-    {
-    }
+    GenTreeIntCon() : GenTreeIntConCommon() {}
 #endif
 };
 
@@ -3183,9 +3141,7 @@ struct GenTreeLngCon : public GenTreeIntConCommon
         SetLngValue(val);
     }
 #if DEBUGGABLE_GENTREE
-    GenTreeLngCon() : GenTreeIntConCommon()
-    {
-    }
+    GenTreeLngCon() : GenTreeIntConCommon() {}
 #endif
 };
 
@@ -3320,9 +3276,7 @@ public:
         SetDconValue(val);
     }
 #if DEBUGGABLE_GENTREE
-    GenTreeDblCon() : GenTree()
-    {
-    }
+    GenTreeDblCon() : GenTree() {}
 #endif
 };
 
@@ -3348,9 +3302,7 @@ struct GenTreeStrCon : public GenTree
     {
     }
 #if DEBUGGABLE_GENTREE
-    GenTreeStrCon() : GenTree()
-    {
-    }
+    GenTreeStrCon() : GenTree() {}
 #endif
 };
 
@@ -3391,14 +3343,10 @@ class SsaNumInfo final
 
     int m_value;
 
-    SsaNumInfo(int value) : m_value(value)
-    {
-    }
+    SsaNumInfo(int value) : m_value(value) {}
 
 public:
-    SsaNumInfo() : m_value(SsaConfig::RESERVED_SSA_NUM)
-    {
-    }
+    SsaNumInfo() : m_value(SsaConfig::RESERVED_SSA_NUM) {}
 
     bool IsSimple() const
     {
@@ -3529,9 +3477,7 @@ public:
     }
 
 #if DEBUGGABLE_GENTREE
-    GenTreeLclVarCommon() : GenTreeUnOp()
-    {
-    }
+    GenTreeLclVarCommon() : GenTreeUnOp() {}
 #endif
 };
 
@@ -3668,7 +3614,7 @@ public:
     }
 
     unsigned int GetFieldCount(Compiler* compiler) const;
-    var_types GetFieldTypeByIndex(Compiler* compiler, unsigned idx);
+    var_types    GetFieldTypeByIndex(Compiler* compiler, unsigned idx);
 
     bool IsNeverNegative(Compiler* comp) const;
 
@@ -3707,8 +3653,8 @@ public:
     }
 #endif
 
-    GenTreeLclVar(genTreeOps oper,
-                  var_types  type,
+    GenTreeLclVar(genTreeOps      oper,
+                  var_types       type,
                   unsigned lclNum DEBUGARG(IL_OFFSET ilOffs = BAD_IL_OFFSET) DEBUGARG(bool largeNode = false))
         : GenTreeLclVarCommon(oper, type, lclNum DEBUGARG(largeNode)) DEBUGARG(gtLclILoffs(ilOffs))
     {
@@ -3721,9 +3667,7 @@ public:
     }
 
 #if DEBUGGABLE_GENTREE
-    GenTreeLclVar() : GenTreeLclVarCommon()
-    {
-    }
+    GenTreeLclVar() : GenTreeLclVarCommon() {}
 #endif
 };
 
@@ -3779,9 +3723,7 @@ public:
 #endif // TARGET_ARM
 
 #if DEBUGGABLE_GENTREE
-    GenTreeLclFld() : GenTreeLclVarCommon()
-    {
-    }
+    GenTreeLclFld() : GenTreeLclVarCommon() {}
 #endif
 };
 
@@ -3831,9 +3773,7 @@ struct GenTreeCast : public GenTreeOp
         gtFlags |= fromUnsigned ? GTF_UNSIGNED : GTF_EMPTY;
     }
 #if DEBUGGABLE_GENTREE
-    GenTreeCast() : GenTreeOp()
-    {
-    }
+    GenTreeCast() : GenTreeOp() {}
 #endif
 
     bool IsZeroExtending()
@@ -3880,9 +3820,7 @@ struct GenTreeBox : public GenTreeUnOp
     {
     }
 #if DEBUGGABLE_GENTREE
-    GenTreeBox() : GenTreeUnOp()
-    {
-    }
+    GenTreeBox() : GenTreeUnOp() {}
 #endif
 
     bool WasCloned()
@@ -3924,9 +3862,7 @@ public:
     }
 
 #if DEBUGGABLE_GENTREE
-    GenTreeFieldAddr() : GenTreeUnOp()
-    {
-    }
+    GenTreeFieldAddr() : GenTreeUnOp() {}
 #endif
 
     // The object this field belongs to. Will be "nullptr" for static fields.
@@ -3994,14 +3930,10 @@ struct GenTreeColon : public GenTreeOp
     }
 
 #if DEBUGGABLE_GENTREE
-    GenTreeColon() : GenTreeOp()
-    {
-    }
+    GenTreeColon() : GenTreeOp() {}
 #endif
 
-    GenTreeColon(var_types typ, GenTree* thenNode, GenTree* elseNode) : GenTreeOp(GT_COLON, typ, elseNode, thenNode)
-    {
-    }
+    GenTreeColon(var_types typ, GenTree* thenNode, GenTree* elseNode) : GenTreeOp(GT_COLON, typ, elseNode, thenNode) {}
 };
 
 // GenTreeConditional -- Conditionally do an operation
@@ -4018,9 +3950,7 @@ struct GenTreeConditional : public GenTreeOp
     }
 
 #if DEBUGGABLE_GENTREE
-    GenTreeConditional() : GenTreeOp()
-    {
-    }
+    GenTreeConditional() : GenTreeOp() {}
 #endif
 };
 
@@ -4456,7 +4386,7 @@ public:
     bool      IsHfaArg() const;
     bool      IsHfaRegArg() const;
     var_types GetHfaType() const;
-    void SetHfaType(var_types type, unsigned hfaSlots);
+    void      SetHfaType(var_types type, unsigned hfaSlots);
 
     regNumber GetRegNum() const
     {
@@ -4570,9 +4500,7 @@ struct NewCallArg
 #ifdef DEBUG
     void ValidateTypes();
 #else
-    void ValidateTypes()
-    {
-    }
+    void ValidateTypes() {}
 #endif
 };
 
@@ -4630,7 +4558,7 @@ public:
         m_signatureClsHnd = arg.SignatureClsHnd;
     }
 
-    CallArg(const CallArg&) = delete;
+    CallArg(const CallArg&)      = delete;
     CallArg& operator=(CallArg&) = delete;
 
     // clang-format off
@@ -4708,15 +4636,15 @@ class CallArgs
     bool m_alignmentDone : 1;
 #endif
 
-    void AddedWellKnownArg(WellKnownArg arg);
-    void RemovedWellKnownArg(WellKnownArg arg);
+    void      AddedWellKnownArg(WellKnownArg arg);
+    void      RemovedWellKnownArg(WellKnownArg arg);
     regNumber GetCustomRegister(Compiler* comp, CorInfoCallConvExtension cc, WellKnownArg arg);
-    void SplitArg(CallArg* arg, unsigned numRegs, unsigned numSlots);
-    void SortArgs(Compiler* comp, GenTreeCall* call, CallArg** sortedArgs);
+    void      SplitArg(CallArg* arg, unsigned numRegs, unsigned numSlots);
+    void      SortArgs(Compiler* comp, GenTreeCall* call, CallArg** sortedArgs);
 
 public:
     CallArgs();
-    CallArgs(const CallArgs&) = delete;
+    CallArgs(const CallArgs&)      = delete;
     CallArgs& operator=(CallArgs&) = delete;
 
     CallArg* FindByNode(GenTree* node);
@@ -4741,8 +4669,8 @@ public:
     CallArg* InsertAfterUnchecked(Compiler* comp, CallArg* after, const NewCallArg& arg);
     CallArg* InsertInstParam(Compiler* comp, GenTree* node);
     CallArg* InsertAfterThisOrFirst(Compiler* comp, const NewCallArg& arg);
-    void PushLateBack(CallArg* arg);
-    void Remove(CallArg* arg);
+    void     PushLateBack(CallArg* arg);
+    void     Remove(CallArg* arg);
 
     template <typename CopyNodeFunc>
     void InternalCopyFrom(Compiler* comp, CallArgs* other, CopyNodeFunc copyFunc);
@@ -4763,7 +4691,7 @@ public:
     bool IsNonStandard(Compiler* comp, GenTreeCall* call, CallArg* arg);
 
     GenTree* MakeTmpArgNode(Compiler* comp, CallArg* arg);
-    void SetTemp(CallArg* arg, unsigned tmpNum);
+    void     SetTemp(CallArg* arg, unsigned tmpNum);
 
     // clang-format off
     bool HasThisPointer() const { return m_hasThisPointer; }
@@ -4801,9 +4729,7 @@ public:
         CallArg* m_arg;
 
     public:
-        explicit CallArgIterator(CallArg* arg) : m_arg(arg)
-        {
-        }
+        explicit CallArgIterator(CallArg* arg) : m_arg(arg) {}
 
         // clang-format off
         CallArg& operator*() const { return *m_arg; }
@@ -4845,9 +4771,7 @@ public:
         }
 
     public:
-        explicit EarlyArgIterator(CallArg* arg) : m_arg(arg)
-        {
-        }
+        explicit EarlyArgIterator(CallArg* arg) : m_arg(arg) {}
 
         // clang-format off
         CallArg& operator*() const { return *m_arg; }
@@ -4901,7 +4825,8 @@ struct GenTreeCall final : public GenTree
     CORINFO_SIG_INFO* callSig;
 #endif
 
-    union {
+    union
+    {
         TailCallSiteInfo* tailCallInfo;
         // Only used for unmanaged calls, which cannot be tail-called
         CorInfoCallConvExtension unmgdCallConv;
@@ -5149,7 +5074,7 @@ struct GenTreeCall final : public GenTree
     }
 
     bool HasNonStandardAddedArgs(Compiler* compiler) const;
-    int GetNonStandardAddedArgCount(Compiler* compiler) const;
+    int  GetNonStandardAddedArgCount(Compiler* compiler) const;
 
     // Returns true if the ABI dictates that this call should get a ret buf
     // arg. This may be out of sync with gtArgs.HasRetBuffer during import
@@ -5558,15 +5483,17 @@ struct GenTreeCall final : public GenTree
     gtCallTypes      gtCallType : 3;   // value from the gtCallTypes enumeration
     var_types        gtReturnType : 5; // exact return type
 
-    uint8_t gtInlineInfoCount; // number of inline candidates for the given call
+    uint8_t gtInlineInfoCount;         // number of inline candidates for the given call
 
-    CORINFO_CLASS_HANDLE gtRetClsHnd; // The return type handle of the call if it is a struct; always available
-    union {
+    CORINFO_CLASS_HANDLE gtRetClsHnd;  // The return type handle of the call if it is a struct; always available
+    union
+    {
         void*                gtStubCallStubAddr; // GTF_CALL_VIRT_STUB - these are never inlined
         CORINFO_CLASS_HANDLE gtInitClsHnd;       // Used by static init helpers, represents a class they init
     };
 
-    union {
+    union
+    {
         // only used for CALLI unmanaged calls (CT_INDIRECT)
         GenTree* gtCallCookie;
 
@@ -5584,7 +5511,8 @@ struct GenTreeCall final : public GenTree
     // expression evaluated after args are placed which determines the control target
     GenTree* gtControlExpr;
 
-    union {
+    union
+    {
         CORINFO_METHOD_HANDLE gtCallMethHnd; // CT_USER_FUNC or CT_HELPER
         GenTree*              gtCallAddr;    // CT_INDIRECT
     };
@@ -5631,13 +5559,9 @@ struct GenTreeCall final : public GenTree
 
     static bool Equals(GenTreeCall* c1, GenTreeCall* c2);
 
-    GenTreeCall(var_types type) : GenTree(GT_CALL, type)
-    {
-    }
+    GenTreeCall(var_types type) : GenTree(GT_CALL, type) {}
 #if DEBUGGABLE_GENTREE
-    GenTreeCall() : GenTree()
-    {
-    }
+    GenTreeCall() : GenTree() {}
 #endif
 };
 
@@ -5660,9 +5584,7 @@ struct GenTreeCmpXchg : public GenTree
         gtFlags |= gtOpComparand->gtFlags & GTF_ALL_EFFECT;
     }
 #if DEBUGGABLE_GENTREE
-    GenTreeCmpXchg() : GenTree()
-    {
-    }
+    GenTreeCmpXchg() : GenTree() {}
 #endif
 };
 
@@ -5762,9 +5684,7 @@ struct GenTreeMultiRegOp : public GenTreeOp
     }
 
 #if DEBUGGABLE_GENTREE
-    GenTreeMultiRegOp() : GenTreeOp()
-    {
-    }
+    GenTreeMultiRegOp() : GenTreeOp() {}
 #endif
 };
 #endif // !defined(TARGET_64BIT)
@@ -5788,9 +5708,7 @@ struct GenTreeFptrVal : public GenTree
 #endif
     }
 #if DEBUGGABLE_GENTREE
-    GenTreeFptrVal() : GenTree()
-    {
-    }
+    GenTreeFptrVal() : GenTree() {}
 #endif
 };
 
@@ -5815,9 +5733,7 @@ struct GenTreeQmark : public GenTreeOp
     }
 
 #if DEBUGGABLE_GENTREE
-    GenTreeQmark() : GenTreeOp()
-    {
-    }
+    GenTreeQmark() : GenTreeOp() {}
 #endif
 };
 
@@ -5847,9 +5763,7 @@ struct GenTreeIntrinsic : public GenTreeOp
     }
 
 #if DEBUGGABLE_GENTREE
-    GenTreeIntrinsic() : GenTreeOp()
-    {
-    }
+    GenTreeIntrinsic() : GenTreeOp() {}
 #endif
 };
 
@@ -5867,9 +5781,7 @@ public:
     protected:
         GenTree** m_use;
 
-        Iterator(GenTree** use) : m_use(use)
-        {
-        }
+        Iterator(GenTree** use) : m_use(use) {}
 
     public:
         Iterator& operator++()
@@ -5892,9 +5804,7 @@ public:
     class OperandsIterator final : public Iterator
     {
     public:
-        OperandsIterator(GenTree** use) : Iterator(use)
-        {
-        }
+        OperandsIterator(GenTree** use) : Iterator(use) {}
 
         GenTree* operator*()
         {
@@ -5905,9 +5815,7 @@ public:
     class UseEdgesIterator final : public Iterator
     {
     public:
-        UseEdgesIterator(GenTree** use) : Iterator(use)
-        {
-        }
+        UseEdgesIterator(GenTree** use) : Iterator(use) {}
 
         GenTree** operator*()
         {
@@ -5952,9 +5860,7 @@ protected:
 
 public:
 #if DEBUGGABLE_GENTREE
-    GenTreeMultiOp() : GenTree()
-    {
-    }
+    GenTreeMultiOp() : GenTree() {}
 #endif
 
     GenTree*& Op(size_t index)
@@ -6249,9 +6155,7 @@ public:
     }
 
 #if DEBUGGABLE_GENTREE
-    GenTreeJitIntrinsic() : GenTreeMultiOp()
-    {
-    }
+    GenTreeJitIntrinsic() : GenTreeMultiOp() {}
 #endif
 
 protected:
@@ -6309,9 +6213,7 @@ struct GenTreeHWIntrinsic : public GenTreeJitIntrinsic
     }
 
 #if DEBUGGABLE_GENTREE
-    GenTreeHWIntrinsic() : GenTreeJitIntrinsic()
-    {
-    }
+    GenTreeHWIntrinsic() : GenTreeJitIntrinsic() {}
 #endif
 
     bool OperIsMemoryLoad(GenTree** pAddr = nullptr) const;
@@ -6429,7 +6331,8 @@ private:
 //
 struct GenTreeVecCon : public GenTree
 {
-    union {
+    union
+    {
         simd8_t  gtSimd8Val;
         simd12_t gtSimd12Val;
         simd16_t gtSimd16Val;
@@ -6480,7 +6383,7 @@ struct GenTreeVecCon : public GenTree
                 // These intrinsics are meant to set the same value to every element.
                 if ((argCnt == 1) && HandleArgForHWIntrinsicCreate<simdTypename>(node->Op(1), 0, simdVal, simdBaseType))
                 {
-// CreateScalar leaves the upper bits as zero
+                    // CreateScalar leaves the upper bits as zero
 
 #if defined(TARGET_XARCH)
                     if ((intrinsic != NI_Vector128_CreateScalar) && (intrinsic != NI_Vector256_CreateScalar) &&
@@ -6801,9 +6704,7 @@ struct GenTreeVecCon : public GenTree
     }
 
 #if DEBUGGABLE_GENTREE
-    GenTreeVecCon() : GenTree()
-    {
-    }
+    GenTreeVecCon() : GenTree() {}
 #endif
 };
 
@@ -6823,12 +6724,12 @@ struct GenTreeIndexAddr : public GenTreeOp
 
     CORINFO_CLASS_HANDLE gtStructElemClass; // If the element type is a struct, this is the struct type.
 
-    BasicBlock* gtIndRngFailBB; // Basic block to jump to for array-index-out-of-range
+    BasicBlock* gtIndRngFailBB;             // Basic block to jump to for array-index-out-of-range
 
-    var_types gtElemType;   // The element type of the array.
-    unsigned  gtElemSize;   // size of elements in the array
-    unsigned  gtLenOffset;  // The offset from the array's base address to its length.
-    unsigned  gtElemOffset; // The offset from the array's base address to its first element.
+    var_types gtElemType;                   // The element type of the array.
+    unsigned  gtElemSize;                   // size of elements in the array
+    unsigned  gtLenOffset;                  // The offset from the array's base address to its length.
+    unsigned  gtElemOffset;                 // The offset from the array's base address to its first element.
 
     GenTreeIndexAddr(GenTree*             arr,
                      GenTree*             ind,
@@ -6858,9 +6759,7 @@ struct GenTreeIndexAddr : public GenTreeOp
     }
 
 #if DEBUGGABLE_GENTREE
-    GenTreeIndexAddr() : GenTreeOp()
-    {
-    }
+    GenTreeIndexAddr() : GenTreeOp() {}
 #endif
 
     bool IsBoundsChecked() const
@@ -6898,9 +6797,7 @@ public:
     }
 
 #if DEBUGGABLE_GENTREE
-    GenTreeArrAddr() : GenTreeUnOp()
-    {
-    }
+    GenTreeArrAddr() : GenTreeUnOp() {}
 #endif
 
     GenTree*& Addr()
@@ -6945,14 +6842,10 @@ struct GenTreeArrCommon : public GenTreeUnOp
         return gtOp1;
     }
 
-    GenTreeArrCommon(genTreeOps oper, var_types type, GenTree* arrRef) : GenTreeUnOp(oper, type, arrRef)
-    {
-    }
+    GenTreeArrCommon(genTreeOps oper, var_types type, GenTree* arrRef) : GenTreeUnOp(oper, type, arrRef) {}
 
 #if DEBUGGABLE_GENTREE
-    GenTreeArrCommon() : GenTreeUnOp()
-    {
-    }
+    GenTreeArrCommon() : GenTreeUnOp() {}
 #endif
 };
 
@@ -6980,9 +6873,7 @@ public:
     }
 
 #if DEBUGGABLE_GENTREE
-    GenTreeArrLen() : GenTreeArrCommon()
-    {
-    }
+    GenTreeArrLen() : GenTreeArrCommon() {}
 #endif
 };
 
@@ -7013,9 +6904,7 @@ public:
     }
 
 #if DEBUGGABLE_GENTREE
-    GenTreeMDArr() : GenTreeArrCommon()
-    {
-    }
+    GenTreeMDArr() : GenTreeArrCommon() {}
 #endif
 };
 
@@ -7045,9 +6934,7 @@ struct GenTreeBoundsChk : public GenTreeOp
         gtFlags |= GTF_EXCEPT;
     }
 #if DEBUGGABLE_GENTREE
-    GenTreeBoundsChk() : GenTreeOp()
-    {
-    }
+    GenTreeBoundsChk() : GenTreeOp() {}
 #endif
 
     // If this check is against GT_ARR_LENGTH or GT_MDARR_LENGTH, returns array reference, else nullptr.
@@ -7087,11 +6974,11 @@ struct GenTreeArrElem : public GenTree
     GenTree*      gtArrInds[GT_ARR_MAX_RANK]; // Indices
     unsigned char gtArrRank;                  // Rank of the array
 
-    unsigned char gtArrElemSize; // !!! Caution, this is an "unsigned char", it is used only
-                                 // on the optimization path of array intrinsics.
-                                 // It stores the size of array elements WHEN it can fit
-                                 // into an "unsigned char".
-                                 // This has caused VSW 571394.
+    unsigned char gtArrElemSize;              // !!! Caution, this is an "unsigned char", it is used only
+                                              // on the optimization path of array intrinsics.
+                                              // It stores the size of array elements WHEN it can fit
+                                              // into an "unsigned char".
+                                              // This has caused VSW 571394.
 
     // Requires that "inds" is a pointer to an array of "rank" nodes for the indices.
     GenTreeArrElem(var_types type, GenTree* arr, unsigned char rank, unsigned char elemSize, GenTree** inds)
@@ -7107,9 +6994,7 @@ struct GenTreeArrElem : public GenTree
         gtFlags |= GTF_EXCEPT;
     }
 #if DEBUGGABLE_GENTREE
-    GenTreeArrElem() : GenTree()
-    {
-    }
+    GenTreeArrElem() : GenTree() {}
 #endif
 };
 
@@ -7201,9 +7086,7 @@ public:
 protected:
     friend GenTree;
     // Used only for GenTree::GetVtableForOper()
-    GenTreeAddrMode() : GenTreeOp()
-    {
-    }
+    GenTreeAddrMode() : GenTreeOp() {}
 #endif
 };
 
@@ -7237,9 +7120,7 @@ struct GenTreeIndir : public GenTreeOp
 
     unsigned Size() const;
 
-    GenTreeIndir(genTreeOps oper, var_types type, GenTree* addr, GenTree* data) : GenTreeOp(oper, type, addr, data)
-    {
-    }
+    GenTreeIndir(genTreeOps oper, var_types type, GenTree* addr, GenTree* data) : GenTreeOp(oper, type, addr, data) {}
 
     // True if this indirection is a volatile memory operation.
     bool IsVolatile() const
@@ -7263,14 +7144,10 @@ struct GenTreeIndir : public GenTreeOp
 
 #if DEBUGGABLE_GENTREE
     // Used only for GenTree::GetVtableForOper()
-    GenTreeIndir() : GenTreeOp()
-    {
-    }
+    GenTreeIndir() : GenTreeOp() {}
 #else
     // Used by XARCH codegen to construct temporary trees to pass to the emitter.
-    GenTreeIndir() : GenTreeOp(GT_NOP, TYP_UNDEF)
-    {
-    }
+    GenTreeIndir() : GenTreeOp(GT_NOP, TYP_UNDEF) {}
 #endif
 };
 
@@ -7372,9 +7249,7 @@ public:
 #if DEBUGGABLE_GENTREE
 protected:
     friend GenTree;
-    GenTreeBlk() : GenTreeIndir()
-    {
-    }
+    GenTreeBlk() : GenTreeIndir() {}
 #endif // DEBUGGABLE_GENTREE
 };
 
@@ -7404,9 +7279,7 @@ public:
 #if DEBUGGABLE_GENTREE
 protected:
     friend GenTree;
-    GenTreeStoreDynBlk() : GenTreeBlk()
-    {
-    }
+    GenTreeStoreDynBlk() : GenTreeBlk() {}
 #endif // DEBUGGABLE_GENTREE
 };
 
@@ -7543,20 +7416,16 @@ struct GenTreeRetExpr : public GenTree
     // nullptr for cases where gtSubstExpr is not a tree from the inlinee.
     BasicBlock* gtSubstBB;
 
-    GenTreeRetExpr(var_types type) : GenTree(GT_RET_EXPR, type)
-    {
-    }
+    GenTreeRetExpr(var_types type) : GenTree(GT_RET_EXPR, type) {}
 #if DEBUGGABLE_GENTREE
-    GenTreeRetExpr() : GenTree()
-    {
-    }
+    GenTreeRetExpr() : GenTree() {}
 #endif
 };
 
 // In LIR there are no longer statements so debug information is inserted linearly using these nodes.
 struct GenTreeILOffset : public GenTree
 {
-    DebugInfo gtStmtDI; // debug info
+    DebugInfo gtStmtDI;         // debug info
 #ifdef DEBUG
     IL_OFFSET gtStmtLastILoffs; // instr offset at end of stmt
 #endif
@@ -7571,9 +7440,7 @@ struct GenTreeILOffset : public GenTree
     }
 
 #if DEBUGGABLE_GENTREE
-    GenTreeILOffset() : GenTree(GT_IL_OFFSET, TYP_VOID)
-    {
-    }
+    GenTreeILOffset() : GenTree(GT_IL_OFFSET, TYP_VOID) {}
 #endif
 };
 
@@ -7593,9 +7460,7 @@ public:
         GenTree* m_tree;
 
     public:
-        explicit iterator(GenTree* tree) : m_tree(tree)
-        {
-        }
+        explicit iterator(GenTree* tree) : m_tree(tree) {}
 
         GenTree* operator*() const
         {
@@ -7614,9 +7479,7 @@ public:
         }
     };
 
-    explicit GenTreeList(GenTree* trees) : m_trees(trees)
-    {
-    }
+    explicit GenTreeList(GenTree* trees) : m_trees(trees) {}
 
     iterator begin() const
     {
@@ -7639,9 +7502,7 @@ public:
         GenTreeLclVarCommon* m_tree;
 
     public:
-        explicit iterator(GenTreeLclVarCommon* tree) : m_tree(tree)
-        {
-        }
+        explicit iterator(GenTreeLclVarCommon* tree) : m_tree(tree) {}
 
         GenTreeLclVarCommon* operator*() const
         {
@@ -7668,9 +7529,7 @@ public:
         }
     };
 
-    explicit LocalsGenTreeList(Statement* stmt) : m_stmt(stmt)
-    {
-    }
+    explicit LocalsGenTreeList(Statement* stmt) : m_stmt(stmt) {}
 
     iterator begin() const;
 
@@ -7868,9 +7727,7 @@ class StatementList
         Statement* m_stmt;
 
     public:
-        iterator(Statement* stmt) : m_stmt(stmt)
-        {
-        }
+        iterator(Statement* stmt) : m_stmt(stmt) {}
 
         Statement* operator*() const
         {
@@ -7890,9 +7747,7 @@ class StatementList
     };
 
 public:
-    StatementList(Statement* stmts) : m_stmts(stmts)
-    {
-    }
+    StatementList(Statement* stmts) : m_stmts(stmts) {}
 
     iterator begin() const
     {
@@ -7921,9 +7776,7 @@ struct GenTreeClsVar : public GenTree
     }
 
 #if DEBUGGABLE_GENTREE
-    GenTreeClsVar() : GenTree()
-    {
-    }
+    GenTreeClsVar() : GenTree() {}
 #endif
 };
 
@@ -7939,9 +7792,7 @@ struct GenTreePhiArg : public GenTreeLclVarCommon
     }
 
 #if DEBUGGABLE_GENTREE
-    GenTreePhiArg() : GenTreeLclVarCommon()
-    {
-    }
+    GenTreePhiArg() : GenTreeLclVarCommon() {}
 #endif
 };
 
@@ -8032,7 +7883,7 @@ public:
         return gtPutInIncomingArgArea;
     }
 
-#else // !FEATURE_FASTTAILCALL
+#else  // !FEATURE_FASTTAILCALL
 
     bool putInIncomingArgArea() const
     {
@@ -8110,9 +7961,7 @@ public:
 #endif // !FEATURE_PUT_STRUCT_ARG_STK
 
 #if DEBUGGABLE_GENTREE
-    GenTreePutArgStk() : GenTreeUnOp()
-    {
-    }
+    GenTreePutArgStk() : GenTreeUnOp() {}
 #endif
 };
 
@@ -8260,9 +8109,7 @@ struct GenTreePutArgSplit : public GenTreePutArgStk
     }
 
 #if DEBUGGABLE_GENTREE
-    GenTreePutArgSplit() : GenTreePutArgStk()
-    {
-    }
+    GenTreePutArgSplit() : GenTreePutArgStk() {}
 #endif
 };
 #endif // FEATURE_ARG_SPLIT
@@ -8395,9 +8242,7 @@ struct GenTreeCopyOrReload : public GenTreeUnOp
     }
 
 #if DEBUGGABLE_GENTREE
-    GenTreeCopyOrReload() : GenTreeUnOp()
-    {
-    }
+    GenTreeCopyOrReload() : GenTreeUnOp() {}
 #endif
 };
 
@@ -8425,9 +8270,7 @@ struct GenTreeAllocObj final : public GenTreeUnOp
 #endif
     }
 #if DEBUGGABLE_GENTREE
-    GenTreeAllocObj() : GenTreeUnOp()
-    {
-    }
+    GenTreeAllocObj() : GenTreeUnOp() {}
 #endif
 };
 
@@ -8444,9 +8287,7 @@ struct GenTreeRuntimeLookup final : public GenTreeUnOp
         assert(hnd != nullptr);
     }
 #if DEBUGGABLE_GENTREE
-    GenTreeRuntimeLookup() : GenTreeUnOp()
-    {
-    }
+    GenTreeRuntimeLookup() : GenTreeUnOp() {}
 #endif
 
     // Return reference to the actual tree that does the lookup
@@ -8608,13 +8449,9 @@ public:
         return names[m_code];
     }
 
-    GenCondition() : m_code()
-    {
-    }
+    GenCondition() : m_code() {}
 
-    GenCondition(Code cond) : m_code(cond)
-    {
-    }
+    GenCondition(Code cond) : m_code(cond) {}
 
     static_assert((GT_NE - GT_EQ) == (NE & ~Unsigned), "bad relop");
     static_assert((GT_LT - GT_EQ) == SLT, "bad relop");
@@ -8742,9 +8579,7 @@ struct GenTreeCC final : public GenTree
     }
 
 #if DEBUGGABLE_GENTREE
-    GenTreeCC() : GenTree()
-    {
-    }
+    GenTreeCC() : GenTree() {}
 #endif // DEBUGGABLE_GENTREE
 };
 
@@ -8764,9 +8599,7 @@ struct GenTreeOpCC : public GenTreeOp
     }
 
 #if DEBUGGABLE_GENTREE
-    GenTreeOpCC() : GenTreeOp()
-    {
-    }
+    GenTreeOpCC() : GenTreeOp() {}
 #endif // DEBUGGABLE_GENTREE
 };
 
@@ -8804,9 +8637,7 @@ struct GenTreeCCMP final : public GenTreeOpCC
     }
 
 #if DEBUGGABLE_GENTREE
-    GenTreeCCMP() : GenTreeOpCC()
-    {
-    }
+    GenTreeCCMP() : GenTreeOpCC() {}
 #endif // DEBUGGABLE_GENTREE
 };
 #endif
@@ -9147,7 +8978,7 @@ inline bool GenTree::IsValidCallArgument()
 
         return false;
 
-#else // FEATURE_MULTIREG_ARGS or FEATURE_PUT_STRUCT_ARG_STK
+#else  // FEATURE_MULTIREG_ARGS or FEATURE_PUT_STRUCT_ARG_STK
 
         // We allow this GT_FIELD_LIST as an argument
         return true;

@@ -67,10 +67,12 @@ void DataFlow::ForwardAnalysis(TCallback& callback)
 
         if (callback.EndMerge(block))
         {
-            block->VisitAllSuccs(m_pCompiler, [&worklist](BasicBlock* succ) {
-                worklist.insert(worklist.end(), succ);
-                return BasicBlockVisit::Continue;
-            });
+            block->VisitAllSuccs(m_pCompiler,
+                                 [&worklist](BasicBlock* succ)
+                                 {
+                                     worklist.insert(worklist.end(), succ);
+                                     return BasicBlockVisit::Continue;
+                                 });
         }
     }
 }

@@ -16,21 +16,21 @@ void emitBegFN(bool hasFramePtr
                ,
                bool checkAlign
 #endif
-               );
+);
 
 void emitEndFN();
 
 void emitComputeCodeSizes();
 
-unsigned emitEndCodeGen(Compiler* comp,
-                        bool      contTrkPtrLcls,
-                        bool      fullyInt,
-                        bool      fullPtrMap,
-                        unsigned  xcptnsCount,
-                        unsigned* prologSize,
-                        unsigned* epilogSize,
-                        void**    codeAddr,
-                        void**    coldCodeAddr,
+unsigned emitEndCodeGen(Compiler*       comp,
+                        bool            contTrkPtrLcls,
+                        bool            fullyInt,
+                        bool            fullPtrMap,
+                        unsigned        xcptnsCount,
+                        unsigned*       prologSize,
+                        unsigned*       epilogSize,
+                        void**          codeAddr,
+                        void**          coldCodeAddr,
                         void** consAddr DEBUGARG(unsigned* instrCount));
 
 /************************************************************************/
@@ -99,11 +99,11 @@ UNATIVE_OFFSET emitDataSize();
 /************************************************************************/
 
 #ifdef TARGET_XARCH
-static bool instrIs3opImul(instruction ins);
-static bool instrIsExtendedReg3opImul(instruction ins);
-static bool instrHasImplicitRegPairDest(instruction ins);
-static void      check3opImulValues();
-static regNumber inst3opImulReg(instruction ins);
+static bool        instrIs3opImul(instruction ins);
+static bool        instrIsExtendedReg3opImul(instruction ins);
+static bool        instrHasImplicitRegPairDest(instruction ins);
+static void        check3opImulValues();
+static regNumber   inst3opImulReg(instruction ins);
 static instruction inst3opImulForReg(regNumber reg);
 #endif
 

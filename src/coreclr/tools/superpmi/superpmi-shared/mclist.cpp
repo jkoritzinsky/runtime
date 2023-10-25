@@ -95,7 +95,7 @@ bool MCList::processArgAsMCL(char* input, int* count, int** list)
                 {
                     inRange = false;
                     for (unsigned int i = rangeStart + 1; i <= scratch; i++)
-                        ll[index++]     = i;
+                        ll[index++] = i;
                 }
                 else
                 {

@@ -23,7 +23,9 @@ void CommandLine::DumpHelp(const char* program)
     printf("%s\n", g_SuperPMIUsageFirstLine);
     printf("\n");
     printf("Usage: %s [options] [jitname] [jitname2] filename.mc\n", program);
-    printf(" jitname" PLATFORM_SHARED_LIB_SUFFIX_A " - optional path of jit to be tested (default is JIT in same directory as %s)\n", program);
+    printf(" jitname" PLATFORM_SHARED_LIB_SUFFIX_A
+           " - optional path of jit to be tested (default is JIT in same directory as %s)\n",
+           program);
     printf(" jitname2" PLATFORM_SHARED_LIB_SUFFIX_A " - optional path of second jit to be tested\n");
     printf(" filename.mc - load method contexts from filename.mc\n");
     printf(" -j[it] Name - optionally -jit can be used to specify jits\n");
@@ -111,7 +113,8 @@ void CommandLine::DumpHelp(const char* program)
     printf("     the number of processors on the machine.\n");
     printf("\n");
     printf(" -failureLimit <limit>\n");
-    printf("     For a positive 'limit' number, replay and asm diffs will exit if it sees more than 'limit' failures.\n");
+    printf(
+        "     For a positive 'limit' number, replay and asm diffs will exit if it sees more than 'limit' failures.\n");
     printf("     Otherwise, all methods will be compiled.\n");
     printf("\n");
     printf(" -skipCleanup\n");
@@ -184,11 +187,11 @@ static bool ParseJitOption(const char* optionString, WCHAR** key, WCHAR** value)
     const char* tempVal = &optionString[i + 1];
 
     const unsigned keyLen = i;
-    WCHAR*       keyBuf = new WCHAR[keyLen + 1];
+    WCHAR*         keyBuf = new WCHAR[keyLen + 1];
     MultiByteToWideChar(CP_UTF8, 0, tempKey, keyLen + 1, keyBuf, keyLen + 1);
 
     const unsigned valLen = (unsigned)strlen(tempVal);
-    WCHAR*       valBuf = new WCHAR[valLen + 1];
+    WCHAR*         valBuf = new WCHAR[valLen + 1];
     MultiByteToWideChar(CP_UTF8, 0, tempVal, valLen + 1, valBuf, valLen + 1);
 
     *key   = keyBuf;
@@ -434,7 +437,7 @@ bool CommandLine::Parse(int argc, char* argv[], /* OUT */ Options* o)
             {
 #ifndef USE_COREDISTOOLS // If USE_COREDISTOOLS is not defined, then allow the switch, but ignore it.
                 o->useCoreDisTools = true;
-#endif // USE_COREDISTOOLS
+#endif                   // USE_COREDISTOOLS
             }
             else if ((_strnicmp(&argv[i][1], "matchHash", argLen) == 0))
             {
@@ -516,8 +519,7 @@ bool CommandLine::Parse(int argc, char* argv[], /* OUT */ Options* o)
 
                 if (o->failureLimit < 1)
                 {
-                    LogError(
-                        "Incorrect limit specified for -failureLimit. Limit must be > 0.");
+                    LogError("Incorrect limit specified for -failureLimit. Limit must be > 0.");
                     DumpHelp(argv[0]);
                     return false;
                 }
@@ -626,12 +628,9 @@ bool CommandLine::Parse(int argc, char* argv[], /* OUT */ Options* o)
 
     if (o->targetArchitecture != nullptr)
     {
-        if ((0 != _stricmp(o->targetArchitecture, "amd64")) &&
-            (0 != _stricmp(o->targetArchitecture, "x64")) &&
-            (0 != _stricmp(o->targetArchitecture, "x86")) &&
-            (0 != _stricmp(o->targetArchitecture, "arm64")) &&
-            (0 != _stricmp(o->targetArchitecture, "arm")) &&
-            (0 != _stricmp(o->targetArchitecture, "arm32")))
+        if ((0 != _stricmp(o->targetArchitecture, "amd64")) && (0 != _stricmp(o->targetArchitecture, "x64")) &&
+            (0 != _stricmp(o->targetArchitecture, "x86")) && (0 != _stricmp(o->targetArchitecture, "arm64")) &&
+            (0 != _stricmp(o->targetArchitecture, "arm")) && (0 != _stricmp(o->targetArchitecture, "arm32")))
         {
             LogError("Illegal target architecture specified with -target (use 'x64', 'x86', 'arm64', or 'arm').");
             DumpHelp(argv[0]);
@@ -655,20 +654,20 @@ bool CommandLine::Parse(int argc, char* argv[], /* OUT */ Options* o)
 
         bool allowDefaultJIT = true;
 
-        const char* hostOSTag = "";
-        const char* jitHostOSPrefix = "";
+        const char* hostOSTag          = "";
+        const char* jitHostOSPrefix    = "";
         const char* jitHostOSExtension = "";
 
 #if defined(HOST_OSX) // NOTE: HOST_UNIX is also defined for HOST_OSX
-        hostOSTag = "unix";
-        jitHostOSPrefix = "lib";
+        hostOSTag          = "unix";
+        jitHostOSPrefix    = "lib";
         jitHostOSExtension = ".dylib";
 #elif defined(HOST_UNIX)
-        hostOSTag = "unix";
-        jitHostOSPrefix = "lib";
+        hostOSTag          = "unix";
+        jitHostOSPrefix    = "lib";
         jitHostOSExtension = ".so";
 #elif defined(HOST_WINDOWS)
-        hostOSTag = "win";
+        hostOSTag          = "win";
         jitHostOSExtension = ".dll";
 #else
         allowDefaultJIT = false;
@@ -679,11 +678,11 @@ bool CommandLine::Parse(int argc, char* argv[], /* OUT */ Options* o)
 #if defined(HOST_AMD64)
         hostArch = "x64";
 #elif defined(HOST_X86)
-        hostArch = "x86";
+        hostArch           = "x86";
 #elif defined(HOST_ARM)
-        hostArch = "arm";
+        hostArch           = "arm";
 #elif defined(HOST_ARM64)
-        hostArch = "arm64";
+        hostArch        = "arm64";
 #else
         allowDefaultJIT = false;
 #endif
@@ -709,9 +708,9 @@ bool CommandLine::Parse(int argc, char* argv[], /* OUT */ Options* o)
                 break;
         }
 
-        size_t programPathLen = 0;
-        char* programPath = nullptr;
-        const char* lastSlash = strrchr(argv[0], DIRECTORY_SEPARATOR_CHAR_A);
+        size_t      programPathLen = 0;
+        char*       programPath    = nullptr;
+        const char* lastSlash      = strrchr(argv[0], DIRECTORY_SEPARATOR_CHAR_A);
         if (lastSlash == nullptr)
         {
             allowDefaultJIT = false;
@@ -719,7 +718,7 @@ bool CommandLine::Parse(int argc, char* argv[], /* OUT */ Options* o)
         else
         {
             programPathLen = lastSlash - argv[0] + 1;
-            programPath = new char[programPathLen];
+            programPath    = new char[programPathLen];
             strncpy_s(programPath, programPathLen, argv[0], programPathLen - 1);
         }
 
@@ -748,7 +747,8 @@ bool CommandLine::Parse(int argc, char* argv[], /* OUT */ Options* o)
             }
 
             const char* const jitBaseName = "clrjit";
-            size_t len = programPathLen + strlen(jitHostOSPrefix) + strlen(jitBaseName) + strlen(jitHostOSExtension) + 1;
+            size_t            len =
+                programPathLen + strlen(jitHostOSPrefix) + strlen(jitBaseName) + strlen(jitHostOSExtension) + 1;
             if (jitOSName != nullptr)
             {
                 len += 3 /* underscores */ + strlen(jitOSName) + strlen(targetArch) + strlen(hostArch);
@@ -756,24 +756,13 @@ bool CommandLine::Parse(int argc, char* argv[], /* OUT */ Options* o)
             char* tempStr = new char[len];
             if (jitOSName == nullptr)
             {
-                sprintf_s(tempStr, len, "%s%c%s%s%s",
-                    programPath,
-                    DIRECTORY_SEPARATOR_CHAR_A,
-                    jitHostOSPrefix,
-                    jitBaseName,
-                    jitHostOSExtension);
+                sprintf_s(tempStr, len, "%s%c%s%s%s", programPath, DIRECTORY_SEPARATOR_CHAR_A, jitHostOSPrefix,
+                          jitBaseName, jitHostOSExtension);
             }
             else
             {
-                sprintf_s(tempStr, len, "%s%c%s%s_%s_%s_%s%s",
-                    programPath,
-                    DIRECTORY_SEPARATOR_CHAR_A,
-                    jitHostOSPrefix,
-                    jitBaseName,
-                    jitOSName,
-                    targetArch,
-                    hostArch,
-                    jitHostOSExtension);
+                sprintf_s(tempStr, len, "%s%c%s%s_%s_%s_%s%s", programPath, DIRECTORY_SEPARATOR_CHAR_A, jitHostOSPrefix,
+                          jitBaseName, jitOSName, targetArch, hostArch, jitHostOSExtension);
             }
 
             o->nameOfJit = tempStr;
@@ -811,9 +800,9 @@ bool CommandLine::Parse(int argc, char* argv[], /* OUT */ Options* o)
 //
 // Returns:
 //    False if an error occurred, true if the option was parsed and added.
-bool CommandLine::AddJitOption(int&  currArgument,
-                               int   argc,
-                               char* argv[],
+bool CommandLine::AddJitOption(int&                           currArgument,
+                               int                            argc,
+                               char*                          argv[],
                                LightWeightMap<DWORD, DWORD>** pJitOptions,
                                LightWeightMap<DWORD, DWORD>** pForceJitOptions)
 {
@@ -853,8 +842,8 @@ bool CommandLine::AddJitOption(int&  currArgument,
 
     DWORD keyIndex =
         (DWORD)targetjitOptions->AddBuffer((unsigned char*)key, sizeof(WCHAR) * ((unsigned int)u16_strlen(key) + 1));
-    DWORD valueIndex =
-        (DWORD)targetjitOptions->AddBuffer((unsigned char*)value, sizeof(WCHAR) * ((unsigned int)u16_strlen(value) + 1));
+    DWORD valueIndex = (DWORD)targetjitOptions->AddBuffer((unsigned char*)value,
+                                                          sizeof(WCHAR) * ((unsigned int)u16_strlen(value) + 1));
     targetjitOptions->Add(keyIndex, valueIndex);
 
     delete[] key;

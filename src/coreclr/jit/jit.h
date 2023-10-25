@@ -26,7 +26,8 @@
 #define ZERO 0
 
 #ifdef _MSC_VER
-#define CHECK_STRUCT_PADDING 0 // Set this to '1' to enable warning C4820 "'bytes' bytes padding added after
+#define CHECK_STRUCT_PADDING                                                                                           \
+    0                          // Set this to '1' to enable warning C4820 "'bytes' bytes padding added after
                                // construct 'member_name'" on interesting structs/classes
 #else
 #define CHECK_STRUCT_PADDING 0 // Never enable it for non-MSFT compilers
@@ -275,11 +276,11 @@
 #elif defined(TARGET_ARM)
 #define IMAGE_FILE_MACHINE_TARGET IMAGE_FILE_MACHINE_ARMNT
 #elif defined(TARGET_ARM64)
-#define IMAGE_FILE_MACHINE_TARGET IMAGE_FILE_MACHINE_ARM64 // 0xAA64
+#define IMAGE_FILE_MACHINE_TARGET IMAGE_FILE_MACHINE_ARM64       // 0xAA64
 #elif defined(TARGET_LOONGARCH64)
 #define IMAGE_FILE_MACHINE_TARGET IMAGE_FILE_MACHINE_LOONGARCH64 // 0x6264
 #elif defined(TARGET_RISCV64)
-#define IMAGE_FILE_MACHINE_TARGET IMAGE_FILE_MACHINE_RISCV64 // 0x5641
+#define IMAGE_FILE_MACHINE_TARGET IMAGE_FILE_MACHINE_RISCV64     // 0x5641
 #else
 #error Unsupported or unset target architecture
 #endif
@@ -299,8 +300,8 @@ typedef ptrdiff_t ssize_t;
 #define __PLACEMENT_NEW_INLINE  // don't bring in the global placement new, it is easy to make a mistake
                                 // with our new(compiler*) pattern.
 
-#include "utilcode.h" // this defines assert as _ASSERTE
-#include "host.h"     // this redefines assert for the JIT to use assertAbort
+#include "utilcode.h"           // this defines assert as _ASSERTE
+#include "host.h"               // this redefines assert for the JIT to use assertAbort
 #include "utils.h"
 #include "targetosarch.h"
 
@@ -392,7 +393,7 @@ XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 #define INFO7 LL_INFO100000  // NYI stuff
 #define INFO8 LL_INFO1000000 // Weird failures
 
-#endif // DEBUG
+#endif                       // DEBUG
 
 typedef class ICorJitInfo* COMP_HANDLE;
 
@@ -481,17 +482,20 @@ public:
 #define VERIFY_GC_TABLES 0
 #define REARRANGE_ADDS 1
 
-#define FUNC_INFO_LOGGING 1 // Support dumping function info to a file. In retail, only NYIs, with no function name,
-                            // are dumped.
+#define FUNC_INFO_LOGGING                                                                                              \
+    1 // Support dumping function info to a file. In retail, only NYIs, with no function name,
+      // are dumped.
 
 /*****************************************************************************/
 /*****************************************************************************/
 /* Set these to 1 to collect and output various statistics about the JIT */
 
 #define CALL_ARG_STATS 0      // Collect stats about calls and call arguments.
-#define COUNT_BASIC_BLOCKS 0  // Create a histogram of basic block sizes, and a histogram of IL sizes in the simple
+#define COUNT_BASIC_BLOCKS                                                                                             \
+    0                         // Create a histogram of basic block sizes, and a histogram of IL sizes in the simple
                               // case of single block methods.
-#define COUNT_LOOPS 0         // Collect stats about loops, such as the total number of natural loops, a histogram of
+#define COUNT_LOOPS                                                                                                    \
+    0                         // Collect stats about loops, such as the total number of natural loops, a histogram of
                               // the number of loop exits, etc.
 #define DISPLAY_SIZES 0       // Display generated code, data, and GC information sizes.
 #define MEASURE_BLOCK_SIZE 0  // Collect stats about basic block and FlowEdge node sizes and memory allocations.
@@ -622,7 +626,8 @@ const bool dspGCtbls = true;
  */
 
 #ifdef TARGET_X86
-#define DOUBLE_ALIGN 1 // permit the double alignment of ESP in prolog,
+#define DOUBLE_ALIGN                                                                                                   \
+    1                  // permit the double alignment of ESP in prolog,
                        //  and permit the double alignment of local offsets
 #else
 #define DOUBLE_ALIGN 0 // no special handling for double alignment
@@ -667,7 +672,7 @@ inline bool IsUninitialized(T data);
 #define MISALIGNED_RD_U2(src) (*castto(src, unsigned short*))
 
 #define MISALIGNED_WR_I2(dst, val) *castto(dst, short*) = val;
-#define MISALIGNED_WR_I4(dst, val) *castto(dst, int*)   = val;
+#define MISALIGNED_WR_I4(dst, val) *castto(dst, int*) = val;
 
 #define MISALIGNED_WR_ST(dst, val) *castto(dst, ssize_t*) = val;
 
@@ -730,7 +735,7 @@ inline size_t unsigned_abs(__int64 x)
 //  RetBlock:
 //     ret
 #define FEATURE_TAILCALL_OPT_SHARED_RETURN 1
-#else // !FEATURE_TAILCALL_OPT
+#else  // !FEATURE_TAILCALL_OPT
 #define FEATURE_TAILCALL_OPT_SHARED_RETURN 0
 #endif // !FEATURE_TAILCALL_OPT
 
@@ -807,7 +812,7 @@ public:
 #endif
 
     static Compiler* GetCompiler();
-    static void SetCompiler(Compiler* compiler);
+    static void      SetCompiler(Compiler* compiler);
 };
 
 #if defined(DEBUG)
@@ -869,7 +874,7 @@ T dspOffset(T o)
 }
 #pragma warning(pop)
 
-#else // !defined(DEBUG)
+#else  // !defined(DEBUG)
 
 //****************************************************************************
 //

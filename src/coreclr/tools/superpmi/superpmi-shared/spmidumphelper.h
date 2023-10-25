@@ -13,37 +13,28 @@
 class SpmiDumpHelper
 {
 public:
-    static std::string DumpAgnostic_CORINFO_RESOLVED_TOKENin(
-        const Agnostic_CORINFO_RESOLVED_TOKENin& tokenIn);
-    static std::string DumpAgnostic_CORINFO_RESOLVED_TOKENout(
-        const Agnostic_CORINFO_RESOLVED_TOKENout& tokenOut);
+    static std::string DumpAgnostic_CORINFO_RESOLVED_TOKENin(const Agnostic_CORINFO_RESOLVED_TOKENin& tokenIn);
+    static std::string DumpAgnostic_CORINFO_RESOLVED_TOKENout(const Agnostic_CORINFO_RESOLVED_TOKENout& tokenOut);
     static std::string DumpAgnostic_CORINFO_RESOLVED_TOKEN(const Agnostic_CORINFO_RESOLVED_TOKEN& token);
     static std::string DumpAgnostic_CORINFO_LOOKUP_KIND(const Agnostic_CORINFO_LOOKUP_KIND& lookupKind);
-    static std::string DumpAgnostic_CORINFO_CONST_LOOKUP(
-        const Agnostic_CORINFO_CONST_LOOKUP& constLookup);
-    static std::string DumpAgnostic_CORINFO_RUNTIME_LOOKUP(
-        const Agnostic_CORINFO_RUNTIME_LOOKUP& lookup);
+    static std::string DumpAgnostic_CORINFO_CONST_LOOKUP(const Agnostic_CORINFO_CONST_LOOKUP& constLookup);
+    static std::string DumpAgnostic_CORINFO_RUNTIME_LOOKUP(const Agnostic_CORINFO_RUNTIME_LOOKUP& lookup);
     static std::string DumpAgnostic_CORINFO_LOOKUP(const Agnostic_CORINFO_LOOKUP& lookup);
 
     template <typename key, typename value>
-    static std::string DumpPSig(
-        DWORD                       pSig_Index,
-        DWORD                       cbSig,
-        LightWeightMap<key, value>* buffers);
+    static std::string DumpPSig(DWORD pSig_Index, DWORD cbSig, LightWeightMap<key, value>* buffers);
 
     template <typename key, typename value>
-    static std::string DumpAgnostic_CORINFO_SIG_INFO(
-        const Agnostic_CORINFO_SIG_INFO& sigInfo,
-        LightWeightMap<key, value>* buffers,
-        const DenseLightWeightMap<DWORDLONG>* handleMap);
+    static std::string DumpAgnostic_CORINFO_SIG_INFO(const Agnostic_CORINFO_SIG_INFO&      sigInfo,
+                                                     LightWeightMap<key, value>*           buffers,
+                                                     const DenseLightWeightMap<DWORDLONG>* handleMap);
 
-    static std::string DumpAgnostic_CORINFO_SIG_INST_Element(
-        const char* prefixStr,
-        const char* instCountPrefixStr,
-        const char* instIndexPrefixStr,
-        unsigned handleInstCount,
-        unsigned handleInstIndex,
-        const DenseLightWeightMap<DWORDLONG>* handleMap);
+    static std::string DumpAgnostic_CORINFO_SIG_INST_Element(const char*                           prefixStr,
+                                                             const char*                           instCountPrefixStr,
+                                                             const char*                           instIndexPrefixStr,
+                                                             unsigned                              handleInstCount,
+                                                             unsigned                              handleInstIndex,
+                                                             const DenseLightWeightMap<DWORDLONG>* handleMap);
 
     static std::string DumpCorInfoFlag(CorInfoFlag flags);
 
@@ -51,35 +42,30 @@ public:
     static std::string DumpJitFlags(unsigned long long rawFlags);
 
 private:
+    static void FormatAgnostic_CORINFO_SIG_INST_Element(char*&                                pbuf,
+                                                        int&                                  sizeOfBuffer,
+                                                        const char*                           prefixStr,
+                                                        const char*                           instCountPrefixStr,
+                                                        const char*                           instIndexPrefixStr,
+                                                        unsigned                              handleInstCount,
+                                                        unsigned                              handleInstIndex,
+                                                        const DenseLightWeightMap<DWORDLONG>* handleMap);
 
-    static void FormatAgnostic_CORINFO_SIG_INST_Element(
-        char*& pbuf,
-        int& sizeOfBuffer,
-        const char* prefixStr,
-        const char* instCountPrefixStr,
-        const char* instIndexPrefixStr,
-        unsigned handleInstCount,
-        unsigned handleInstIndex,
-        const DenseLightWeightMap<DWORDLONG>* handleMap);
-
-    static void FormatHandleArray(char*& pbuf, int& sizeOfBuffer, const DenseLightWeightMap<DWORDLONG>* map, DWORD count, DWORD startIndex);
+    static void FormatHandleArray(
+        char*& pbuf, int& sizeOfBuffer, const DenseLightWeightMap<DWORDLONG>* map, DWORD count, DWORD startIndex);
 
     static const int MAX_BUFFER_SIZE = 1000;
 };
 
 template <typename key, typename value>
-inline std::string SpmiDumpHelper::DumpPSig(
-    DWORD                       pSig_Index,
-    DWORD                       cbSig,
-    LightWeightMap<key, value>* buffers)
+inline std::string SpmiDumpHelper::DumpPSig(DWORD pSig_Index, DWORD cbSig, LightWeightMap<key, value>* buffers)
 {
-    char buffer[MAX_BUFFER_SIZE];
-    char* pbuf = buffer;
-    int sizeOfBuffer = sizeof(buffer);
-    int cch;
+    char  buffer[MAX_BUFFER_SIZE];
+    char* pbuf         = buffer;
+    int   sizeOfBuffer = sizeof(buffer);
+    int   cch;
 
-    cch = sprintf_s(pbuf, sizeOfBuffer, "cbSig-%u, si-%08X",
-        cbSig, pSig_Index);
+    cch = sprintf_s(pbuf, sizeOfBuffer, "cbSig-%u, si-%08X", cbSig, pSig_Index);
     pbuf += cch;
     sizeOfBuffer -= cch;
 
@@ -111,7 +97,7 @@ inline std::string SpmiDumpHelper::DumpPSig(
             sizeOfBuffer -= cch;
 
             const unsigned int maxSigDisplayBytes = 25; // Don't display more than this.
-            const unsigned int sigDisplayBytes = min(maxSigDisplayBytes, cbSig);
+            const unsigned int sigDisplayBytes    = min(maxSigDisplayBytes, cbSig);
 
             // TODO: display character representation of the types?
 
@@ -146,26 +132,30 @@ inline std::string SpmiDumpHelper::DumpPSig(
 }
 
 template <typename key, typename value>
-inline std::string SpmiDumpHelper::DumpAgnostic_CORINFO_SIG_INFO(
-    const Agnostic_CORINFO_SIG_INFO& sigInfo,
-    LightWeightMap<key, value>* buffers,
-    const DenseLightWeightMap<DWORDLONG>* handleMap)
+inline std::string SpmiDumpHelper::DumpAgnostic_CORINFO_SIG_INFO(const Agnostic_CORINFO_SIG_INFO&      sigInfo,
+                                                                 LightWeightMap<key, value>*           buffers,
+                                                                 const DenseLightWeightMap<DWORDLONG>* handleMap)
 {
-    char buffer[MAX_BUFFER_SIZE];
-    char* pbuf = buffer;
-    int sizeOfBuffer = sizeof(buffer);
-    int cch;
+    char  buffer[MAX_BUFFER_SIZE];
+    char* pbuf         = buffer;
+    int   sizeOfBuffer = sizeof(buffer);
+    int   cch;
 
-    cch = sprintf_s(pbuf, sizeOfBuffer, "{callConv-%08X retTypeClass-%016llX retTypeSigClass-%016llX retType-%08X(%s) flg-%08X na-%u",
-        sigInfo.callConv, sigInfo.retTypeClass, sigInfo.retTypeSigClass, sigInfo.retType, toString((CorInfoType)sigInfo.retType), sigInfo.flags, sigInfo.numArgs);
+    cch = sprintf_s(pbuf, sizeOfBuffer,
+                    "{callConv-%08X retTypeClass-%016llX retTypeSigClass-%016llX retType-%08X(%s) flg-%08X na-%u",
+                    sigInfo.callConv, sigInfo.retTypeClass, sigInfo.retTypeSigClass, sigInfo.retType,
+                    toString((CorInfoType)sigInfo.retType), sigInfo.flags, sigInfo.numArgs);
     pbuf += cch;
     sizeOfBuffer -= cch;
 
-    FormatAgnostic_CORINFO_SIG_INST_Element(pbuf, sizeOfBuffer, " ", "cc", "ci", sigInfo.sigInst_classInstCount, sigInfo.sigInst_classInst_Index, handleMap);
-    FormatAgnostic_CORINFO_SIG_INST_Element(pbuf, sizeOfBuffer, " ", "mc", "mi", sigInfo.sigInst_methInstCount, sigInfo.sigInst_methInst_Index, handleMap);
+    FormatAgnostic_CORINFO_SIG_INST_Element(pbuf, sizeOfBuffer, " ", "cc", "ci", sigInfo.sigInst_classInstCount,
+                                            sigInfo.sigInst_classInst_Index, handleMap);
+    FormatAgnostic_CORINFO_SIG_INST_Element(pbuf, sizeOfBuffer, " ", "mc", "mi", sigInfo.sigInst_methInstCount,
+                                            sigInfo.sigInst_methInst_Index, handleMap);
 
-    cch = sprintf_s(pbuf, sizeOfBuffer, " args-%016llX sig-%s msig-%016llX scp-%016llX tok-%08X}",
-        sigInfo.args, DumpPSig(sigInfo.pSig_Index, sigInfo.cbSig, buffers).c_str(), sigInfo.methodSignature, sigInfo.scope, sigInfo.token);
+    cch = sprintf_s(pbuf, sizeOfBuffer, " args-%016llX sig-%s msig-%016llX scp-%016llX tok-%08X}", sigInfo.args,
+                    DumpPSig(sigInfo.pSig_Index, sigInfo.cbSig, buffers).c_str(), sigInfo.methodSignature,
+                    sigInfo.scope, sigInfo.token);
     pbuf += cch;
     sizeOfBuffer -= cch;
 

@@ -19,17 +19,20 @@ enum CallType
 class CallUtils
 {
 public:
-    static CallType GetRecordedCallSiteInfo(MethodContext*            mc,
-                                            CompileResult*            cr,
-                                            unsigned int              callInstrOffset,
-                                            /*out*/ CORINFO_SIG_INFO* outSigInfo,
-                                            /*out*/ char**            outCallTargetSymbol);
-    static CallType GetDirectCallSiteInfo(MethodContext*            mc,
-                                          void*                     callTarget,
-                                          /*out*/ CORINFO_SIG_INFO* outSigInfo,
-                                          /*out*/ char**            outCallTargetSymbol);
+    static CallType        GetRecordedCallSiteInfo(MethodContext*            mc,
+                                                   CompileResult*            cr,
+                                                   unsigned int              callInstrOffset,
+                                                   /*out*/ CORINFO_SIG_INFO* outSigInfo,
+                                                   /*out*/ char**            outCallTargetSymbol);
+    static CallType        GetDirectCallSiteInfo(MethodContext*            mc,
+                                                 void*                     callTarget,
+                                                 /*out*/ CORINFO_SIG_INFO* outSigInfo,
+                                                 /*out*/ char**            outCallTargetSymbol);
     static CorInfoHelpFunc GetHelperNum(CORINFO_METHOD_HANDLE method);
-    static const char* GetMethodFullName(MethodContext* mc, CORINFO_METHOD_HANDLE hnd, CORINFO_SIG_INFO sig, bool ignoreMethodName = false);
+    static const char*     GetMethodFullName(MethodContext*        mc,
+                                             CORINFO_METHOD_HANDLE hnd,
+                                             CORINFO_SIG_INFO      sig,
+                                             bool                  ignoreMethodName = false);
 };
 
 #endif

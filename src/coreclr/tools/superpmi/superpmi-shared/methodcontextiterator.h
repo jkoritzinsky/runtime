@@ -98,6 +98,6 @@ private:
     // Should we log a progress report as we are loading the method contexts?
     // The timer is only used when m_progressReport==true.
     bool         m_progressReport;
-    const int    m_progressRate;    // Report progress every `m_progressRate` method contexts.
+    const int    m_progressRate; // Report progress every `m_progressRate` method contexts.
     SimpleTimer* m_timer;
 };

@@ -87,8 +87,7 @@ void Logger::CloseLogFile()
             // We can call this before closing the handle because remove just marks the file
             // for deletion, i.e. it does not actually get deleted until its last handle is closed.
             if (remove(s_logFilePath) == -1)
-                fprintf(stderr, "WARNING: [Logger::CloseLogFile] remove failed. GetLastError()=%u\n",
-                        GetLastError());
+                fprintf(stderr, "WARNING: [Logger::CloseLogFile] remove failed. GetLastError()=%u\n", GetLastError());
         }
 
         if (!CloseHandle(s_logFile))
@@ -118,7 +117,7 @@ UINT32 Logger::ParseLogLevelString(const char* specifierStr)
 {
     UINT32 logLevelMask = LOGMASK_NONE;
 
-    if (strchr(specifierStr, 'q') == nullptr) // "Quiet" overrides all other specifiers
+    if (strchr(specifierStr, 'q') == nullptr)     // "Quiet" overrides all other specifiers
     {
         if (strchr(specifierStr, 'a') != nullptr) // "All" overrides the other specifiers
         {
@@ -197,12 +196,12 @@ void Logger::LogVprintf(
     {
         case LOGLEVEL_ERROR:
             logLevelStr = "ERROR";
-            dest = stderr;
+            dest        = stderr;
             break;
 
         case LOGLEVEL_WARNING:
             logLevelStr = "WARNING";
-            dest = stderr;
+            dest        = stderr;
             break;
 
         case LOGLEVEL_MISSING:
@@ -231,7 +230,7 @@ void Logger::LogVprintf(
 
         case LOGLEVEL_PASSTHROUGH_STDERR:
             logLevelStr = "STDERR";
-            dest = stderr;
+            dest        = stderr;
             break;
 
         default:
@@ -277,8 +276,8 @@ void Logger::LogVprintf(
 #endif // TARGET_UNIX
 
         const char logEntryFmtStr[] = "%s - %s [%s:%d] - %s - %s\r\n";
-        size_t logEntryBuffSize = sizeof(logEntryFmtStr) + strlen(timeStr) + strlen(function) + strlen(file) + /* line number */ 10 +
-                                  strlen(logLevelStr) + strlen(fullMsg);
+        size_t     logEntryBuffSize = sizeof(logEntryFmtStr) + strlen(timeStr) + strlen(function) + strlen(file) +
+                                  /* line number */ 10 + strlen(logLevelStr) + strlen(fullMsg);
 
         char* logEntry = new char[logEntryBuffSize];
         sprintf_s(logEntry, logEntryBuffSize, logEntryFmtStr, timeStr, function, file, line, logLevelStr, fullMsg);

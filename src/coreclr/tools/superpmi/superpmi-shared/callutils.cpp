@@ -218,7 +218,10 @@ CallType CallUtils::GetDirectCallSiteInfo(MethodContext*            mc,
 // Originally from src/jit/eeinterface.cpp
 // If `ignoreMethodName` is `true`, we construct the function signature with a dummy method name that will be the
 // same for all methods.
-const char* CallUtils::GetMethodFullName(MethodContext* mc, CORINFO_METHOD_HANDLE hnd, CORINFO_SIG_INFO sig, bool ignoreMethodName /* = false */)
+const char* CallUtils::GetMethodFullName(MethodContext*        mc,
+                                         CORINFO_METHOD_HANDLE hnd,
+                                         CORINFO_SIG_INFO      sig,
+                                         bool                  ignoreMethodName /* = false */)
 {
     const char* returnType = NULL;
 
@@ -227,12 +230,12 @@ const char* CallUtils::GetMethodFullName(MethodContext* mc, CORINFO_METHOD_HANDL
         return kHelperName[GetHelperNum(hnd)];
     }
 
-    std::string className = "CLASS";
+    std::string className  = "CLASS";
     std::string methodName = "METHOD";
 
     if (!ignoreMethodName)
     {
-        className = getClassName(mc, mc->repGetMethodClass(hnd));
+        className  = getClassName(mc, mc->repGetMethodClass(hnd));
         methodName = getMethodName(mc, hnd);
     }
 

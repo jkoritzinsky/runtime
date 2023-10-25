@@ -795,7 +795,7 @@ void ProfileSynthesis::BuildReversePostorder()
 
     // Build map from bbNum to Block*.
     //
-    m_bbNumToBlockMap = new (m_comp, CMK_Pgo) BasicBlock*[m_comp->fgBBNumMax + 1]{};
+    m_bbNumToBlockMap = new (m_comp, CMK_Pgo) BasicBlock* [m_comp->fgBBNumMax + 1] {};
     for (BasicBlock* const block : m_comp->Blocks())
     {
         m_bbNumToBlockMap[block->bbNum] = block;

@@ -29,9 +29,7 @@ PhaseStatus Compiler::optRedundantBranches()
         {
         }
 
-        void PreOrderVisit(BasicBlock* block)
-        {
-        }
+        void PreOrderVisit(BasicBlock* block) {}
 
         void PostOrderVisit(BasicBlock* block)
         {
@@ -2149,22 +2147,26 @@ bool Compiler::optReachable(BasicBlock* const fromBlock, BasicBlock* const toBlo
             continue;
         }
 
-        BasicBlockVisit result = nextBlock->VisitAllSuccs(this, [this, toBlock, &stack](BasicBlock* succ) {
-            if (succ == toBlock)
-            {
-                return BasicBlockVisit::Abort;
-            }
+        BasicBlockVisit result =
+            nextBlock->VisitAllSuccs(this,
+                                     [this, toBlock, &stack](BasicBlock* succ)
+                                     {
+                                         if (succ == toBlock)
+                                         {
+                                             return BasicBlockVisit::Abort;
+                                         }
 
-            if (BitVecOps::IsMember(optReachableBitVecTraits, optReachableBitVec, succ->bbNum))
-            {
-                return BasicBlockVisit::Continue;
-            }
+                                         if (BitVecOps::IsMember(optReachableBitVecTraits, optReachableBitVec,
+                                                                 succ->bbNum))
+                                         {
+                                             return BasicBlockVisit::Continue;
+                                         }
 
-            BitVecOps::AddElemD(optReachableBitVecTraits, optReachableBitVec, succ->bbNum);
+                                         BitVecOps::AddElemD(optReachableBitVecTraits, optReachableBitVec, succ->bbNum);
 
-            stack.Push(succ);
-            return BasicBlockVisit::Continue;
-        });
+                                         stack.Push(succ);
+                                         return BasicBlockVisit::Continue;
+                                     });
 
         if (result == BasicBlockVisit::Abort)
         {

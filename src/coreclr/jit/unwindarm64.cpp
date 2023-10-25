@@ -461,8 +461,8 @@ void Compiler::unwindSaveRegPairPreindexed(regNumber reg1, regNumber reg2, int o
 
         pu->AddCode(0x80 | (BYTE)z);
     }
-    else if ((reg1 == REG_R19) &&
-             (-256 <= offset)) // If the offset is between -512 and -256, we use the save_regp_x unwind code.
+    else if ((reg1 == REG_R19) && (-256 <= offset)) // If the offset is between -512 and -256, we use the save_regp_x
+                                                    // unwind code.
     {
         // save_r19r20_x: 001zzzzz: save <r19,r20> pair at [sp-#Z*8]!, pre-indexed offset >= -248
         // NOTE: I'm not sure why we allow Z==0 here; seems useless, and the calculation of offset is different from the
@@ -710,9 +710,9 @@ unsigned UnwindCodesBase::GetCodeSizeFromUnwindCodes(bool isProlog)
         BYTE b1 = *pCodes;
         if (IsEndCode(b1))
         {
-            break; // We hit an "end" code; we're done
+            break;                          // We hit an "end" code; we're done
         }
-        size += 4; // All codes represent 4 byte instructions.
+        size += 4;                          // All codes represent 4 byte instructions.
         pCodes += GetUnwindSizeFromUnwindHeader(b1);
         assert(pCodes - pCodesStart < 256); // 255 is the absolute maximum number of code bytes allowed
     }
@@ -758,7 +758,7 @@ void DumpUnwindInfo(Compiler*         comp,
     // pHeader is not guaranteed to be aligned. We put four 0xFF end codes at the end
     // to provide padding, and round down to get a multiple of 4 bytes in size.
     DWORD UNALIGNED* pdw = (DWORD UNALIGNED*)pHeader;
-    DWORD dw;
+    DWORD            dw;
 
     dw = *pdw++;
 

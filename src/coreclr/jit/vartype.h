@@ -231,7 +231,7 @@ inline bool varTypeIsIntOrI(T vt)
 #ifdef TARGET_64BIT
             || (TypeGet(vt) == TYP_I_IMPL)
 #endif // TARGET_64BIT
-                );
+    );
 }
 
 template <class T>
@@ -327,11 +327,11 @@ inline bool varTypeUsesFloatReg(T vt)
 template <class T>
 inline bool varTypeUsesMaskReg(T vt)
 {
-// The technically correct check is:
-//     return varTypeRegister[TypeGet(vt)] == VTR_MASK;
-//
-// However, we only have one type that uses VTR_MASK today
-// and so its quite a bit cheaper to just check that directly
+    // The technically correct check is:
+    //     return varTypeRegister[TypeGet(vt)] == VTR_MASK;
+    //
+    // However, we only have one type that uses VTR_MASK today
+    // and so its quite a bit cheaper to just check that directly
 
 #if defined(FEATURE_SIMD) && defined(TARGET_XARCH)
     assert((TypeGet(vt) == TYP_MASK) || (varTypeRegister[TypeGet(vt)] != VTR_MASK));

@@ -10,8 +10,7 @@
 #include "spmirecordhelper.h"
 #include <assert.h>
 
-std::string SpmiDumpHelper::DumpAgnostic_CORINFO_RESOLVED_TOKENin(
-    const Agnostic_CORINFO_RESOLVED_TOKENin& tokenIn)
+std::string SpmiDumpHelper::DumpAgnostic_CORINFO_RESOLVED_TOKENin(const Agnostic_CORINFO_RESOLVED_TOKENin& tokenIn)
 {
     char buffer[MAX_BUFFER_SIZE];
     sprintf_s(buffer, MAX_BUFFER_SIZE, "tc-%016llX ts-%016llX tok-%08X tt-%u", tokenIn.tokenContext, tokenIn.tokenScope,
@@ -19,8 +18,7 @@ std::string SpmiDumpHelper::DumpAgnostic_CORINFO_RESOLVED_TOKENin(
     return std::string(buffer);
 }
 
-std::string SpmiDumpHelper::DumpAgnostic_CORINFO_RESOLVED_TOKENout(
-    const Agnostic_CORINFO_RESOLVED_TOKENout& tokenOut)
+std::string SpmiDumpHelper::DumpAgnostic_CORINFO_RESOLVED_TOKENout(const Agnostic_CORINFO_RESOLVED_TOKENout& tokenOut)
 {
     char buffer[MAX_BUFFER_SIZE];
     sprintf_s(buffer, MAX_BUFFER_SIZE, "cls-%016llX meth-%016llX fld-%016llX ti-%u ts-%u mi-%u ms-%u", tokenOut.hClass,
@@ -29,31 +27,27 @@ std::string SpmiDumpHelper::DumpAgnostic_CORINFO_RESOLVED_TOKENout(
     return std::string(buffer);
 }
 
-std::string SpmiDumpHelper::DumpAgnostic_CORINFO_RESOLVED_TOKEN(
-    const Agnostic_CORINFO_RESOLVED_TOKEN& token)
+std::string SpmiDumpHelper::DumpAgnostic_CORINFO_RESOLVED_TOKEN(const Agnostic_CORINFO_RESOLVED_TOKEN& token)
 {
     return DumpAgnostic_CORINFO_RESOLVED_TOKENin(token.inValue) + std::string(" ") +
            DumpAgnostic_CORINFO_RESOLVED_TOKENout(token.outValue);
 }
 
-std::string SpmiDumpHelper::DumpAgnostic_CORINFO_LOOKUP_KIND(
-    const Agnostic_CORINFO_LOOKUP_KIND& lookupKind)
+std::string SpmiDumpHelper::DumpAgnostic_CORINFO_LOOKUP_KIND(const Agnostic_CORINFO_LOOKUP_KIND& lookupKind)
 {
     char buffer[MAX_BUFFER_SIZE];
     sprintf_s(buffer, MAX_BUFFER_SIZE, "nrl-%u rlk-%u", lookupKind.needsRuntimeLookup, lookupKind.runtimeLookupKind);
     return std::string(buffer);
 }
 
-std::string SpmiDumpHelper::DumpAgnostic_CORINFO_CONST_LOOKUP(
-    const Agnostic_CORINFO_CONST_LOOKUP& constLookup)
+std::string SpmiDumpHelper::DumpAgnostic_CORINFO_CONST_LOOKUP(const Agnostic_CORINFO_CONST_LOOKUP& constLookup)
 {
     char buffer[MAX_BUFFER_SIZE];
     sprintf_s(buffer, MAX_BUFFER_SIZE, "at-%u handle/address-%016llX", constLookup.accessType, constLookup.handle);
     return std::string(buffer);
 }
 
-std::string SpmiDumpHelper::DumpAgnostic_CORINFO_RUNTIME_LOOKUP(
-    const Agnostic_CORINFO_RUNTIME_LOOKUP& lookup)
+std::string SpmiDumpHelper::DumpAgnostic_CORINFO_RUNTIME_LOOKUP(const Agnostic_CORINFO_RUNTIME_LOOKUP& lookup)
 {
     char buffer[MAX_BUFFER_SIZE];
     sprintf_s(buffer, MAX_BUFFER_SIZE, " sig-%016llX hlp-%u ind-%u tfn-%u so-%u { ", lookup.signature, lookup.helper,
@@ -83,8 +77,10 @@ std::string SpmiDumpHelper::DumpAgnostic_CORINFO_LOOKUP(const Agnostic_CORINFO_L
     return kind + std::string(" ") + lookupDescription;
 }
 
-// Dump the consecutive elements of a DenseLightweightMap, which are DWORDLONG, and assumed to represent an array of handles.
-void SpmiDumpHelper::FormatHandleArray(char*& pbuf, int& sizeOfBuffer, const DenseLightWeightMap<DWORDLONG>* map, DWORD count, DWORD startIndex)
+// Dump the consecutive elements of a DenseLightweightMap, which are DWORDLONG, and assumed to represent an array of
+// handles.
+void SpmiDumpHelper::FormatHandleArray(
+    char*& pbuf, int& sizeOfBuffer, const DenseLightWeightMap<DWORDLONG>* map, DWORD count, DWORD startIndex)
 {
     int cch;
 
@@ -93,7 +89,7 @@ void SpmiDumpHelper::FormatHandleArray(char*& pbuf, int& sizeOfBuffer, const Den
     sizeOfBuffer -= cch;
 
     const unsigned int maxHandleArrayDisplayElems = 5; // Don't display more than this.
-    const unsigned int handleArrayDisplayElems = min(maxHandleArrayDisplayElems, count);
+    const unsigned int handleArrayDisplayElems    = min(maxHandleArrayDisplayElems, count);
 
     bool first = true;
     for (DWORD i = startIndex; i < startIndex + handleArrayDisplayElems; i++)
@@ -117,36 +113,36 @@ void SpmiDumpHelper::FormatHandleArray(char*& pbuf, int& sizeOfBuffer, const Den
     sizeOfBuffer -= cch;
 }
 
-void SpmiDumpHelper::FormatAgnostic_CORINFO_SIG_INST_Element(
-    char*& pbuf,
-    int& sizeOfBuffer,
-    const char* prefixStr,
-    const char* instCountPrefixStr,
-    const char* instIndexPrefixStr,
-    unsigned handleInstCount,
-    unsigned handleInstIndex,
-    const DenseLightWeightMap<DWORDLONG>* handleMap)
+void SpmiDumpHelper::FormatAgnostic_CORINFO_SIG_INST_Element(char*&                                pbuf,
+                                                             int&                                  sizeOfBuffer,
+                                                             const char*                           prefixStr,
+                                                             const char*                           instCountPrefixStr,
+                                                             const char*                           instIndexPrefixStr,
+                                                             unsigned                              handleInstCount,
+                                                             unsigned                              handleInstIndex,
+                                                             const DenseLightWeightMap<DWORDLONG>* handleMap)
 {
-    int cch = sprintf_s(pbuf, sizeOfBuffer, "%s%s-%u %s-%u ", prefixStr, instCountPrefixStr, handleInstCount, instIndexPrefixStr, handleInstIndex);
+    int cch = sprintf_s(pbuf, sizeOfBuffer, "%s%s-%u %s-%u ", prefixStr, instCountPrefixStr, handleInstCount,
+                        instIndexPrefixStr, handleInstIndex);
     pbuf += cch;
     sizeOfBuffer -= cch;
 
     FormatHandleArray(pbuf, sizeOfBuffer, handleMap, handleInstCount, handleInstIndex);
 }
 
-std::string SpmiDumpHelper::DumpAgnostic_CORINFO_SIG_INST_Element(
-    const char* prefixStr,
-    const char* instCountPrefixStr,
-    const char* instIndexPrefixStr,
-    unsigned handleInstCount,
-    unsigned handleInstIndex,
-    const DenseLightWeightMap<DWORDLONG>* handleMap)
+std::string SpmiDumpHelper::DumpAgnostic_CORINFO_SIG_INST_Element(const char* prefixStr,
+                                                                  const char* instCountPrefixStr,
+                                                                  const char* instIndexPrefixStr,
+                                                                  unsigned    handleInstCount,
+                                                                  unsigned    handleInstIndex,
+                                                                  const DenseLightWeightMap<DWORDLONG>* handleMap)
 {
-    char buffer[MAX_BUFFER_SIZE];
-    char* pbuf = buffer;
-    int sizeOfBuffer = sizeof(buffer);
+    char  buffer[MAX_BUFFER_SIZE];
+    char* pbuf         = buffer;
+    int   sizeOfBuffer = sizeof(buffer);
 
-    FormatAgnostic_CORINFO_SIG_INST_Element(pbuf, sizeOfBuffer, prefixStr, instCountPrefixStr, instIndexPrefixStr, handleInstCount, handleInstIndex, handleMap);
+    FormatAgnostic_CORINFO_SIG_INST_Element(pbuf, sizeOfBuffer, prefixStr, instCountPrefixStr, instIndexPrefixStr,
+                                            handleInstCount, handleInstIndex, handleMap);
 
     return std::string(buffer);
 }
@@ -155,8 +151,12 @@ std::string SpmiDumpHelper::DumpCorInfoFlag(CorInfoFlag flags)
 {
     std::string s("");
 
-#define AddFlag(__name)\
-    if (flags & __name) { s += std::string(" ") + std::string(#__name); flags = (CorInfoFlag)((DWORD)flags & ~(DWORD)__name); }
+#define AddFlag(__name)                                                                                                \
+    if (flags & __name)                                                                                                \
+    {                                                                                                                  \
+        s += std::string(" ") + std::string(#__name);                                                                  \
+        flags = (CorInfoFlag)((DWORD)flags & ~(DWORD)__name);                                                          \
+    }
 
     AddFlag(CORINFO_FLG_PROTECTED);
     AddFlag(CORINFO_FLG_STATIC);
@@ -212,19 +212,23 @@ std::string SpmiDumpHelper::DumpJitFlags(unsigned long long flags)
 {
     std::string s("");
 
-#define AddFlag(__name)\
-    if (flags & (1ull << CORJIT_FLAGS::CorJitFlag::CORJIT_FLAG_ ## __name)) { \
-       s += std::string(" ") + std::string(#__name); \
-       flags &= ~(1ull << CORJIT_FLAGS::CorJitFlag::CORJIT_FLAG_ ## __name); }
+#define AddFlag(__name)                                                                                                \
+    if (flags & (1ull << CORJIT_FLAGS::CorJitFlag::CORJIT_FLAG_##__name))                                              \
+    {                                                                                                                  \
+        s += std::string(" ") + std::string(#__name);                                                                  \
+        flags &= ~(1ull << CORJIT_FLAGS::CorJitFlag::CORJIT_FLAG_##__name);                                            \
+    }
 
     // Note some flags are target dependent, but we want to
     // be target-agnostic. So we use numbers for the few
     // flags that are not universally defined.
 
-#define AddFlagNumeric(__name, __val)\
-    if (flags & (1ull << __val)) { \
-       s += std::string(" ") + std::string(#__name); \
-       flags &= ~(1ull <<__val); }
+#define AddFlagNumeric(__name, __val)                                                                                  \
+    if (flags & (1ull << __val))                                                                                       \
+    {                                                                                                                  \
+        s += std::string(" ") + std::string(#__name);                                                                  \
+        flags &= ~(1ull << __val);                                                                                     \
+    }
 
     AddFlag(SPEED_OPT);
     AddFlag(SIZE_OPT);
@@ -288,4 +292,3 @@ std::string SpmiDumpHelper::DumpJitFlags(unsigned long long flags)
 
     return s;
 }
-

@@ -178,7 +178,7 @@ GenTree* Compiler::impExpandHalfConstEqualsSIMD(
         xor1 = gtNewSimdBinOpNode(GT_XOR, simdType, vec1, cnsVec1, baseType, simdSize);
     }
 
-// ((v1 ^ cns1) | (v2 ^ cns2)) == zero
+    // ((v1 ^ cns1) | (v2 ^ cns2)) == zero
 
 #if defined(TARGET_XARCH)
     if (compOpportunisticallyDependsOn(InstructionSet_AVX512F_VL))
@@ -836,7 +836,7 @@ GenTree* Compiler::impSpanEqualsOrStartsWith(bool startsWith, CORINFO_SIG_INFO* 
     GenTreeLclFld* spanReferenceFld = gtNewLclFldNode(spanLclNum, TYP_BYREF, OFFSETOF__CORINFO_Span__reference);
     GenTreeLclFld* spanLengthFld    = gtNewLclFldNode(spanLclNum, TYP_INT, OFFSETOF__CORINFO_Span__length);
     GenTree*       unrolled = impExpandHalfConstEquals(spanReferenceFld, spanLengthFld, false, startsWith, (WCHAR*)str,
-                                                 cnsLength, 0, cmpMode);
+                                                       cnsLength, 0, cmpMode);
 
     if (unrolled != nullptr)
     {

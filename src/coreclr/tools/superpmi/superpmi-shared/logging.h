@@ -75,7 +75,7 @@ public:
     static void CloseLogFile();
 
     static UINT32 ParseLogLevelString(const char* specifierStr);
-    static void SetLogLevel(UINT32 logLevelMask)
+    static void   SetLogLevel(UINT32 logLevelMask)
     {
         s_logLevel = logLevelMask;
     }

@@ -11,9 +11,7 @@ CycleTimer::CycleTimer()
     overhead = QueryOverhead();
 }
 
-CycleTimer::~CycleTimer()
-{
-}
+CycleTimer::~CycleTimer() {}
 
 void CycleTimer::Start()
 {

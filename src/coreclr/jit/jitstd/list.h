@@ -24,14 +24,14 @@ class list
 {
 public:
     typedef Allocator allocator_type;
-    typedef T* pointer;
-    typedef T& reference;
-    typedef const T* const_pointer;
-    typedef const T& const_reference;
+    typedef T*        pointer;
+    typedef T&        reference;
+    typedef const T*  const_pointer;
+    typedef const T&  const_reference;
 
-    typedef size_t size_type;
+    typedef size_t    size_type;
     typedef ptrdiff_t difference_type;
-    typedef T value_type;
+    typedef T         value_type;
 
     // Forward declaration
 private:
@@ -44,6 +44,7 @@ public:
     {
     private:
         const_iterator(Node* ptr);
+
     public:
         const_iterator();
         const_iterator(const const_iterator& it);
@@ -53,13 +54,13 @@ public:
         const_iterator& operator++(int);
         const_iterator& operator--();
         const_iterator& operator--(int);
-        const_iterator operator+(difference_type n);
-        const_iterator operator-(difference_type n);
-        size_type operator-(const const_iterator& that);
-        bool operator==(const const_iterator& it) const;
-        bool operator!=(const const_iterator& it) const;
-        const T& operator*() const;
-        const T* operator->() const;
+        const_iterator  operator+(difference_type n);
+        const_iterator  operator-(difference_type n);
+        size_type       operator-(const const_iterator& that);
+        bool            operator==(const const_iterator& it) const;
+        bool            operator!=(const const_iterator& it) const;
+        const T&        operator*() const;
+        const T*        operator->() const;
         operator const T*() const;
 
     private:
@@ -70,6 +71,7 @@ public:
     class iterator : public jitstd::iterator<bidirectional_iterator_tag, T>
     {
         iterator(Node* ptr);
+
     public:
         iterator();
         iterator(const iterator& it);
@@ -78,13 +80,13 @@ public:
         iterator& operator++(int);
         iterator& operator--();
         iterator& operator--(int);
-        iterator operator+(difference_type n);
-        iterator operator-(difference_type n);
+        iterator  operator+(difference_type n);
+        iterator  operator-(difference_type n);
         size_type operator-(const iterator& that);
-        bool operator==(const iterator& it);
-        bool operator!=(const iterator& it);
-        T& operator*();
-        T* operator->();
+        bool      operator==(const iterator& it);
+        bool      operator!=(const iterator& it);
+        T&        operator*();
+        T*        operator->();
         operator T*();
 
     private:
@@ -98,6 +100,7 @@ public:
     {
     private:
         const_reverse_iterator(Node* ptr);
+
     public:
         const_reverse_iterator();
         const_reverse_iterator(const const_reverse_iterator& it);
@@ -107,13 +110,13 @@ public:
         const_reverse_iterator& operator++(int);
         const_reverse_iterator& operator--();
         const_reverse_iterator& operator--(int);
-        const_reverse_iterator operator+(difference_type n);
-        const_reverse_iterator operator-(difference_type n);
-        size_type operator-(const const_reverse_iterator& that);
-        bool operator==(const const_reverse_iterator& it) const;
-        bool operator!=(const const_reverse_iterator& it) const;
-        const T& operator*() const;
-        const T* operator->() const;
+        const_reverse_iterator  operator+(difference_type n);
+        const_reverse_iterator  operator-(difference_type n);
+        size_type               operator-(const const_reverse_iterator& that);
+        bool                    operator==(const const_reverse_iterator& it) const;
+        bool                    operator!=(const const_reverse_iterator& it) const;
+        const T&                operator*() const;
+        const T*                operator->() const;
         operator const T*() const;
 
     private:
@@ -125,6 +128,7 @@ public:
     {
     private:
         reverse_iterator(Node* ptr);
+
     public:
         reverse_iterator();
         reverse_iterator(const reverse_iterator& it);
@@ -133,13 +137,13 @@ public:
         reverse_iterator& operator++(int);
         reverse_iterator& operator--();
         reverse_iterator& operator--(int);
-        reverse_iterator operator+(difference_type n);
-        reverse_iterator operator-(difference_type n);
-        size_type operator-(const reverse_iterator& that);
-        bool operator==(const reverse_iterator& it);
-        bool operator!=(const reverse_iterator& it);
-        T& operator*();
-        T* operator->();
+        reverse_iterator  operator+(difference_type n);
+        reverse_iterator  operator-(difference_type n);
+        size_type         operator-(const reverse_iterator& that);
+        bool              operator==(const reverse_iterator& it);
+        bool              operator!=(const reverse_iterator& it);
+        T&                operator*();
+        T*                operator->();
         operator T*();
         friend class list<T, Allocator>::const_reverse_iterator;
 
@@ -151,10 +155,10 @@ public:
 #ifdef DEBUG
     void init(const Allocator& a)
     {
-        m_pHead = nullptr;
-        m_pTail = nullptr;
-        m_nSize = 0;
-        m_allocator = a;
+        m_pHead         = nullptr;
+        m_pTail         = nullptr;
+        m_nSize         = 0;
+        m_allocator     = a;
         m_nodeAllocator = a;
     }
 #endif
@@ -174,23 +178,23 @@ public:
 
     void assign(size_type size, const T& val);
 
-    reference back();
+    reference       back();
     const_reference back() const;
-    iterator backPosition();
-    const_iterator backPosition() const;
+    iterator        backPosition();
+    const_iterator  backPosition() const;
 
-    iterator begin();
+    iterator       begin();
     const_iterator begin() const;
 
     void clear();
     bool empty() const;
 
-    iterator end();
+    iterator       end();
     const_iterator end() const;
 
     iterator erase(iterator position);
 
-    reference front();
+    reference       front();
     const_reference front() const;
 
     allocator_type get_allocator() const;
@@ -198,7 +202,7 @@ public:
     iterator insert(iterator position, const T& x);
     template <class... Args>
     iterator emplace(iterator position, Args&&... args);
-    void insert(iterator position, size_type n, const T& x);
+    void     insert(iterator position, size_type n, const T& x);
     template <class InputIterator>
     void insert(iterator position, InputIterator first, InputIterator last);
 
@@ -206,7 +210,7 @@ public:
 
     void merge(list<T, Allocator>& lst);
     template <class Compare>
-    void merge (list<T, Allocator>& lst, Compare comp);
+    void merge(list<T, Allocator>& lst, Compare comp);
 
     list<T, Allocator>& operator=(const list<T, Allocator>& lst);
 
@@ -216,25 +220,25 @@ public:
     void push_back(const T& val);
     template <class... Args>
     void emplace_back(Args&&... args);
-    void push_front (const T& val);
+    void push_front(const T& val);
     template <class... Args>
     void emplace_front(Args&&... args);
 
-    reverse_iterator rbegin();
+    reverse_iterator       rbegin();
     const_reverse_iterator rbegin() const;
 
     void remove(const T& val);
     template <class Predicate>
     void remove_if(Predicate pred);
 
-    reverse_iterator rend();
+    reverse_iterator       rend();
     const_reverse_iterator rend() const;
 
     void resize(size_type sz, const T& c);
     void reverse();
 
     size_type size() const;
-    void sort();
+    void      sort();
 
     template <class Compare>
     void sort(Compare comp);
@@ -243,7 +247,7 @@ public:
     void splice(iterator position, list& lst, iterator i);
     void splice(iterator position, list& x, iterator first, iterator last);
 
-    void swap(list<T,Allocator>& lst);
+    void swap(list<T, Allocator>& lst);
 
     void unique();
 
@@ -253,13 +257,12 @@ public:
 private:
     struct Node
     {
-        T m_value;
+        T     m_value;
         Node* m_pNext;
         Node* m_pPrev;
 
         template <class... Args>
-        Node(Args&&... args)
-            : m_value(std::forward<Args>(args)...)
+        Node(Args&&... args) : m_value(std::forward<Args>(args)...)
         {
         }
     };
@@ -280,34 +283,26 @@ private:
 
     void insert_new_node_helper(Node* pInsert, Node* pNewNode);
 
-    Node* m_pHead;
-    Node* m_pTail;
-    size_type m_nSize;
-    typename Allocator::template rebind<T>::allocator m_allocator;
+    Node*                                                m_pHead;
+    Node*                                                m_pTail;
+    size_type                                            m_nSize;
+    typename Allocator::template rebind<T>::allocator    m_allocator;
     typename Allocator::template rebind<Node>::allocator m_nodeAllocator;
 };
 
-}
+} // namespace jitstd
 
 namespace jitstd
 {
 template <typename T, typename Allocator>
 list<T, Allocator>::list(const Allocator& allocator)
-    : m_pHead(nullptr)
-    , m_pTail(nullptr)
-    , m_nSize(0)
-    , m_allocator(allocator)
-    , m_nodeAllocator(allocator)
+    : m_pHead(nullptr), m_pTail(nullptr), m_nSize(0), m_allocator(allocator), m_nodeAllocator(allocator)
 {
 }
 
 template <typename T, typename Allocator>
 list<T, Allocator>::list(size_type n, const T& value, const Allocator& allocator)
-    : m_pHead(NULL)
-    , m_pTail(NULL)
-    , m_nSize(0)
-    , m_allocator(allocator)
-    , m_nodeAllocator(allocator)
+    : m_pHead(NULL), m_pTail(NULL), m_nSize(0), m_allocator(allocator), m_nodeAllocator(allocator)
 {
     construct_helper(n, value, int_not_an_iterator_tag());
 }
@@ -315,22 +310,14 @@ list<T, Allocator>::list(size_type n, const T& value, const Allocator& allocator
 template <typename T, typename Allocator>
 template <typename InputIterator>
 list<T, Allocator>::list(InputIterator first, InputIterator last, const Allocator& allocator)
-    : m_pHead(NULL)
-    , m_pTail(NULL)
-    , m_nSize(0)
-    , m_allocator(allocator)
-    , m_nodeAllocator(allocator)
+    : m_pHead(NULL), m_pTail(NULL), m_nSize(0), m_allocator(allocator), m_nodeAllocator(allocator)
 {
     construct_helper(first, last, iterator_traits<InputIterator>::iterator_category());
 }
 
 template <typename T, typename Allocator>
 list<T, Allocator>::list(const list<T, Allocator>& other)
-    : m_pHead(NULL)
-    , m_pTail(NULL)
-    , m_nSize(0)
-    , m_allocator(other.m_allocator)
-    , m_nodeAllocator(other.m_nodeAllocator)
+    : m_pHead(NULL), m_pTail(NULL), m_nSize(0), m_allocator(other.m_allocator), m_nodeAllocator(other.m_nodeAllocator)
 {
     construct_helper(other.begin(), other.end(), forward_iterator_tag());
 }
@@ -467,8 +454,7 @@ typename list<T, Allocator>::allocator_type list<T, Allocator>::get_allocator() 
 }
 
 template <typename T, typename Allocator>
-typename list<T, Allocator>::iterator
-    list<T, Allocator>::insert(iterator position, const T& val)
+typename list<T, Allocator>::iterator list<T, Allocator>::insert(iterator position, const T& val)
 {
     Node* pNewNode = new (m_nodeAllocator.allocate(1), placement_t()) Node(val);
     insert_new_node_helper(position.m_pNode, pNewNode);
@@ -477,8 +463,7 @@ typename list<T, Allocator>::iterator
 
 template <typename T, typename Allocator>
 template <typename... Args>
-typename list<T, Allocator>::iterator
-    list<T, Allocator>::emplace(iterator position, Args&&... args)
+typename list<T, Allocator>::iterator list<T, Allocator>::emplace(iterator position, Args&&... args)
 {
     Node* pNewNode = new (m_nodeAllocator.allocate(1), placement_t()) Node(std::forward<Args>(args)...);
     insert_new_node_helper(position.m_pNode, pNewNode);
@@ -565,7 +550,7 @@ void list<T, Allocator>::pop_back()
     Node* pDelete = m_pTail;
     if (m_pHead != m_pTail)
     {
-        m_pTail = m_pTail->m_pPrev;
+        m_pTail          = m_pTail->m_pPrev;
         m_pTail->m_pNext = nullptr;
     }
     else
@@ -587,7 +572,7 @@ void list<T, Allocator>::pop_front()
     Node* pDelete = m_pHead;
     if (m_pHead != m_pTail)
     {
-        m_pHead = m_pHead->m_pNext;
+        m_pHead          = m_pHead->m_pNext;
         m_pHead->m_pPrev = NULL;
     }
     else
@@ -626,15 +611,13 @@ void list<T, Allocator>::emplace_front(Args&&... args)
 }
 
 template <typename T, typename Allocator>
-typename list<T, Allocator>::reverse_iterator
-    list<T, Allocator>::rbegin()
+typename list<T, Allocator>::reverse_iterator list<T, Allocator>::rbegin()
 {
     return reverse_iterator(m_pTail);
 }
 
 template <typename T, typename Allocator>
-typename list<T, Allocator>::const_reverse_iterator
-    list<T, Allocator>::rbegin() const
+typename list<T, Allocator>::const_reverse_iterator list<T, Allocator>::rbegin() const
 {
     return const_reverse_iterator(m_pTail);
 }
@@ -790,7 +773,6 @@ void list<T, Allocator>::destroy_helper()
     m_nSize = 0;
 }
 
-
 template <typename T, typename Allocator>
 void list<T, Allocator>::construct_helper(size_type n, const T& value, int_not_an_iterator_tag)
 {
@@ -891,10 +873,6 @@ void list<T, Allocator>::insert_new_node_helper(Node* pInsert, Node* pNewNode)
 
 } // end of namespace jitstd.
 
-
-
-
-
 // Implementation of list iterators
 
 namespace jitstd
@@ -902,23 +880,19 @@ namespace jitstd
 
 // iterator
 template <typename T, typename Allocator>
-list<T, Allocator>::iterator::iterator()
-    : m_pNode(NULL)
+list<T, Allocator>::iterator::iterator() : m_pNode(NULL)
 {
 }
 
 template <typename T, typename Allocator>
-list<T, Allocator>::iterator::iterator(Node* pNode)
-    : m_pNode(pNode)
+list<T, Allocator>::iterator::iterator(Node* pNode) : m_pNode(pNode)
 {
 }
 
 template <typename T, typename Allocator>
-list<T, Allocator>::iterator::iterator(const iterator& it)
-    : m_pNode(it.m_pNode)
+list<T, Allocator>::iterator::iterator(const iterator& it) : m_pNode(it.m_pNode)
 {
 }
-
 
 template <typename T, typename Allocator>
 typename list<T, Allocator>::iterator& list<T, Allocator>::iterator::operator++()
@@ -978,25 +952,19 @@ list<T, Allocator>::iterator::operator T*()
     return &(m_pNode->m_value);
 }
 
-
-
-
 // const_iterator
 template <typename T, typename Allocator>
-list<T, Allocator>::const_iterator::const_iterator()
-    : m_pNode(NULL)
+list<T, Allocator>::const_iterator::const_iterator() : m_pNode(NULL)
 {
 }
 
 template <typename T, typename Allocator>
-list<T, Allocator>::const_iterator::const_iterator(Node* pNode)
-    : m_pNode(pNode)
+list<T, Allocator>::const_iterator::const_iterator(Node* pNode) : m_pNode(pNode)
 {
 }
 
 template <typename T, typename Allocator>
-list<T, Allocator>::const_iterator::const_iterator(const const_iterator& it)
-    : m_pNode(it.m_pNode)
+list<T, Allocator>::const_iterator::const_iterator(const const_iterator& it) : m_pNode(it.m_pNode)
 {
 }
 
@@ -1064,26 +1032,21 @@ list<T, Allocator>::const_iterator::operator const T*() const
     return &(m_pNode->m_value);
 }
 
-
 // reverse_iterator
 template <typename T, typename Allocator>
-list<T, Allocator>::reverse_iterator::reverse_iterator()
-    : m_pNode(NULL)
+list<T, Allocator>::reverse_iterator::reverse_iterator() : m_pNode(NULL)
 {
 }
 
 template <typename T, typename Allocator>
-list<T, Allocator>::reverse_iterator::reverse_iterator(Node* pNode)
-    : m_pNode(pNode)
+list<T, Allocator>::reverse_iterator::reverse_iterator(Node* pNode) : m_pNode(pNode)
 {
 }
 
 template <typename T, typename Allocator>
-list<T, Allocator>::reverse_iterator::reverse_iterator(const reverse_iterator& it)
-    : m_pNode(it.m_pNode)
+list<T, Allocator>::reverse_iterator::reverse_iterator(const reverse_iterator& it) : m_pNode(it.m_pNode)
 {
 }
-
 
 template <typename T, typename Allocator>
 typename list<T, Allocator>::reverse_iterator& list<T, Allocator>::reverse_iterator::operator++()
@@ -1145,14 +1108,12 @@ list<T, Allocator>::reverse_iterator::operator T*()
 
 // const_reverse_iterator
 template <typename T, typename Allocator>
-list<T, Allocator>::const_reverse_iterator::const_reverse_iterator()
-    : m_pNode(NULL)
+list<T, Allocator>::const_reverse_iterator::const_reverse_iterator() : m_pNode(NULL)
 {
 }
 
 template <typename T, typename Allocator>
-list<T, Allocator>::const_reverse_iterator::const_reverse_iterator(Node* pNode)
-    : m_pNode(pNode)
+list<T, Allocator>::const_reverse_iterator::const_reverse_iterator(Node* pNode) : m_pNode(pNode)
 {
 }
 
@@ -1163,8 +1124,7 @@ list<T, Allocator>::const_reverse_iterator::const_reverse_iterator(const const_r
 }
 
 template <typename T, typename Allocator>
-list<T, Allocator>::const_reverse_iterator::const_reverse_iterator(const reverse_iterator& it)
-    : m_pNode(it.m_pNode)
+list<T, Allocator>::const_reverse_iterator::const_reverse_iterator(const reverse_iterator& it) : m_pNode(it.m_pNode)
 {
 }
 
@@ -1226,5 +1186,4 @@ list<T, Allocator>::const_reverse_iterator::operator const T*() const
     return &(m_pNode->m_value);
 }
 
-}
-
+} // namespace jitstd

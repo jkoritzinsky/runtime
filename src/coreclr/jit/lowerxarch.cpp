@@ -655,13 +655,13 @@ void Lowering::LowerPutArgStk(GenTreePutArgStk* putArgStk)
                 else
 #endif // TARGET_X86
                     if (loadSize <= comp->getUnrollThreshold(Compiler::UnrollKind::Memcpy))
-                {
-                    putArgStk->gtPutArgStkKind = GenTreePutArgStk::Kind::Unroll;
-                }
-                else
-                {
-                    putArgStk->gtPutArgStkKind = GenTreePutArgStk::Kind::RepInstr;
-                }
+                    {
+                        putArgStk->gtPutArgStkKind = GenTreePutArgStk::Kind::Unroll;
+                    }
+                    else
+                    {
+                        putArgStk->gtPutArgStkKind = GenTreePutArgStk::Kind::RepInstr;
+                    }
             }
             else // There are GC pointers.
             {
@@ -732,7 +732,7 @@ void Lowering::LowerPutArgStk(GenTreePutArgStk* putArgStk)
 #if defined(TARGET_AMD64)
         && !src->IsIntegralConst(0)
 #endif // TARGET_AMD64
-            )
+    )
     {
         MakeSrcContained(putArgStk, src);
     }
@@ -5913,12 +5913,14 @@ bool Lowering::IsRMWIndirCandidate(GenTree* operand, GenTree* storeInd)
                 return false;
             }
 
-            node->VisitOperands([&markCount](GenTree* nodeOperand) -> GenTree::VisitResult {
-                assert((nodeOperand->gtLIRFlags & LIR::Flags::Mark) == 0);
-                nodeOperand->gtLIRFlags |= LIR::Flags::Mark;
-                markCount++;
-                return GenTree::VisitResult::Continue;
-            });
+            node->VisitOperands(
+                [&markCount](GenTree* nodeOperand) -> GenTree::VisitResult
+                {
+                    assert((nodeOperand->gtLIRFlags & LIR::Flags::Mark) == 0);
+                    nodeOperand->gtLIRFlags |= LIR::Flags::Mark;
+                    markCount++;
+                    return GenTree::VisitResult::Continue;
+                });
         }
     }
 
@@ -6369,12 +6371,12 @@ void Lowering::ContainCheckCallOperands(GenTreeCall* call)
         else
 #endif // TARGET_X86
             if (ctrlExpr->isIndir())
-        {
-            // We may have cases where we have set a register target on the ctrlExpr, but if it
-            // contained we must clear it.
-            ctrlExpr->SetRegNum(REG_NA);
-            MakeSrcContained(call, ctrlExpr);
-        }
+            {
+                // We may have cases where we have set a register target on the ctrlExpr, but if it
+                // contained we must clear it.
+                ctrlExpr->SetRegNum(REG_NA);
+                MakeSrcContained(call, ctrlExpr);
+            }
     }
 }
 
@@ -9494,8 +9496,8 @@ void Lowering::ContainCheckHWIntrinsic(GenTreeHWIntrinsic* node)
 
                                 if (op1->IsVectorZero())
                                 {
-// When op1 is zero, we can contain it and we expect that
-// ival is already in the correct state to account for it
+                                    // When op1 is zero, we can contain it and we expect that
+                                    // ival is already in the correct state to account for it
 
 #if DEBUG
                                     ssize_t ival = lastOp->AsIntConCommon()->IconValue();
@@ -9515,8 +9517,8 @@ void Lowering::ContainCheckHWIntrinsic(GenTreeHWIntrinsic* node)
                                 }
                                 else if (op2->IsVectorZero())
                                 {
-// When op2 is zero, we can contain it and we expect that
-// zmask is already in the correct state to account for it
+                                    // When op2 is zero, we can contain it and we expect that
+                                    // zmask is already in the correct state to account for it
 
 #if DEBUG
                                     ssize_t ival = lastOp->AsIntConCommon()->IconValue();

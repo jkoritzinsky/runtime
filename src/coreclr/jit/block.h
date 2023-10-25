@@ -158,9 +158,7 @@ class MemoryKindIterator
     int value;
 
 public:
-    explicit inline MemoryKindIterator(int val) : value(val)
-    {
-    }
+    explicit inline MemoryKindIterator(int val) : value(val) {}
     inline MemoryKindIterator& operator++()
     {
         ++value;
@@ -187,9 +185,7 @@ public:
 // Empty struct that allows enumerating memory kinds via `for(MemoryKind kind : allMemoryKinds())`
 struct allMemoryKinds
 {
-    inline allMemoryKinds()
-    {
-    }
+    inline allMemoryKinds() {}
     inline MemoryKindIterator begin()
     {
         return MemoryKindIterator(0);
@@ -240,9 +236,7 @@ class PredEdgeList
     };
 
 public:
-    PredEdgeList(FlowEdge* pred) : m_begin(pred)
-    {
-    }
+    PredEdgeList(FlowEdge* pred) : m_begin(pred) {}
 
     iterator begin() const
     {
@@ -292,9 +286,7 @@ class PredBlockList
     };
 
 public:
-    PredBlockList(FlowEdge* pred) : m_begin(pred)
-    {
-    }
+    PredBlockList(FlowEdge* pred) : m_begin(pred) {}
 
     iterator begin() const
     {
@@ -317,9 +309,7 @@ class BBArrayIterator
     BasicBlock* const* m_bbEntry;
 
 public:
-    BBArrayIterator(BasicBlock* const* bbEntry) : m_bbEntry(bbEntry)
-    {
-    }
+    BBArrayIterator(BasicBlock* const* bbEntry) : m_bbEntry(bbEntry) {}
 
     BasicBlock* operator*() const
     {
@@ -530,7 +520,8 @@ private:
     BBjumpKinds bbJumpKind; // jump (if any) at the end of this block
 
     /* The following union describes the jump target(s) of this block */
-    union {
+    union
+    {
         unsigned    bbJumpOffs; // PC offset (temporary only)
         BasicBlock* bbJumpDest; // basic block
         BBswtDesc*  bbJumpSwt;  // switch descriptor
@@ -687,7 +678,7 @@ public:
     static_assert_no_msg((BBF_SPLIT_NONEXIST & BBF_SPLIT_LOST) == 0);
     static_assert_no_msg((BBF_SPLIT_NONEXIST & BBF_SPLIT_GAINED) == 0);
 
-    unsigned bbNum; // the block's number
+    unsigned bbNum;  // the block's number
 
     unsigned bbRefs; // number of blocks that can reach here, either by fall-through or a branch. If this falls to zero,
                      // the block is unreachable.
@@ -714,25 +705,25 @@ public:
     }
 
 #ifdef DEBUG
-    void     dspFlags();               // Print the flags
-    unsigned dspPreds();               // Print the predecessors (bbPreds)
-    void dspSuccs(Compiler* compiler); // Print the successors. The 'compiler' argument determines whether EH
-                                       // regions are printed: see NumSucc() for details.
-    void dspJumpKind();                // Print the block jump kind (e.g., BBJ_NONE, BBJ_COND, etc.).
+    void     dspFlags();                   // Print the flags
+    unsigned dspPreds();                   // Print the predecessors (bbPreds)
+    void     dspSuccs(Compiler* compiler); // Print the successors. The 'compiler' argument determines whether EH
+                                           // regions are printed: see NumSucc() for details.
+    void dspJumpKind();                    // Print the block jump kind (e.g., BBJ_NONE, BBJ_COND, etc.).
 
     // Print a simple basic block header for various output, including a list of predecessors and successors.
     void dspBlockHeader(Compiler* compiler, bool showKind = true, bool showFlags = false, bool showPreds = true);
 
     const char* dspToString(int blockNumPadding = 0);
-#endif // DEBUG
+#endif                               // DEBUG
 
 #define BB_UNITY_WEIGHT 100.0        // how much a normal execute once block weighs
 #define BB_UNITY_WEIGHT_UNSIGNED 100 // how much a normal execute once block weighs
 #define BB_LOOP_WEIGHT_SCALE 8.0     // synthetic profile scale factor for loops
 #define BB_ZERO_WEIGHT 0.0
-#define BB_MAX_WEIGHT FLT_MAX // maximum finite weight  -- needs rethinking.
+#define BB_MAX_WEIGHT FLT_MAX        // maximum finite weight  -- needs rethinking.
 
-    weight_t bbWeight; // The dynamic execution weight of this block
+    weight_t bbWeight;               // The dynamic execution weight of this block
 
     // getCalledCount -- get the value used to normalize weights for this method
     static weight_t getCalledCount(Compiler* comp);
@@ -946,14 +937,16 @@ public:
 
     EntryState* bbEntryState; // verifier tracked state of all entries in stack.
 
-#define NO_BASE_TMP UINT_MAX // base# to use when we have none
+#define NO_BASE_TMP UINT_MAX  // base# to use when we have none
 
-    union {
+    union
+    {
         unsigned bbStkTempsIn;       // base# for input stack temps
         int      bbCountSchemaIndex; // schema index for count instrumentation
     };
 
-    union {
+    union
+    {
         unsigned bbStkTempsOut;          // base# for output stack temps
         int      bbHistogramSchemaIndex; // schema index for histogram instrumentation
     };
@@ -1089,7 +1082,8 @@ public:
                              // or else NOT_IN_LOOP if this block is not in a loop.
 
     // TODO-Cleanup: Get rid of bbStkDepth and use bbStackDepthOnEntry() instead
-    union {
+    union
+    {
         unsigned short bbStkDepth; // stack depth on entry
         unsigned short bbFPinVars; // number of inner enregistered FP vars
     };
@@ -1124,7 +1118,8 @@ public:
 
     BlockSet bbReach; // Set of all blocks that can reach this one
 
-    union {
+    union
+    {
         BasicBlock* bbIDom;          // Represent the closest dominator to this block (called the Immediate
                                      // Dominator) used to compute the dominance tree.
         FlowEdge* bbLastPred;        // Used early on by fgLinkBasicBlock/fgAddRefPred
@@ -1146,11 +1141,11 @@ public:
                                   // BAD_IL_OFFSET.
 #endif                            // DEBUG
 
-    VARSET_TP bbVarUse; // variables used     by block (before a definition)
-    VARSET_TP bbVarDef; // variables assigned by block (before a use)
+    VARSET_TP bbVarUse;           // variables used     by block (before a definition)
+    VARSET_TP bbVarDef;           // variables assigned by block (before a use)
 
-    VARSET_TP bbLiveIn;  // variables live on entry
-    VARSET_TP bbLiveOut; // variables live on exit
+    VARSET_TP bbLiveIn;           // variables live on entry
+    VARSET_TP bbLiveOut;          // variables live on exit
 
     // Use, def, live in/out information for the implicit memory variable.
     MemoryKindSet bbMemoryUse : MemoryKindCount; // must be set for any MemoryKinds this block references
@@ -1173,9 +1168,7 @@ public:
             return m_ssaNum;
         }
 
-        MemoryPhiArg(unsigned ssaNum, MemoryPhiArg* nextArg = nullptr) : m_ssaNum(ssaNum), m_nextArg(nextArg)
-        {
-        }
+        MemoryPhiArg(unsigned ssaNum, MemoryPhiArg* nextArg = nullptr) : m_ssaNum(ssaNum), m_nextArg(nextArg) {}
 
         void* operator new(size_t sz, class Compiler* comp);
     };
@@ -1189,7 +1182,7 @@ public:
     unsigned bbMemorySsaNumIn[MemoryKindCount];  // The SSA # of memory on entry to the block.
     unsigned bbMemorySsaNumOut[MemoryKindCount]; // The SSA # of memory on exit from the block.
 
-    VARSET_TP bbScope; // variables in scope over the block
+    VARSET_TP bbScope;                           // variables in scope over the block
 
     void InitVarSets(class Compiler* comp);
 
@@ -1199,17 +1192,20 @@ public:
      *  thus we can union them since the two operations are completely disjunct.
      */
 
-    union {
+    union
+    {
         EXPSET_TP bbCseGen;       // CSEs computed by block
         ASSERT_TP bbAssertionGen; // assertions computed by block
     };
 
-    union {
+    union
+    {
         EXPSET_TP bbCseIn;       // CSEs available on entry
         ASSERT_TP bbAssertionIn; // assertions available on entry
     };
 
-    union {
+    union
+    {
         EXPSET_TP bbCseOut;       // CSEs available on exit
         ASSERT_TP bbAssertionOut; // assertions available on exit
     };
@@ -1221,14 +1217,14 @@ public:
 #endif // defined(FEATURE_EH_FUNCLETS) && defined(TARGET_ARM)
 
 #ifdef VERIFIER
-    stackDesc bbStackIn;  // stack descriptor for  input
-    stackDesc bbStackOut; // stack descriptor for output
+    stackDesc bbStackIn;    // stack descriptor for  input
+    stackDesc bbStackOut;   // stack descriptor for output
 
     verTypeVal* bbTypesIn;  // list of variable types on  input
     verTypeVal* bbTypesOut; // list of variable types on output
 #endif                      // VERIFIER
 
-//-------------------------------------------------------------------------
+    //-------------------------------------------------------------------------
 
 #if MEASURE_BLOCK_SIZE
     static size_t s_Size;
@@ -1263,8 +1259,8 @@ public:
     unsigned bbID;
 #endif // DEBUG
 
-    unsigned bbStackDepthOnEntry() const;
-    void bbSetStack(StackEntry* stack);
+    unsigned    bbStackDepthOnEntry() const;
+    void        bbSetStack(StackEntry* stack);
     StackEntry* bbStackOnEntry() const;
 
     // "bbNum" is one-based (for unknown reasons); it is sometimes useful to have the corresponding
@@ -1314,9 +1310,7 @@ public:
     Statement* FirstNonPhiDef() const;
     Statement* FirstNonPhiDefOrCatchArgStore() const;
 
-    BasicBlock() : bbStmtList(nullptr), bbLiveIn(VarSetOps::UninitVal()), bbLiveOut(VarSetOps::UninitVal())
-    {
-    }
+    BasicBlock() : bbStmtList(nullptr), bbLiveIn(VarSetOps::UninitVal()), bbLiveOut(VarSetOps::UninitVal()) {}
 
     // Iteratable collection of successors of a block.
     template <typename TPosition>
@@ -1326,9 +1320,7 @@ public:
         BasicBlock* m_block;
 
     public:
-        Successors(Compiler* comp, BasicBlock* block) : m_comp(comp), m_block(block)
-        {
-        }
+        Successors(Compiler* comp, BasicBlock* block) : m_comp(comp), m_block(block) {}
 
         class iterator
         {
@@ -1337,13 +1329,9 @@ public:
             TPosition   m_pos;
 
         public:
-            iterator(Compiler* comp, BasicBlock* block) : m_comp(comp), m_block(block), m_pos(comp, block)
-            {
-            }
+            iterator(Compiler* comp, BasicBlock* block) : m_comp(comp), m_block(block), m_pos(comp, block) {}
 
-            iterator() : m_pos()
-            {
-            }
+            iterator() : m_pos() {}
 
             void operator++(void)
             {
@@ -1454,9 +1442,7 @@ public:
         };
 
     public:
-        BBCompilerSuccList(Compiler* comp, BasicBlock* block) : m_comp(comp), m_block(block)
-        {
-        }
+        BBCompilerSuccList(Compiler* comp, BasicBlock* block) : m_comp(comp), m_block(block) {}
 
         iterator begin() const
         {
@@ -1554,9 +1540,7 @@ class BasicBlockIterator
     BasicBlock* m_block;
 
 public:
-    BasicBlockIterator(BasicBlock* block) : m_block(block)
-    {
-    }
+    BasicBlockIterator(BasicBlock* block) : m_block(block) {}
 
     BasicBlock* operator*() const
     {
@@ -1590,9 +1574,7 @@ class BasicBlockSimpleList
     BasicBlock* m_begin;
 
 public:
-    BasicBlockSimpleList(BasicBlock* begin) : m_begin(begin)
-    {
-    }
+    BasicBlockSimpleList(BasicBlock* begin) : m_begin(begin) {}
 
     BasicBlockIterator begin() const
     {
@@ -1660,9 +1642,7 @@ struct BBswtDesc
     bool bbsHasDefault;      // true if last switch case is a default case
     bool bbsHasDominantCase; // true if switch has a dominant case
 
-    BBswtDesc() : bbsHasDefault(true), bbsHasDominantCase(false)
-    {
-    }
+    BBswtDesc() : bbsHasDefault(true), bbsHasDominantCase(false) {}
 
     BBswtDesc(Compiler* comp, const BBswtDesc* other);
 
@@ -1708,9 +1688,7 @@ struct BBehfDesc
     BasicBlock** bbeSuccs; // array of `BasicBlock*` pointing to BBJ_EHFINALLYRET block successors
     unsigned     bbeCount; // size of `bbeSuccs` array
 
-    BBehfDesc() : bbeSuccs(nullptr), bbeCount(0)
-    {
-    }
+    BBehfDesc() : bbeSuccs(nullptr), bbeCount(0) {}
 
     BBehfDesc(Compiler* comp, const BBehfDesc* other);
 };
@@ -1831,13 +1809,9 @@ struct BasicBlockList
     BasicBlockList* next;  // The next BasicBlock in the list, nullptr for end of list.
     BasicBlock*     block; // The BasicBlock of interest.
 
-    BasicBlockList() : next(nullptr), block(nullptr)
-    {
-    }
+    BasicBlockList() : next(nullptr), block(nullptr) {}
 
-    BasicBlockList(BasicBlock* blk, BasicBlockList* rest) : next(rest), block(blk)
-    {
-    }
+    BasicBlockList(BasicBlock* blk, BasicBlockList* rest) : next(rest), block(blk) {}
 };
 
 //-------------------------------------------------------------------------
@@ -2070,7 +2044,8 @@ void* emitCodeGetCookie(BasicBlock* block);
 class AllSuccessorEnumerator
 {
     BasicBlock* m_block;
-    union {
+    union
+    {
         // We store up to 4 successors inline in the enumerator. For ASP.NET
         // and libraries.pmi this is enough in 99.7% of cases.
         BasicBlock*  m_successors[4];

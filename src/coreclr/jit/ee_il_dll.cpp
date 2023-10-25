@@ -236,15 +236,11 @@ void JitTls::SetCompiler(Compiler* compiler)
     reinterpret_cast<JitTls*>(GetJitTls())->m_compiler = compiler;
 }
 
-#else // !defined(DEBUG)
+#else  // !defined(DEBUG)
 
-JitTls::JitTls(ICorJitInfo* jitInfo)
-{
-}
+JitTls::JitTls(ICorJitInfo* jitInfo) {}
 
-JitTls::~JitTls()
-{
-}
+JitTls::~JitTls() {}
 
 Compiler* JitTls::GetCompiler()
 {

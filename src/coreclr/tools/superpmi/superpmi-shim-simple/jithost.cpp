@@ -8,9 +8,7 @@
 
 JitHost* g_ourJitHost;
 
-JitHost::JitHost(ICorJitHost* wrappedHost) : wrappedHost(wrappedHost)
-{
-}
+JitHost::JitHost(ICorJitHost* wrappedHost) : wrappedHost(wrappedHost) {}
 
 void* JitHost::allocateMemory(size_t size)
 {

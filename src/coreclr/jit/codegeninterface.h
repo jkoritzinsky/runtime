@@ -169,8 +169,8 @@ protected:
     TreeLifeUpdater<true>* treeLifeUpdater;
 
 public:
-    bool genUseOptimizedWriteBarriers(GCInfo::WriteBarrierForm wbf);
-    bool genUseOptimizedWriteBarriers(GenTreeStoreInd* store);
+    bool            genUseOptimizedWriteBarriers(GCInfo::WriteBarrierForm wbf);
+    bool            genUseOptimizedWriteBarriers(GenTreeStoreInd* store);
     CorInfoHelpFunc genWriteBarrierHelperForWriteBarrierForm(GCInfo::WriteBarrierForm wbf);
 
     // The following property indicates whether the current method sets up
@@ -291,7 +291,7 @@ public:
 
 private:
     bool m_cgDoubleAlign;
-#else // !DOUBLE_ALIGN
+#else  // !DOUBLE_ALIGN
 
 public:
     bool doubleAlignOrFramePointerUsed() const
@@ -442,7 +442,8 @@ public:
     {
         siVarLocType vlType;
 
-        union {
+        union
+        {
             // VLT_REG/VLT_REG_FP -- Any pointer-sized enregistered value (TYP_INT, TYP_REF, etc)
             // eg. EAX
             // VLT_REG_BYREF -- the specified register contains the address of the variable
@@ -730,14 +731,14 @@ public:
 
         Compiler* m_Compiler;
 
-        VariableLiveDescriptor* m_vlrLiveDsc; // Array of descriptors that manage VariableLiveRanges.
-                                              // Its indices correspond to lvaTable indexes (or lvSlotNum).
+        VariableLiveDescriptor* m_vlrLiveDsc;          // Array of descriptors that manage VariableLiveRanges.
+                                                       // Its indices correspond to lvaTable indexes (or lvSlotNum).
 
         VariableLiveDescriptor* m_vlrLiveDscForProlog; // Array of descriptors that manage VariableLiveRanges.
                                                        // Its indices correspond to lvaTable indexes (or lvSlotNum).
 
-        bool m_LastBasicBlockHasBeenEmitted; // When true no more siEndVariableLiveRange is considered.
-                                             // No update/start happens when code has been generated.
+        bool m_LastBasicBlockHasBeenEmitted;           // When true no more siEndVariableLiveRange is considered.
+                                                       // No update/start happens when code has been generated.
 
     public:
         VariableLiveKeeper(unsigned int  totalLocalCount,
@@ -756,7 +757,7 @@ public:
 
         LiveRangeList* getLiveRangesForVarForBody(unsigned int varNum) const;
         LiveRangeList* getLiveRangesForVarForProlog(unsigned int varNum) const;
-        size_t getLiveRangesCount() const;
+        size_t         getLiveRangesCount() const;
 
         // For parameters locations on prolog
         void psiStartVariableLiveRange(CodeGenInterface::siVarLoc varLocation, unsigned int varNum);

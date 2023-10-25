@@ -10,7 +10,7 @@ struct placement_t
 {
 };
 
-}
+} // namespace jitstd
 
 inline void* operator new(size_t sz, void* p, jitstd::placement_t /* syntax_difference */)
 {

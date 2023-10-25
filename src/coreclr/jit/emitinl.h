@@ -207,10 +207,10 @@ inline ssize_t emitter::emitGetInsAmdAny(const instrDesc* id) const
 
 #endif // TARGET_XARCH
 
-/*****************************************************************************
- *
- *  Convert between a register mask and a smaller version for storage.
- */
+       /*****************************************************************************
+        *
+        *  Convert between a register mask and a smaller version for storage.
+        */
 /*static*/ inline void emitter::emitEncodeCallGCregs(regMaskTP regmask, instrDesc* id)
 {
     unsigned encodeMask;

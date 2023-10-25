@@ -14,7 +14,7 @@
 
 #include "errorhandling.h"
 
-//#define DEBUG_LWM
+// #define DEBUG_LWM
 
 // Common base class that implements the raw buffer functionality.
 class LightWeightMapBuffer
@@ -265,8 +265,9 @@ public:
 
         // If we have RTTI, we can make this assert report the correct type. No RTTI, though, when
         // built with .NET Core, especially when built against the PAL.
-        AssertCodeMsg((unsigned int)(ptr - rawData) == size, EXCEPTIONCODE_LWM, "%s - Ended with unexpected sizes %zx != %x",
-                      "Unknown type" /*typeid(_Item).name()*/, ptr - rawData, size);
+        AssertCodeMsg((unsigned int)(ptr - rawData) == size, EXCEPTIONCODE_LWM,
+                      "%s - Ended with unexpected sizes %zx != %x", "Unknown type" /*typeid(_Item).name()*/,
+                      ptr - rawData, size);
     }
 
     unsigned int CalculateArraySize() const
@@ -324,9 +325,9 @@ public:
         return size;
     }
 
-    // It's worth noting that the actual order of insertion here doesnt meet what you might expect.  It's using memcmp, so
-    // since we are on a little endian machine we'd use the lowest 8 bits as the first part of the key.  This is
-    // a side effect of using the same code for large structs and DWORDS etc...
+    // It's worth noting that the actual order of insertion here doesnt meet what you might expect.  It's using memcmp,
+    // so since we are on a little endian machine we'd use the lowest 8 bits as the first part of the key.  This is a
+    // side effect of using the same code for large structs and DWORDS etc...
     bool Add(_Key key, _Item item)
     {
         // Make sure we have space left, expand if needed
@@ -365,7 +366,7 @@ public:
             if (res < 0)
                 first = mid + 1; // repeat search in top half.
             else if (res > 0)
-                last = mid - 1; // repeat search in bottom half.
+                last = mid - 1;  // repeat search in bottom half.
             else
             {
                 int resItem = memcmp(&pItems[mid], &item, sizeof(_Item));
@@ -386,8 +387,8 @@ public:
         if (numItems > 0)
         {
             int countToMove = (numItems - insert);
-            memmove(&pKeys[insert+1], &pKeys[insert], countToMove * sizeof(pKeys[insert]));
-            memmove(&pItems[insert+1], &pItems[insert], countToMove * sizeof(pItems[insert]));
+            memmove(&pKeys[insert + 1], &pKeys[insert], countToMove * sizeof(pKeys[insert]));
+            memmove(&pItems[insert + 1], &pItems[insert], countToMove * sizeof(pItems[insert]));
         }
 
         pKeys[insert]  = key;
@@ -418,11 +419,11 @@ public:
             if (res < 0)
                 first = mid + 1; // repeat search in top half.
             else if (res > 0)
-                last = mid - 1; // repeat search in bottom half.
+                last = mid - 1;  // repeat search in bottom half.
             else
-                return mid; // found it. return position /////
+                return mid;      // found it. return position /////
         }
-        return -1; // Didn't find key
+        return -1;               // Didn't find key
     }
 
     _Item GetItem(int index) const

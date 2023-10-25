@@ -12,10 +12,9 @@
 WCHAR* GetPrefixedEnvironmentVariable(const WCHAR* prefix, size_t prefixLen, const WCHAR* key, JitInstance& jitInstance)
 {
     // Prepend prefix to the provided key
-    size_t   keyLen       = u16_strlen(key);
-    size_t   keyBufferLen = keyLen + prefixLen + 1;
-    WCHAR* keyBuffer =
-        reinterpret_cast<WCHAR*>(jitInstance.allocateArray(sizeof(WCHAR) * keyBufferLen));
+    size_t keyLen       = u16_strlen(key);
+    size_t keyBufferLen = keyLen + prefixLen + 1;
+    WCHAR* keyBuffer    = reinterpret_cast<WCHAR*>(jitInstance.allocateArray(sizeof(WCHAR) * keyBufferLen));
     wcscpy_s(keyBuffer, keyBufferLen, prefix);
     wcscpy_s(&keyBuffer[prefixLen], keyLen + 1, key);
 
@@ -29,7 +28,7 @@ WCHAR* GetPrefixedEnvironmentVariable(const WCHAR* prefix, size_t prefixLen, con
 
     // Note this value must live as long as the jit instance does.
     WCHAR* value       = reinterpret_cast<WCHAR*>(jitInstance.allocateLongLivedArray(sizeof(WCHAR) * valueLen));
-    DWORD    newValueLen = GetEnvironmentVariableW(keyBuffer, value, valueLen);
+    DWORD  newValueLen = GetEnvironmentVariableW(keyBuffer, value, valueLen);
 
     jitInstance.freeArray(keyBuffer);
     if (valueLen < newValueLen)
@@ -55,9 +54,7 @@ WCHAR* GetConfigFromEnvironmentVariable(const WCHAR* key, JitInstance& jitInstan
     return result;
 }
 
-JitHost::JitHost(JitInstance& jitInstance) : jitInstance(jitInstance)
-{
-}
+JitHost::JitHost(JitInstance& jitInstance) : jitInstance(jitInstance) {}
 
 void* JitHost::allocateMemory(size_t size)
 {
@@ -76,7 +73,7 @@ bool JitHost::convertStringValueToInt(const WCHAR* key, const WCHAR* stringValue
         return false;
     }
 
-    WCHAR*      endPtr;
+    WCHAR*        endPtr;
     unsigned long longResult = u16_strtoul(stringValue, &endPtr, 16);
     bool          succeeded  = (errno != ERANGE) && (endPtr != stringValue) && (longResult <= INT_MAX);
     if (!succeeded)
@@ -151,7 +148,7 @@ const WCHAR* JitHost::getStringConfigValue(const WCHAR* key)
 {
     jitInstance.mc->cr->AddCall("getStringConfigValue");
 
-    bool           needToDup = true;
+    bool         needToDup = true;
     const WCHAR* result    = nullptr;
 
     // First check the force options, then mc value. If value is not presented there, probe the JIT options and then the
@@ -178,8 +175,8 @@ const WCHAR* JitHost::getStringConfigValue(const WCHAR* key)
     if (result != nullptr && needToDup)
     {
         // Now we need to dup it, so you can call freeStringConfigValue() on what we return.
-        size_t   resultLenInChars = u16_strlen(result) + 1;
-        WCHAR* dupResult = (WCHAR*)jitInstance.allocateLongLivedArray(sizeof(WCHAR) * resultLenInChars);
+        size_t resultLenInChars = u16_strlen(result) + 1;
+        WCHAR* dupResult        = (WCHAR*)jitInstance.allocateLongLivedArray(sizeof(WCHAR) * resultLenInChars);
         wcscpy_s(dupResult, resultLenInChars, result);
         result = dupResult;
     }

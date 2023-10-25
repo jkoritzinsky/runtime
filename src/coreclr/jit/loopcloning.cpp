@@ -1323,7 +1323,7 @@ bool Compiler::optDeriveLoopCloningConditions(unsigned loopNum, LoopCloneContext
                 LcMdArrayOptInfo* mdArrInfo = optInfo->AsLcMdArrayOptInfo();
                 LC_Array arrLen(LC_Array(LC_Array::MdArray, mdArrInfo->GetArrIndexForDim(getAllocator(CMK_LoopClone)),
                                          mdArrInfo->dim, LC_Array::None));
-                LC_Ident     arrLenIdent = LC_Ident::CreateArrAccess(arrLen);
+                LC_Ident arrLenIdent = LC_Ident::CreateArrAccess(arrLen);
                 LC_Condition cond(opLimitCondition, LC_Expr(ident), LC_Expr(arrLenIdent));
                 context->EnsureConditions(loopNum)->Push(cond);
 
@@ -2087,7 +2087,7 @@ void Compiler::optCloneLoop(unsigned loopInd, LoopCloneContext* context)
             x2->SetJumpDest(x);
             BlockSetOps::Assign(this, x2->bbReach, h->bbReach);
 
-            fgAddRefPred(x2, b); // Add b->x2 pred edge
+            fgAddRefPred(x2, b);     // Add b->x2 pred edge
             JITDUMP("Adding " FMT_BB " -> " FMT_BB "\n", b->bbNum, x2->bbNum);
             fgReplacePred(x, b, x2); // The pred of x is now x2, not the fall-through of COND b.
             JITDUMP("Replace " FMT_BB " -> " FMT_BB " with " FMT_BB " -> " FMT_BB "\n", b->bbNum, x->bbNum, x2->bbNum,
@@ -2132,7 +2132,7 @@ void Compiler::optCloneLoop(unsigned loopInd, LoopCloneContext* context)
         newBlk->scaleBBWeight(slowPathWeightScaleFactor);
         blk->scaleBBWeight(fastPathWeightScaleFactor);
 
-// TODO: scale the pred edges of `blk`?
+        // TODO: scale the pred edges of `blk`?
 
 #if FEATURE_LOOP_ALIGN
         // If the original loop is aligned, do not align the cloned loop because cloned loop will be executed in

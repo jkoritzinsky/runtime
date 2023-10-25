@@ -433,12 +433,13 @@ static void regenLog(unsigned encoding, InfoHdr* header, InfoHdr* state)
 
     EnterCriticalSection(&logFileLock);
 
-    fprintf(logFile, "InfoHdr( %2d, %2d, %1d, %1d, %1d,"
-                     " %1d, %1d, %1d, %1d, %1d,"
-                     " %1d, %1d, %1d, %1d, %1d, %1d,"
-                     " %1d, %1d, %1d,"
-                     " %1d, %2d, %2d,"
-                     " %2d, %2d, %2d, %2d, %2d, %2d), \n",
+    fprintf(logFile,
+            "InfoHdr( %2d, %2d, %1d, %1d, %1d,"
+            " %1d, %1d, %1d, %1d, %1d,"
+            " %1d, %1d, %1d, %1d, %1d, %1d,"
+            " %1d, %1d, %1d,"
+            " %1d, %2d, %2d,"
+            " %2d, %2d, %2d, %2d, %2d, %2d), \n",
             state->prologSize, state->epilogSize, state->epilogCount, state->epilogAtEnd, state->ediSaved,
             state->esiSaved, state->ebxSaved, state->ebpSaved, state->ebpFrame, state->interruptible,
             state->doubleAlign, state->security, state->handlers, state->localloc, state->editNcontinue, state->varargs,
@@ -1861,8 +1862,8 @@ protected:
     pasMaskType pasBottomMask;      // The first 32 args
     pasMaskType pasByrefBottomMask; // byref qualifier for pasBottomMask
 
-    BYTE*    pasTopArray;       // More than 32 args are represented here
-    unsigned pasPtrsInTopArray; // How many GCptrs here
+    BYTE*    pasTopArray;           // More than 32 args are represented here
+    unsigned pasPtrsInTopArray;     // How many GCptrs here
 };
 
 //-----------------------------------------------------------------------------
@@ -2330,7 +2331,7 @@ size_t GCInfo::gcMakeRegPtrTable(BYTE* dest, int mask, const InfoHdr& header, un
             unsigned varOffs = compiler->lvaTable[compiler->info.compThisArg].GetStackOffset();
 
             /* For negative stack offsets we must reset the low bits,
-                * take abs and then set them back */
+             * take abs and then set them back */
 
             varOffs = abs(static_cast<int>(varOffs));
             varOffs |= this_OFFSET_FLAG;
@@ -3164,10 +3165,10 @@ size_t GCInfo::gcMakeRegPtrTable(BYTE* dest, int mask, const InfoHdr& header, un
                 thisRegNum = genRegNumFromMask(tmpMask);
                 switch (thisRegNum)
                 {
-                    case 0: // EAX
-                    case 1: // ECX
-                    case 2: // EDX
-                    case 4: // ESP
+                    case 0:             // EAX
+                    case 1:             // ECX
+                    case 2:             // EDX
+                    case 4:             // ESP
                         break;
                     case 7:             // EDI
                         *dest++ = 0xF4; /* 11110100  This pointer is in EDI */
@@ -3284,7 +3285,7 @@ size_t GCInfo::gcMakeRegPtrTable(BYTE* dest, int mask, const InfoHdr& header, un
 
                     assert(regMask || argMask || callArgCnt || pasStk.pasCurDepth());
 
-// Emit IPtrMask if needed
+                    // Emit IPtrMask if needed
 
 #define CHK_NON_INTRPT_ESP_IPtrMask                                                                                    \
                                                                                                                        \
@@ -3570,7 +3571,7 @@ size_t GCInfo::gcInfoBlockHdrDump(const BYTE* table, InfoHdr* header, unsigned* 
 #ifdef DEBUG
     gcDump.gcPrintf = gcDump_logf; // use my printf (which logs to VM)
 #else
-    gcDump.gcPrintf       = printf;
+    gcDump.gcPrintf = printf;
 #endif
 
     printf("Method info block:\n");
@@ -3589,7 +3590,7 @@ size_t GCInfo::gcDumpPtrTable(const BYTE* table, const InfoHdr& header, unsigned
 #ifdef DEBUG
     gcDump.gcPrintf = gcDump_logf; // use my printf (which logs to VM)
 #else
-    gcDump.gcPrintf       = printf;
+    gcDump.gcPrintf = printf;
 #endif
 
     return gcDump.DumpGCTable(table, header, methodSize, verifyGCTables);
@@ -3607,7 +3608,7 @@ void GCInfo::gcFindPtrsInFrame(const void* infoBlock, const void* codeBlock, uns
 #ifdef DEBUG
     gcDump.gcPrintf = gcDump_logf; // use my printf (which logs to VM)
 #else
-    gcDump.gcPrintf       = printf;
+    gcDump.gcPrintf = printf;
 #endif
 
     gcDump.DumpPtrsInFrame((PTR_CBYTE)infoBlock, (const BYTE*)codeBlock, offs, verifyGCTables);
@@ -3615,7 +3616,7 @@ void GCInfo::gcFindPtrsInFrame(const void* infoBlock, const void* codeBlock, uns
 
 #endif // DUMP_GC_TABLES
 
-#else // !JIT32_GCENCODER
+#else  // !JIT32_GCENCODER
 
 #include "gcinfoencoder.h"
 
@@ -4792,7 +4793,7 @@ void GCInfo::gcInfoRecordGCStackArgLive(GcInfoEncoder* gcInfoEncoder, MakeRegPtr
 
     StackSlotIdKey sskey(genStackPtr->rpdPtrArg, false,
                          GcSlotFlags(genStackPtr->rpdGCtypeGet() == GCT_BYREF ? GC_SLOT_INTERIOR : GC_SLOT_BASE));
-    GcSlotId varSlotId;
+    GcSlotId       varSlotId;
     if (mode == MAKE_REG_PTR_MODE_ASSIGN_SLOTS)
     {
         if (!m_stackSlotMap->Lookup(sskey, &varSlotId))
@@ -4840,8 +4841,8 @@ void GCInfo::gcInfoRecordGCStackArgsDead(GcInfoEncoder* gcInfoEncoder,
 
         StackSlotIdKey sskey(genRegPtrTemp->rpdPtrArg, false,
                              genRegPtrTemp->rpdGCtypeGet() == GCT_BYREF ? GC_SLOT_INTERIOR : GC_SLOT_BASE);
-        GcSlotId varSlotId;
-        bool     b = m_stackSlotMap->Lookup(sskey, &varSlotId);
+        GcSlotId       varSlotId;
+        bool           b = m_stackSlotMap->Lookup(sskey, &varSlotId);
         assert(b); // Should have been added in the first pass.
         // Live until the call.
         gcInfoEncoderWithLog->SetSlotState(instrOffset, varSlotId, GC_SLOT_DEAD);

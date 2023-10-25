@@ -154,14 +154,14 @@ protected:
     // bucket in a chain must be occupied (i.e. `m_isFull` will be true).
     struct Bucket
     {
-        bool m_isFull; // True if the bucket is occupied; false otherwise.
+        bool m_isFull;          // True if the bucket is occupied; false otherwise.
 
         unsigned m_firstOffset; // The offset to the first node in the chain for this bucket index.
         unsigned m_nextOffset;  // The offset to the next node in the chain for this bucket index.
 
-        unsigned m_hash;  // The hash code for the element stored in this bucket.
-        TKey     m_key;   // The key for the element stored in this bucket.
-        TValue   m_value; // The value for the element stored in this bucket.
+        unsigned m_hash;        // The hash code for the element stored in this bucket.
+        TKey     m_key;         // The key for the element stored in this bucket.
+        TValue   m_value;       // The value for the element stored in this bucket.
     };
 
 private:
@@ -365,9 +365,7 @@ public:
         }
 
     public:
-        KeyValuePair() : m_bucket(nullptr)
-        {
-        }
+        KeyValuePair() : m_bucket(nullptr) {}
 
         inline TKey& Key()
         {
@@ -405,9 +403,7 @@ public:
         }
 
     public:
-        Iterator() : m_buckets(nullptr), m_numBuckets(0), m_index(0)
-        {
-        }
+        Iterator() : m_buckets(nullptr), m_numBuckets(0), m_index(0) {}
 
         KeyValuePair operator*() const
         {
@@ -636,9 +632,7 @@ class HashTable final : public HashTableBase<TKey, TValue, TKeyInfo, TAllocator>
     }
 
 public:
-    HashTable(TAllocator alloc) : TBase(alloc, nullptr, 0)
-    {
-    }
+    HashTable(TAllocator alloc) : TBase(alloc, nullptr, 0) {}
 
     HashTable(TAllocator alloc, unsigned initialSize)
         : TBase(alloc, alloc.template allocate<TBase::Bucket>(RoundUp(initialSize)), RoundUp(initialSize))
@@ -670,9 +664,7 @@ class SmallHashTable final : public HashTableBase<TKey, TValue, TKeyInfo, TAlloc
     typename TBase::Bucket m_inlineBuckets[RoundedNumInlineBuckets];
 
 public:
-    SmallHashTable(TAllocator alloc) : TBase(alloc, m_inlineBuckets, RoundedNumInlineBuckets)
-    {
-    }
+    SmallHashTable(TAllocator alloc) : TBase(alloc, m_inlineBuckets, RoundedNumInlineBuckets) {}
 };
 
 #endif // _SMALLHASHTABLE_H_

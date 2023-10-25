@@ -725,8 +725,8 @@ void CodeGen::genIntrinsic(GenTreeIntrinsic* treeNode)
             break;
 
 #if defined(FEATURE_SIMD)
-        // The handling is a bit more complex so genSimdUpperSave/Restore
-        // handles genConsumeOperands and genProduceReg
+            // The handling is a bit more complex so genSimdUpperSave/Restore
+            // handles genConsumeOperands and genProduceReg
 
         case NI_SIMD_UpperRestore:
         {
@@ -859,7 +859,7 @@ void CodeGen::genPutArgStk(GenTreePutArgStk* treeNode)
 
             emit->emitIns_S_R(storeIns, storeAttr, REG_ZR, varNumOut, argOffsetOut);
 #else  // !TARGET_ARM64
-            // There is no zero register on ARM32
+       // There is no zero register on ARM32
             unreached();
 #endif // !TARGET_ARM64
         }
@@ -883,9 +883,9 @@ void CodeGen::genPutArgStk(GenTreePutArgStk* treeNode)
         argOffsetOut += EA_SIZE_IN_BYTES(storeAttr);
         assert(argOffsetOut <= argOffsetMax); // We can't write beyond the outgoing arg area
     }
-    else // We have some kind of a struct argument
+    else                                      // We have some kind of a struct argument
     {
-        assert(source->isContained()); // We expect that this node was marked as contained in Lower
+        assert(source->isContained());        // We expect that this node was marked as contained in Lower
 
         if (source->OperGet() == GT_FIELD_LIST)
         {
@@ -1008,17 +1008,17 @@ void CodeGen::genPutArgStk(GenTreePutArgStk* treeNode)
                 // Emit stp instruction to store the two registers into the outgoing argument area
                 emit->emitIns_S_S_R_R(INS_stp, emitTypeSize(type0), emitTypeSize(type1), loReg, hiReg, varNumOut,
                                       argOffsetOut);
-                argOffsetOut += (2 * TARGET_POINTER_SIZE); // We stored 16-bytes of the struct
-                assert(argOffsetOut <= argOffsetMax);      // We can't write beyond the outgoing arg area
+                argOffsetOut += (2 * TARGET_POINTER_SIZE);  // We stored 16-bytes of the struct
+                assert(argOffsetOut <= argOffsetMax);       // We can't write beyond the outgoing arg area
 
                 remainingSize -= (2 * TARGET_POINTER_SIZE); // We loaded 16-bytes of the struct
                 structOffset += (2 * TARGET_POINTER_SIZE);
                 nextIndex += 2;
             }
 #else  // TARGET_ARM
-            // For a >= 4 byte sizes we will generate a ldr and str instruction each loop
-            //             ldr     r2, [r0]
-            //             str     r2, [sp, #16]
+       // For a >= 4 byte sizes we will generate a ldr and str instruction each loop
+       //             ldr     r2, [r0]
+       //             str     r2, [sp, #16]
             while (remainingSize >= TARGET_POINTER_SIZE)
             {
                 var_types type = layout->GetGCPtrType(nextIndex);
@@ -1810,7 +1810,7 @@ instruction CodeGen::genGetVolatileLdStIns(instruction   currentIns,
         assert(!addrIsInReg);
         switch (currentIns)
         {
-            // Loads
+                // Loads
 
             case INS_ldrb:
                 return INS_ldapurb;
@@ -1821,7 +1821,7 @@ instruction CodeGen::genGetVolatileLdStIns(instruction   currentIns,
             case INS_ldr:
                 return INS_ldapur;
 
-            // Stores
+                // Stores
 
             case INS_strb:
                 return INS_stlurb;
@@ -1853,7 +1853,7 @@ instruction CodeGen::genGetVolatileLdStIns(instruction   currentIns,
     const bool hasRcpc1 = compiler->compOpportunisticallyDependsOn(InstructionSet_Rcpc);
     switch (currentIns)
     {
-        // Loads
+            // Loads
 
         case INS_ldrb:
             return hasRcpc1 ? INS_ldaprb : INS_ldarb;
@@ -1864,7 +1864,7 @@ instruction CodeGen::genGetVolatileLdStIns(instruction   currentIns,
         case INS_ldr:
             return hasRcpc1 ? INS_ldapr : INS_ldar;
 
-        // Stores
+            // Stores
 
         case INS_strb:
             return INS_stlrb;
@@ -2273,9 +2273,7 @@ public:
 class InitBlockUnrollHelper
 {
 public:
-    InitBlockUnrollHelper(int dstOffset, unsigned byteCount) : dstStartOffset(dstOffset), byteCount(byteCount)
-    {
-    }
+    InitBlockUnrollHelper(int dstOffset, unsigned byteCount) : dstStartOffset(dstOffset), byteCount(byteCount) {}
 
     int GetDstOffset() const
     {
@@ -3119,7 +3117,8 @@ void CodeGen::genCodeForMemmove(GenTreeBlk* tree)
     regNumber src  = genConsumeReg(srcIndir->Addr());
     unsigned  size = tree->Size();
 
-    auto emitLoadStore = [&](bool load, unsigned regSize, regNumber tempReg, unsigned offset) {
+    auto emitLoadStore = [&](bool load, unsigned regSize, regNumber tempReg, unsigned offset)
+    {
         var_types memType;
         switch (regSize)
         {
@@ -3168,7 +3167,8 @@ void CodeGen::genCodeForMemmove(GenTreeBlk* tree)
             tempRegs[i] = tree->ExtractTempReg(RBM_ALLFLOAT);
         }
 
-        auto emitSimdLoadStore = [&](bool load) {
+        auto emitSimdLoadStore = [&](bool load)
+        {
             unsigned offset   = 0;
             int      regIndex = 0;
             do
@@ -3420,13 +3420,13 @@ void CodeGen::genCall(GenTreeCall* call)
             else
 #endif // TARGET_ARM
                 if (varTypeUsesFloatArgReg(returnType))
-            {
-                returnReg = REG_FLOATRET;
-            }
-            else
-            {
-                returnReg = REG_INTRET;
-            }
+                {
+                    returnReg = REG_FLOATRET;
+                }
+                else
+                {
+                    returnReg = REG_INTRET;
+                }
 
             if (call->GetRegNum() != returnReg)
             {
@@ -3636,19 +3636,19 @@ void CodeGen::genCallInstruction(GenTreeCall* call)
             else
 #endif // FEATURE_READYTORUN
                 if (call->gtCallType == CT_HELPER)
-            {
-                CorInfoHelpFunc helperNum = compiler->eeGetHelperNum(methHnd);
-                noway_assert(helperNum != CORINFO_HELP_UNDEF);
+                {
+                    CorInfoHelpFunc helperNum = compiler->eeGetHelperNum(methHnd);
+                    noway_assert(helperNum != CORINFO_HELP_UNDEF);
 
-                void* pAddr = nullptr;
-                addr        = compiler->compGetHelperFtn(helperNum, (void**)&pAddr);
-                assert(pAddr == nullptr);
-            }
-            else
-            {
-                // Direct call to a non-virtual user function.
-                addr = call->gtDirectCallAddress;
-            }
+                    void* pAddr = nullptr;
+                    addr        = compiler->compGetHelperFtn(helperNum, (void**)&pAddr);
+                    assert(pAddr == nullptr);
+                }
+                else
+                {
+                    // Direct call to a non-virtual user function.
+                    addr = call->gtDirectCallAddress;
+                }
 
             assert(addr != nullptr);
 
@@ -4314,8 +4314,8 @@ void CodeGen::genFloatToFloatCast(GenTree* treeNode)
 //------------------------------------------------------------------------
 // genCreateAndStoreGCInfo: Create and record GC Info for the function.
 //
-void CodeGen::genCreateAndStoreGCInfo(unsigned codeSize,
-                                      unsigned prologSize,
+void CodeGen::genCreateAndStoreGCInfo(unsigned            codeSize,
+                                      unsigned            prologSize,
                                       unsigned epilogSize DEBUGARG(void* codePtr))
 {
     IAllocator*    allowZeroAlloc = new (compiler, CMK_GC) CompIAllocator(compiler->getAllocatorGC());
@@ -5478,9 +5478,8 @@ void CodeGen::genFnEpilog(BasicBlock* block)
         compiler->unwindSetFrameReg(REG_SAVED_LOCALLOC_SP, 0);
     }
 
-    if (jmpEpilog ||
-        genStackAllocRegisterMask(compiler->compLclFrameSize, regSet.rsGetModifiedRegsMask() & RBM_FLT_CALLEE_SAVED) ==
-            RBM_NONE)
+    if (jmpEpilog || genStackAllocRegisterMask(compiler->compLclFrameSize,
+                                               regSet.rsGetModifiedRegsMask() & RBM_FLT_CALLEE_SAVED) == RBM_NONE)
     {
         genFreeLclFrame(compiler->compLclFrameSize, &unwindStarted);
     }
@@ -5552,9 +5551,9 @@ void CodeGen::genFnEpilog(BasicBlock* block)
 #if !FEATURE_FASTTAILCALL
         noway_assert(jmpNode->gtOper == GT_JMP);
 #else  // FEATURE_FASTTAILCALL
-        // armarch
-        // If jmpNode is GT_JMP then gtNext must be null.
-        // If jmpNode is a fast tail call, gtNext need not be null since it could have embedded stmts.
+       // armarch
+       // If jmpNode is GT_JMP then gtNext must be null.
+       // If jmpNode is a fast tail call, gtNext need not be null since it could have embedded stmts.
         noway_assert((jmpNode->gtOper != GT_JMP) || (jmpNode->gtNext == nullptr));
 
         // Could either be a "jmp method" or "fast tail call" implemented as epilog+jmp

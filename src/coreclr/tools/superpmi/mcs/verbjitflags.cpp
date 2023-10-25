@@ -15,25 +15,26 @@ int verbJitFlags::DoWork(const char* nameOfInput)
         return -1;
 
     LightWeightMap<unsigned long long, unsigned> flagMap;
-    unsigned mcCount = 0;
+    unsigned                                     mcCount = 0;
 
     while (mci.MoveNext())
     {
         MethodContext* mc = mci.Current();
-        CORJIT_FLAGS corJitFlags;
+        CORJIT_FLAGS   corJitFlags;
         mc->repGetJitFlags(&corJitFlags, sizeof(corJitFlags));
         unsigned long long rawFlags = corJitFlags.GetFlagsRaw();
 
         // We co-opt unused flag bits to note if there's pgo data,
         // and if so, what kind
         //
-        bool hasEdgeProfile = false;
-        bool hasClassProfile = false;
-        bool hasMethodProfile = false;
-        bool hasLikelyClass = false;
-        bool hasLikelyMethod = false;
-        ICorJitInfo::PgoSource pgoSource = ICorJitInfo::PgoSource::Unknown;
-        if (mc->hasPgoData(hasEdgeProfile, hasClassProfile, hasMethodProfile, hasLikelyClass, hasLikelyMethod, pgoSource))
+        bool                   hasEdgeProfile   = false;
+        bool                   hasClassProfile  = false;
+        bool                   hasMethodProfile = false;
+        bool                   hasLikelyClass   = false;
+        bool                   hasLikelyMethod  = false;
+        ICorJitInfo::PgoSource pgoSource        = ICorJitInfo::PgoSource::Unknown;
+        if (mc->hasPgoData(hasEdgeProfile, hasClassProfile, hasMethodProfile, hasLikelyClass, hasLikelyMethod,
+                           pgoSource))
         {
             rawFlags |= 1ULL << (EXTRA_JIT_FLAGS::HAS_PGO);
 
@@ -95,16 +96,17 @@ int verbJitFlags::DoWork(const char* nameOfInput)
 
     unsigned appearancesPerBit[64] = {};
 
-    const unsigned int count = flagMap.GetCount();
+    const unsigned int  count  = flagMap.GetCount();
     unsigned long long* pFlags = flagMap.GetRawKeys();
 
     for (unsigned int i = 0; i < count; i++)
     {
-        const unsigned long long flags = *pFlags++;
-        const int index = flagMap.GetIndex(flags);
-        const unsigned appearances = flagMap.GetItem(index);
+        const unsigned long long flags       = *pFlags++;
+        const int                index       = flagMap.GetIndex(flags);
+        const unsigned           appearances = flagMap.GetItem(index);
 
-        printf("%016llx %8u %7.2f%% %s\n", flags, appearances, 100.0 * ((double) appearances / mcCount), SpmiDumpHelper::DumpJitFlags(flags).c_str());
+        printf("%016llx %8u %7.2f%% %s\n", flags, appearances, 100.0 * ((double)appearances / mcCount),
+               SpmiDumpHelper::DumpJitFlags(flags).c_str());
 
         for (unsigned int bit = 0; bit < 64; bit++)
         {
@@ -121,10 +123,10 @@ int verbJitFlags::DoWork(const char* nameOfInput)
         unsigned perBit = appearancesPerBit[bit];
         if (perBit > 0)
         {
-            printf("%8u %7.2f%% %s\n", perBit, 100.0 * (double) perBit / mcCount, SpmiDumpHelper::DumpJitFlags(1ull<<bit).c_str());
+            printf("%8u %7.2f%% %s\n", perBit, 100.0 * (double)perBit / mcCount,
+                   SpmiDumpHelper::DumpJitFlags(1ull << bit).c_str());
         }
     }
 
     return 0;
 }
-

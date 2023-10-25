@@ -8,7 +8,7 @@
 #include "jithost.h"
 #include "superpmi-shim-collector.h"
 
-#define fatMC                               // this is nice to have on so ildump works...
+#define fatMC // this is nice to have on so ildump works...
 
 void interceptor_ICJC::setTargetOS(CORINFO_OS os)
 {
@@ -16,7 +16,10 @@ void interceptor_ICJC::setTargetOS(CORINFO_OS os)
     original_ICorJitCompiler->setTargetOS(os);
 }
 
-void interceptor_ICJC::finalizeAndCommitCollection(MethodContext* mc, CorJitResult result, uint8_t* nativeEntry, uint32_t nativeSizeOfCode)
+void interceptor_ICJC::finalizeAndCommitCollection(MethodContext* mc,
+                                                   CorJitResult   result,
+                                                   uint8_t*       nativeEntry,
+                                                   uint32_t       nativeSizeOfCode)
 {
     mc->cr->recCompileMethod(&nativeEntry, &nativeSizeOfCode, result);
 
@@ -29,11 +32,11 @@ void interceptor_ICJC::finalizeAndCommitCollection(MethodContext* mc, CorJitResu
     mc->saveToFile(hFile);
 }
 
-template<typename TPrinter>
+template <typename TPrinter>
 static void printInFull(TPrinter print)
 {
     size_t requiredSize;
-    char buffer[256];
+    char   buffer[256];
     print(buffer, sizeof(buffer), &requiredSize);
 
     if (requiredSize > sizeof(buffer))
@@ -43,19 +46,19 @@ static void printInFull(TPrinter print)
     }
 }
 
-CorJitResult interceptor_ICJC::compileMethod(ICorJitInfo*                comp,     /* IN */
-                                             struct CORINFO_METHOD_INFO* info,     /* IN */
-                                             unsigned /* code:CorJitFlag */ flags, /* IN */
-                                             uint8_t** nativeEntry,                /* OUT */
-                                             uint32_t* nativeSizeOfCode            /* OUT */
-                                             )
+CorJitResult interceptor_ICJC::compileMethod(ICorJitInfo*                   comp,            /* IN */
+                                             struct CORINFO_METHOD_INFO*    info,            /* IN */
+                                             unsigned /* code:CorJitFlag */ flags,           /* IN */
+                                             uint8_t**                      nativeEntry,     /* OUT */
+                                             uint32_t*                      nativeSizeOfCode /* OUT */
+)
 {
     // See if we are filtering the collection (currently by simple substring match)
     //
     if (g_collectionFilter != nullptr)
     {
-        bool collect = false;
-        const char* className = nullptr;
+        bool        collect    = false;
+        const char* className  = nullptr;
         const char* methodName = comp->getMethodNameFromMetadata(info->ftn, &className, nullptr, nullptr);
         collect |= (methodName != nullptr) && strstr(methodName, g_collectionFilter) != nullptr;
         collect |= (className != nullptr) && strstr(className, g_collectionFilter) != nullptr;
@@ -65,7 +68,7 @@ CorJitResult interceptor_ICJC::compileMethod(ICorJitInfo*                comp,  
         }
     }
 
-    auto* mc = new MethodContext();
+    auto*            mc = new MethodContext();
     interceptor_ICJI our_ICorJitInfo(this, comp, mc);
 
     mc->cr->recProcessName(GetCommandLineA());
@@ -89,8 +92,10 @@ CorJitResult interceptor_ICJC::compileMethod(ICorJitInfo*                comp,  
     our_ICorJitInfo.isValueClass(ourClass);
     our_ICorJitInfo.asCorInfoType(ourClass);
 
-    printInFull([&](char* buffer, size_t bufferSize, size_t* requiredBufferSize) { our_ICorJitInfo.printClassName(ourClass, buffer, bufferSize, requiredBufferSize); });
-    printInFull([&](char* buffer, size_t bufferSize, size_t* requiredBufferSize) { our_ICorJitInfo.printMethodName(info->ftn, buffer, bufferSize, requiredBufferSize); });
+    printInFull([&](char* buffer, size_t bufferSize, size_t* requiredBufferSize)
+                { our_ICorJitInfo.printClassName(ourClass, buffer, bufferSize, requiredBufferSize); });
+    printInFull([&](char* buffer, size_t bufferSize, size_t* requiredBufferSize)
+                { our_ICorJitInfo.printMethodName(info->ftn, buffer, bufferSize, requiredBufferSize); });
 #endif
 
     // Record data from the global context, if any
@@ -101,42 +106,39 @@ CorJitResult interceptor_ICJC::compileMethod(ICorJitInfo*                comp,  
 
     struct CompileParams
     {
-        ICorJitCompiler* origComp;
-        interceptor_ICJI* ourICJI;
+        ICorJitCompiler*            origComp;
+        interceptor_ICJI*           ourICJI;
         struct CORINFO_METHOD_INFO* methodInfo;
-        unsigned flags;
-        uint8_t** nativeEntry;
-        uint32_t* nativeSizeOfCode;
-        CorJitResult result;
+        unsigned                    flags;
+        uint8_t**                   nativeEntry;
+        uint32_t*                   nativeSizeOfCode;
+        CorJitResult                result;
     } compileParams;
 
-    compileParams.origComp = original_ICorJitCompiler;
-    compileParams.ourICJI = &our_ICorJitInfo;
-    compileParams.methodInfo = info;
-    compileParams.flags = flags;
-    compileParams.nativeEntry = nativeEntry;
+    compileParams.origComp         = original_ICorJitCompiler;
+    compileParams.ourICJI          = &our_ICorJitInfo;
+    compileParams.methodInfo       = info;
+    compileParams.flags            = flags;
+    compileParams.nativeEntry      = nativeEntry;
     compileParams.nativeSizeOfCode = nativeSizeOfCode;
-    compileParams.result = CORJIT_INTERNALERROR;
+    compileParams.result           = CORJIT_INTERNALERROR;
 
-    *nativeEntry = nullptr;
+    *nativeEntry      = nullptr;
     *nativeSizeOfCode = 0;
 
     auto doCompile = [mc, our_ICorJitInfo, this, &compileParams]()
     {
         PAL_TRY(CompileParams*, pParam, &compileParams)
         {
-            pParam->result = pParam->origComp->compileMethod(
-                pParam->ourICJI,
-                pParam->methodInfo,
-                pParam->flags,
-                pParam->nativeEntry,
-                pParam->nativeSizeOfCode);
+            pParam->result = pParam->origComp->compileMethod(pParam->ourICJI, pParam->methodInfo, pParam->flags,
+                                                             pParam->nativeEntry, pParam->nativeSizeOfCode);
         }
         PAL_FINALLY
         {
             if (!our_ICorJitInfo.SavedCollectionEarly())
             {
-                finalizeAndCommitCollection(mc, compileParams.result, *compileParams.nativeEntry, *compileParams.nativeSizeOfCode);
+                finalizeAndCommitCollection(mc, compileParams.result, *compileParams.nativeEntry,
+                                            *compileParams.nativeSizeOfCode);
             }
 
             delete mc;

@@ -18,9 +18,7 @@ SimpleTimer::SimpleTimer()
     }
 }
 
-SimpleTimer::~SimpleTimer()
-{
-}
+SimpleTimer::~SimpleTimer() {}
 
 void SimpleTimer::Start()
 {

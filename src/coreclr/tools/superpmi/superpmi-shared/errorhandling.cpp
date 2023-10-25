@@ -12,7 +12,7 @@ void MSC_ONLY(__declspec(noreturn)) ThrowSpmiException(DWORD exceptionCode, va_l
 {
     assert(IsSuperPMIException(exceptionCode));
 
-    char*      buffer = new char[8192];
+    char* buffer = new char[8192];
     _vsnprintf_s(buffer, 8192, 8191, message, args);
 
     if (BreakOnException())
@@ -102,14 +102,16 @@ LONG FilterSuperPMIExceptions_CatchMC(PEXCEPTION_POINTERS pExceptionPointers, LP
 // This filter function captures the exception pointers and continues searching.
 LONG FilterSuperPMIExceptions_CaptureExceptionAndContinue(PEXCEPTION_POINTERS pExceptionPointers, LPVOID lpvParam)
 {
-    FilterSuperPMIExceptionsParam_CaptureException* pSPMIEParam = (FilterSuperPMIExceptionsParam_CaptureException*)lpvParam;
+    FilterSuperPMIExceptionsParam_CaptureException* pSPMIEParam =
+        (FilterSuperPMIExceptionsParam_CaptureException*)lpvParam;
     pSPMIEParam->Initialize(pExceptionPointers);
     return EXCEPTION_CONTINUE_SEARCH;
 }
 
 LONG FilterSuperPMIExceptions_CaptureExceptionAndStop(PEXCEPTION_POINTERS pExceptionPointers, LPVOID lpvParam)
 {
-    FilterSuperPMIExceptionsParam_CaptureException* pSPMIEParam = (FilterSuperPMIExceptionsParam_CaptureException*)lpvParam;
+    FilterSuperPMIExceptionsParam_CaptureException* pSPMIEParam =
+        (FilterSuperPMIExceptionsParam_CaptureException*)lpvParam;
     pSPMIEParam->Initialize(pExceptionPointers);
     return EXCEPTION_EXECUTE_HANDLER;
 }
@@ -141,7 +143,6 @@ LONG FilterSuperPMIExceptions_CatchNonSuperPMIException(PEXCEPTION_POINTERS pExc
     return !IsSuperPMIException(pExceptionPointers->ExceptionRecord->ExceptionCode);
 }
 
-
 // This filter function executes the handler only for SuperPMI generated exceptions, otherwise it continues the
 // handler search. This allows for SuperPMI-thrown exceptions to be caught by the JIT and not be caught by the outer
 // SuperPMI handler.
@@ -149,7 +150,6 @@ LONG FilterSuperPMIExceptions_CatchSuperPMIException(PEXCEPTION_POINTERS pExcept
 {
     return IsSuperPMIException(pExceptionPointers->ExceptionRecord->ExceptionCode);
 }
-
 
 bool RunWithErrorTrap(void (*function)(void*), void* param)
 {
@@ -201,17 +201,19 @@ bool RunWithSPMIErrorTrap(void (*function)(void*), void* param)
     return success;
 }
 
-void RunWithErrorExceptionCodeCaptureAndContinueImp(void* param, void (*function)(void*), void (*finallyFunction)(void*, DWORD))
+void RunWithErrorExceptionCodeCaptureAndContinueImp(void* param,
+                                                    void (*function)(void*),
+                                                    void (*finallyFunction)(void*, DWORD))
 {
     struct Param : FilterSuperPMIExceptionsParam_CaptureException
     {
         void (*function)(void*);
         void (*finallyFunction)(void*, DWORD);
-        void*       pParamActual;
+        void* pParamActual;
     } paramStruct;
 
-    paramStruct.pParamActual = param;
-    paramStruct.function = function;
+    paramStruct.pParamActual    = param;
+    paramStruct.function        = function;
     paramStruct.finallyFunction = finallyFunction;
 
 #ifdef HOST_UNIX
@@ -225,24 +227,18 @@ void RunWithErrorExceptionCodeCaptureAndContinueImp(void* param, void (*function
     paramStruct.exceptionCode = 1;
 #endif // HOST_UNIX
 
-    PAL_TRY(Param*, pOuterParam, &paramStruct)
-    {
-        PAL_TRY(Param*, pParam, pOuterParam)
-        {
-            pParam->function(pParam->pParamActual);
+    PAL_TRY(Param*, pOuterParam,
+            &paramStruct){PAL_TRY(Param*, pParam, pOuterParam){pParam->function(pParam->pParamActual);
 #ifdef HOST_UNIX
-            pParam->exceptionCode = 0;
+    pParam->exceptionCode = 0;
 #endif // HOST_UNIX
-        }
-        PAL_EXCEPT_FILTER(FilterSuperPMIExceptions_CaptureExceptionAndContinue)
-        {
-        }
-        PAL_ENDTRY
-    }
-    PAL_FINALLY
-    {
-        paramStruct.finallyFunction(paramStruct.pParamActual, paramStruct.exceptionCode);
-    }
-    PAL_ENDTRY
-
+}
+PAL_EXCEPT_FILTER(FilterSuperPMIExceptions_CaptureExceptionAndContinue) {}
+PAL_ENDTRY
+}
+PAL_FINALLY
+{
+    paramStruct.finallyFunction(paramStruct.pParamActual, paramStruct.exceptionCode);
+}
+PAL_ENDTRY
 }

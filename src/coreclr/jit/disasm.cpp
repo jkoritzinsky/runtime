@@ -22,13 +22,13 @@
 /*****************************************************************************/
 
 // Define DISASM_DEBUG to get verbose output of late disassembler inner workings.
-//#define DISASM_DEBUG
+// #define DISASM_DEBUG
 #ifdef DISASM_DEBUG
 #ifdef DEBUG
 #define DISASM_DUMP(...)                                                                                               \
     if (VERBOSE)                                                                                                       \
     printf(__VA_ARGS__)
-#else // !DEBUG
+#else  // !DEBUG
 #define DISASM_DUMP(...) printf(__VA_ARGS__)
 #endif // !DEBUG
 #else  // !DISASM_DEBUG
@@ -41,39 +41,39 @@
 
 #if defined(HOST_AMD64)
 
-#pragma comment(linker,                                                                                                \
-                "/ALTERNATENAME:__imp_?CchFormatAddr@DIS@@QEBA_K_KPEAG0@Z=__imp_?CchFormatAddr@DIS@@QEBA_K_KPEA_W0@Z")
-#pragma comment(linker,                                                                                                \
-                "/ALTERNATENAME:__imp_?CchFormatInstr@DIS@@QEBA_KPEAG_K@Z=__imp_?CchFormatInstr@DIS@@QEBA_KPEA_W_K@Z")
 #pragma comment(                                                                                                       \
-    linker,                                                                                                            \
-    "/ALTERNATENAME:__imp_?PfncchaddrSet@DIS@@QEAAP6A_KPEBV1@_KPEAG1PEA_K@ZP6A_K01213@Z@Z=__imp_?PfncchaddrSet@DIS@@QEAAP6A_KPEBV1@_KPEA_W1PEA_K@ZP6A_K01213@Z@Z")
+        linker, "/ALTERNATENAME:__imp_?CchFormatAddr@DIS@@QEBA_K_KPEAG0@Z=__imp_?CchFormatAddr@DIS@@QEBA_K_KPEA_W0@Z")
 #pragma comment(                                                                                                       \
-    linker,                                                                                                            \
-    "/ALTERNATENAME:__imp_?PfncchregSet@DIS@@QEAAP6A_KPEBV1@W4REGA@1@PEAG_K@ZP6A_K0123@Z@Z=__imp_?PfncchregSet@DIS@@QEAAP6A_KPEBV1@W4REGA@1@PEA_W_K@ZP6A_K0123@Z@Z")
+        linker, "/ALTERNATENAME:__imp_?CchFormatInstr@DIS@@QEBA_KPEAG_K@Z=__imp_?CchFormatInstr@DIS@@QEBA_KPEA_W_K@Z")
 #pragma comment(                                                                                                       \
-    linker,                                                                                                            \
-    "/ALTERNATENAME:__imp_?PfncchregrelSet@DIS@@QEAAP6A_KPEBV1@W4REGA@1@KPEAG_KPEAK@ZP6A_K01K234@Z@Z=__imp_?PfncchregrelSet@DIS@@QEAAP6A_KPEBV1@W4REGA@1@KPEA_W_KPEAK@ZP6A_K01K234@Z@Z")
+        linker,                                                                                                        \
+            "/ALTERNATENAME:__imp_?PfncchaddrSet@DIS@@QEAAP6A_KPEBV1@_KPEAG1PEA_K@ZP6A_K01213@Z@Z=__imp_?PfncchaddrSet@DIS@@QEAAP6A_KPEBV1@_KPEA_W1PEA_K@ZP6A_K01213@Z@Z")
 #pragma comment(                                                                                                       \
-    linker,                                                                                                            \
-    "/ALTERNATENAME:__imp_?PfncchfixupSet@DIS@@QEAAP6A_KPEBV1@_K1PEAG1PEA_K@ZP6A_K011213@Z@Z=__imp_?PfncchfixupSet@DIS@@QEAAP6A_KPEBV1@_K1PEA_W1PEA_K@ZP6A_K011213@Z@Z")
+        linker,                                                                                                        \
+            "/ALTERNATENAME:__imp_?PfncchregSet@DIS@@QEAAP6A_KPEBV1@W4REGA@1@PEAG_K@ZP6A_K0123@Z@Z=__imp_?PfncchregSet@DIS@@QEAAP6A_KPEBV1@W4REGA@1@PEA_W_K@ZP6A_K0123@Z@Z")
+#pragma comment(                                                                                                       \
+        linker,                                                                                                        \
+            "/ALTERNATENAME:__imp_?PfncchregrelSet@DIS@@QEAAP6A_KPEBV1@W4REGA@1@KPEAG_KPEAK@ZP6A_K01K234@Z@Z=__imp_?PfncchregrelSet@DIS@@QEAAP6A_KPEBV1@W4REGA@1@KPEA_W_KPEAK@ZP6A_K01K234@Z@Z")
+#pragma comment(                                                                                                       \
+        linker,                                                                                                        \
+            "/ALTERNATENAME:__imp_?PfncchfixupSet@DIS@@QEAAP6A_KPEBV1@_K1PEAG1PEA_K@ZP6A_K011213@Z@Z=__imp_?PfncchfixupSet@DIS@@QEAAP6A_KPEBV1@_K1PEA_W1PEA_K@ZP6A_K011213@Z@Z")
 
 #elif defined(HOST_X86)
 
 #pragma comment(linker, "/ALTERNATENAME:__imp_?CchFormatAddr@DIS@@QBEI_KPAGI@Z=__imp_?CchFormatAddr@DIS@@QBEI_KPA_WI@Z")
 #pragma comment(linker, "/ALTERNATENAME:__imp_?CchFormatInstr@DIS@@QBEIPAGI@Z=__imp_?CchFormatInstr@DIS@@QBEIPA_WI@Z")
 #pragma comment(                                                                                                       \
-    linker,                                                                                                            \
-    "/ALTERNATENAME:__imp_?PfncchaddrSet@DIS@@QAEP6GIPBV1@_KPAGIPA_K@ZP6GI012I3@Z@Z=__imp_?PfncchaddrSet@DIS@@QAEP6GIPBV1@_KPA_WIPA_K@ZP6GI012I3@Z@Z")
+        linker,                                                                                                        \
+            "/ALTERNATENAME:__imp_?PfncchaddrSet@DIS@@QAEP6GIPBV1@_KPAGIPA_K@ZP6GI012I3@Z@Z=__imp_?PfncchaddrSet@DIS@@QAEP6GIPBV1@_KPA_WIPA_K@ZP6GI012I3@Z@Z")
 #pragma comment(                                                                                                       \
-    linker,                                                                                                            \
-    "/ALTERNATENAME:__imp_?PfncchregSet@DIS@@QAEP6GIPBV1@W4REGA@1@PAGI@ZP6GI012I@Z@Z=__imp_?PfncchregSet@DIS@@QAEP6GIPBV1@W4REGA@1@PA_WI@ZP6GI012I@Z@Z")
+        linker,                                                                                                        \
+            "/ALTERNATENAME:__imp_?PfncchregSet@DIS@@QAEP6GIPBV1@W4REGA@1@PAGI@ZP6GI012I@Z@Z=__imp_?PfncchregSet@DIS@@QAEP6GIPBV1@W4REGA@1@PA_WI@ZP6GI012I@Z@Z")
 #pragma comment(                                                                                                       \
-    linker,                                                                                                            \
-    "/ALTERNATENAME:__imp_?PfncchregrelSet@DIS@@QAEP6GIPBV1@W4REGA@1@KPAGIPAK@ZP6GI01K2I3@Z@Z=__imp_?PfncchregrelSet@DIS@@QAEP6GIPBV1@W4REGA@1@KPA_WIPAK@ZP6GI01K2I3@Z@Z")
+        linker,                                                                                                        \
+            "/ALTERNATENAME:__imp_?PfncchregrelSet@DIS@@QAEP6GIPBV1@W4REGA@1@KPAGIPAK@ZP6GI01K2I3@Z@Z=__imp_?PfncchregrelSet@DIS@@QAEP6GIPBV1@W4REGA@1@KPA_WIPAK@ZP6GI01K2I3@Z@Z")
 #pragma comment(                                                                                                       \
-    linker,                                                                                                            \
-    "/ALTERNATENAME:__imp_?PfncchfixupSet@DIS@@QAEP6GIPBV1@_KIPAGIPA_K@ZP6GI01I2I3@Z@Z=__imp_?PfncchfixupSet@DIS@@QAEP6GIPBV1@_KIPA_WIPA_K@ZP6GI01I2I3@Z@Z")
+        linker,                                                                                                        \
+            "/ALTERNATENAME:__imp_?PfncchfixupSet@DIS@@QAEP6GIPBV1@_KIPAGIPA_K@ZP6GI01I2I3@Z@Z=__imp_?PfncchfixupSet@DIS@@QAEP6GIPBV1@_KIPA_WIPA_K@ZP6GI01I2I3@Z@Z")
 
 #endif
 
@@ -91,12 +91,12 @@ typedef struct codeFix
 {
     codeFix* cfNext;
     unsigned cfFixup;
-} * codeFixPtr;
+}* codeFixPtr;
 
 typedef struct codeBlk
 {
     codeFix* cbFixupLst;
-} * codeBlkPtr;
+}* codeBlkPtr;
 
 /*****************************************************************************
  * The following is the callback for jump label and direct function calls fixups.
@@ -132,7 +132,7 @@ size_t DisAssembler::disCchAddrMember(
 
     switch (terminationType)
     {
-        // int disCallSize;
+            // int disCallSize;
 
         case DISX86::trmtaJmpShort:
         case DISX86::trmtaJmpCcShort:
@@ -221,7 +221,7 @@ size_t DisAssembler::disCchAddrMember(
 
     switch (terminationType)
     {
-        // int disCallSize;
+            // int disCallSize;
 
         case DISARM64::TRMTA::trmtaBra:
         case DISARM64::TRMTA::trmtaBraCase:
@@ -318,7 +318,7 @@ size_t DisAssembler::disCchAddrMember(
             break;
     }
 
-#else // TARGET*
+#else  // TARGET*
 #error Unsupported or unset target architecture
 #endif // TARGET*
 
@@ -567,7 +567,7 @@ size_t DisAssembler::disCchFixupMember(
             break;
     }
 
-#else // TARGET*
+#else  // TARGET*
 #error Unsupported or unset target architecture
 #endif // TARGET*
 
@@ -613,7 +613,7 @@ size_t DisAssembler::disCchRegRelMember(
 
         case DISX86::trmtaFallThrough:
 
-        /* some instructions like division have a TRAP termination type - ignore it */
+            /* some instructions like division have a TRAP termination type - ignore it */
 
         case DISX86::trmtaTrap:
         case DISX86::trmtaTrapCc:
@@ -708,7 +708,7 @@ size_t DisAssembler::disCchRegRelMember(
 
         case DISARM64::TRMTA::trmtaFallThrough:
 
-        /* some instructions like division have a TRAP termination type - ignore it */
+            /* some instructions like division have a TRAP termination type - ignore it */
 
         case DISARM64::TRMTA::trmtaTrap:
         case DISARM64::TRMTA::trmtaTrapCc:
@@ -780,7 +780,7 @@ size_t DisAssembler::disCchRegRelMember(
             break;
     }
 
-#else // TARGET*
+#else  // TARGET*
 #error Unsupported or unset target architecture
 #endif // TARGET*
 
@@ -1081,10 +1081,10 @@ size_t DisAssembler::CbDisassemble(DIS*        pdis,
                 /* jump is not in the current code block */
                 break;
 
-        } // end switch
-#else // TARGET*
+        }                        // end switch
+#else     // TARGET*
 #error Unsupported or unset target architecture
-#endif // TARGET*
+#endif    // TARGET*
 
         return cb;
     } // end if
@@ -1112,7 +1112,7 @@ size_t DisAssembler::CbDisassemble(DIS*        pdis,
         }
 
 #ifdef TARGET_ARM64
-#define CCH_INDENT 8 // fixed sized instructions, always 8 characters
+#define CCH_INDENT 8  // fixed sized instructions, always 8 characters
 #elif defined(TARGET_AMD64)
 #define CCH_INDENT 30 // large constants sometimes
 #else
@@ -1321,15 +1321,15 @@ void DisAssembler::DisasmBuffer(FILE* pfile, bool printit)
         size_t cb;
 
         cb = CbDisassemble(pdis, ibCur, addr + ibCur, disGetLinearAddr(ibCur), disGetBufferSize(ibCur), pfile,
-                           false, // find labels
+                           false,        // find labels
                            printit,
                            !disDiffable, // display relative offset
 #ifdef DEBUG
-                           !disDiffable // Display code bytes?
+                           !disDiffable  // Display code bytes?
 #else
                            false // Display code bytes?
 #endif
-                           );
+        );
 
         ibCur += (unsigned)cb;
     }

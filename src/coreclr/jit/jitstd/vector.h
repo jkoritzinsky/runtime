@@ -18,24 +18,25 @@ XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 namespace jitstd
 {
 
-template <typename T, typename Allocator = allocator<T> >
+template <typename T, typename Allocator = allocator<T>>
 class vector
 {
 public:
     typedef Allocator allocator_type;
-    typedef T* pointer;
-    typedef T& reference;
-    typedef const T* const_pointer;
-    typedef const T& const_reference;
+    typedef T*        pointer;
+    typedef T&        reference;
+    typedef const T*  const_pointer;
+    typedef const T&  const_reference;
 
-    typedef size_t size_type;
+    typedef size_t    size_type;
     typedef ptrdiff_t difference_type;
-    typedef T value_type;
+    typedef T         value_type;
 
     // nested classes
     class iterator : public jitstd::iterator<random_access_iterator_tag, T>
     {
         iterator(T* ptr);
+
     public:
         iterator();
         iterator(const iterator& it);
@@ -44,13 +45,13 @@ public:
         iterator& operator++(int);
         iterator& operator--();
         iterator& operator--(int);
-        iterator operator+(difference_type n);
-        iterator operator-(difference_type n);
+        iterator  operator+(difference_type n);
+        iterator  operator-(difference_type n);
         size_type operator-(const iterator& that);
-        bool operator==(const iterator& it);
-        bool operator!=(const iterator& it);
-        T& operator*();
-        T* operator&();
+        bool      operator==(const iterator& it);
+        bool      operator!=(const iterator& it);
+        T&        operator*();
+        T*        operator&();
         operator T*();
 
     private:
@@ -63,6 +64,7 @@ public:
     private:
         const_iterator(T* ptr);
         const_iterator();
+
     public:
         const_iterator(const const_iterator& it);
 
@@ -70,13 +72,13 @@ public:
         const_iterator& operator++(int);
         const_iterator& operator--();
         const_iterator& operator--(int);
-        const_iterator operator+(difference_type n);
-        const_iterator operator-(difference_type n);
-        size_type operator-(const const_iterator& that);
-        bool operator==(const const_iterator& it) const;
-        bool operator!=(const const_iterator& it) const;
-        const T& operator*() const;
-        const T* operator&() const;
+        const_iterator  operator+(difference_type n);
+        const_iterator  operator-(difference_type n);
+        size_type       operator-(const const_iterator& that);
+        bool            operator==(const const_iterator& it) const;
+        bool            operator!=(const const_iterator& it) const;
+        const T&        operator*() const;
+        const T*        operator&() const;
         operator const T*() const;
 
     private:
@@ -88,6 +90,7 @@ public:
     {
     private:
         reverse_iterator(T* ptr);
+
     public:
         reverse_iterator();
         reverse_iterator(const reverse_iterator& it);
@@ -96,13 +99,13 @@ public:
         reverse_iterator& operator++(int);
         reverse_iterator& operator--();
         reverse_iterator& operator--(int);
-        reverse_iterator operator+(difference_type n);
-        reverse_iterator operator-(difference_type n);
-        size_type operator-(const reverse_iterator& that);
-        bool operator==(const reverse_iterator& it);
-        bool operator!=(const reverse_iterator& it);
-        T& operator*();
-        T* operator&();
+        reverse_iterator  operator+(difference_type n);
+        reverse_iterator  operator-(difference_type n);
+        size_type         operator-(const reverse_iterator& that);
+        bool              operator==(const reverse_iterator& it);
+        bool              operator!=(const reverse_iterator& it);
+        T&                operator*();
+        T*                operator&();
         operator T*();
 
     private:
@@ -114,6 +117,7 @@ public:
     {
     private:
         const_reverse_iterator(T* ptr);
+
     public:
         const_reverse_iterator();
         const_reverse_iterator(const const_reverse_iterator& it);
@@ -122,13 +126,13 @@ public:
         const_reverse_iterator& operator++(int);
         const_reverse_iterator& operator--();
         const_reverse_iterator& operator--(int);
-        const_reverse_iterator operator+(difference_type n);
-        const_reverse_iterator operator-(difference_type n);
-        size_type operator-(const const_reverse_iterator& that);
-        bool operator==(const const_reverse_iterator& it) const;
-        bool operator!=(const const_reverse_iterator& it) const;
-        const T& operator*() const;
-        const T* operator&() const;
+        const_reverse_iterator  operator+(difference_type n);
+        const_reverse_iterator  operator-(difference_type n);
+        size_type               operator-(const const_reverse_iterator& that);
+        bool                    operator==(const const_reverse_iterator& it) const;
+        bool                    operator!=(const const_reverse_iterator& it) const;
+        const T&                operator*() const;
+        const T*                operator&() const;
         operator const T*() const;
 
     private:
@@ -158,12 +162,12 @@ public:
     void assign(size_type size, const T& value);
 
     const_reference at(size_type n) const;
-    reference at(size_type n);
+    reference       at(size_type n);
 
-    reference back();
+    reference       back();
     const_reference back() const;
 
-    iterator begin();
+    iterator       begin();
     const_iterator begin() const;
     const_iterator cbegin() const;
 
@@ -172,20 +176,20 @@ public:
     void clear();
     bool empty() const;
 
-    iterator end();
+    iterator       end();
     const_iterator end() const;
     const_iterator cend() const;
 
     iterator erase(iterator position);
     iterator erase(iterator first, iterator last);
 
-    reference front();
+    reference       front();
     const_reference front() const;
 
     allocator_type get_allocator() const;
 
     iterator insert(iterator position, const T& value);
-    void insert(iterator position, size_type size, const T& value);
+    void     insert(iterator position, size_type size, const T& value);
 
     template <typename InputIterator>
     void insert(iterator position, InputIterator first, InputIterator last);
@@ -198,16 +202,16 @@ public:
 
     vector& operator=(vector&& vec);
 
-    reference operator[](size_type n);
+    reference       operator[](size_type n);
     const_reference operator[](size_type n) const;
 
     void pop_back();
     void push_back(const T& value);
 
-    reverse_iterator rbegin();
+    reverse_iterator       rbegin();
     const_reverse_iterator rbegin() const;
 
-    reverse_iterator rend();
+    reverse_iterator       rend();
     const_reverse_iterator rend() const;
 
     void reserve(size_type n);
@@ -216,19 +220,20 @@ public:
 
     size_type size() const;
 
-    T* data() { return m_pArray; }
+    T* data()
+    {
+        return m_pArray;
+    }
 
     void swap(vector<T, Allocator>& vec);
 
 private:
-
     typename Allocator::template rebind<T>::allocator m_allocator;
-    T* m_pArray;
-    size_type m_nSize;
-    size_type m_nCapacity;
+    T*                                                m_pArray;
+    size_type                                         m_nSize;
+    size_type                                         m_nCapacity;
 
-    inline
-    bool ensure_capacity(size_type capacity);
+    inline bool ensure_capacity(size_type capacity);
 
     template <typename InputIterator>
     void construct_helper(InputIterator first, InputIterator last, forward_iterator_tag);
@@ -251,9 +256,7 @@ private:
     friend class vector;
 };
 
-}// namespace jitstd
-
-
+} // namespace jitstd
 
 // Implementation of vector.
 
@@ -267,28 +270,22 @@ template <typename InputIterator>
 size_t iterator_difference(InputIterator first, const InputIterator& last)
 {
     size_t size = 0;
-    for (; first != last; ++first, ++size);
+    for (; first != last; ++first, ++size)
+        ;
     return size;
 }
 
-}
-
+} // namespace
 
 template <typename T, typename Allocator>
 vector<T, Allocator>::vector(const Allocator& allocator)
-    : m_allocator(allocator)
-    , m_pArray(nullptr)
-    , m_nSize(0)
-    , m_nCapacity(0)
+    : m_allocator(allocator), m_pArray(nullptr), m_nSize(0), m_nCapacity(0)
 {
 }
 
 template <typename T, typename Allocator>
 vector<T, Allocator>::vector(size_type size, const T& value, const Allocator& allocator)
-    : m_allocator(allocator)
-    , m_pArray(NULL)
-    , m_nSize(0)
-    , m_nCapacity(0)
+    : m_allocator(allocator), m_pArray(NULL), m_nSize(0), m_nCapacity(0)
 {
     construct_helper(size, value);
 }
@@ -296,10 +293,7 @@ vector<T, Allocator>::vector(size_type size, const T& value, const Allocator& al
 template <typename T, typename Allocator>
 template <typename InputIterator>
 vector<T, Allocator>::vector(InputIterator first, InputIterator last, const Allocator& allocator)
-    : m_allocator(allocator)
-    , m_pArray(NULL)
-    , m_nSize(0)
-    , m_nCapacity(0)
+    : m_allocator(allocator), m_pArray(NULL), m_nSize(0), m_nCapacity(0)
 {
     construct_helper(first, last, iterator_traits<InputIterator>::iterator_category());
 }
@@ -314,7 +308,7 @@ vector<T, Allocator>::vector(const vector<Alt, AltAllocator>& vec)
 {
     for (size_type i = 0; i < vec.m_nSize; ++i)
     {
-        new (m_pArray + i, placement_t()) T((T) vec.m_pArray[i]);
+        new (m_pArray + i, placement_t()) T((T)vec.m_pArray[i]);
     }
 }
 
@@ -333,13 +327,10 @@ vector<T, Allocator>::vector(const vector<T, Allocator>& vec)
 
 template <typename T, typename Allocator>
 vector<T, Allocator>::vector(vector<T, Allocator>&& vec)
-    : m_allocator(vec.m_allocator)
-    , m_pArray(vec.m_pArray)
-    , m_nSize(vec.m_nSize)
-    , m_nCapacity(vec.m_nCapacity)
+    : m_allocator(vec.m_allocator), m_pArray(vec.m_pArray), m_nSize(vec.m_nSize), m_nCapacity(vec.m_nCapacity)
 {
-    vec.m_pArray = nullptr;
-    vec.m_nSize = 0;
+    vec.m_pArray    = nullptr;
+    vec.m_nSize     = 0;
     vec.m_nCapacity = 0;
 }
 
@@ -351,10 +342,9 @@ vector<T, Allocator>::~vector()
         m_pArray[i].~T();
     }
     m_allocator.deallocate(m_pArray, m_nCapacity);
-    m_nSize = 0;
+    m_nSize     = 0;
     m_nCapacity = 0;
 }
-
 
 // public methods
 
@@ -377,61 +367,52 @@ void vector<T, Allocator>::assign(size_type size, const T& value)
 }
 
 template <typename T, typename Allocator>
-typename vector<T, Allocator>::const_reference
-    vector<T, Allocator>::at(size_type i) const
+typename vector<T, Allocator>::const_reference vector<T, Allocator>::at(size_type i) const
 {
     return operator[](i);
 }
 
 template <typename T, typename Allocator>
-typename vector<T, Allocator>::reference
-    vector<T, Allocator>::at(size_type i)
+typename vector<T, Allocator>::reference vector<T, Allocator>::at(size_type i)
 {
     return operator[](i);
 }
 
 template <typename T, typename Allocator>
-typename vector<T, Allocator>::reference
-    vector<T, Allocator>::back()
+typename vector<T, Allocator>::reference vector<T, Allocator>::back()
 {
     return operator[](m_nSize - 1);
 }
 
 template <typename T, typename Allocator>
-typename vector<T, Allocator>::const_reference
-    vector<T, Allocator>::back() const
+typename vector<T, Allocator>::const_reference vector<T, Allocator>::back() const
 {
     return operator[](m_nSize - 1);
 }
 
 template <typename T, typename Allocator>
-typename vector<T, Allocator>::iterator
-    vector<T, Allocator>::begin()
+typename vector<T, Allocator>::iterator vector<T, Allocator>::begin()
 {
     return iterator(m_pArray);
 }
 
 template <typename T, typename Allocator>
-typename vector<T, Allocator>::const_iterator
-    vector<T, Allocator>::begin() const
+typename vector<T, Allocator>::const_iterator vector<T, Allocator>::begin() const
 {
     return const_iterator(m_pArray);
 }
 
 template <typename T, typename Allocator>
-typename vector<T, Allocator>::const_iterator
-    vector<T, Allocator>::cbegin() const
+typename vector<T, Allocator>::const_iterator vector<T, Allocator>::cbegin() const
 {
     return const_iterator(m_pArray);
 }
 
 template <typename T, typename Allocator>
-typename vector<T, Allocator>::size_type
-    vector<T, Allocator>::capacity() const
+typename vector<T, Allocator>::size_type vector<T, Allocator>::capacity() const
 {
     return m_nCapacity;
 }
-
 
 template <typename T, typename Allocator>
 void vector<T, Allocator>::clear()
@@ -456,8 +437,7 @@ typename vector<T, Allocator>::iterator vector<T, Allocator>::end()
 }
 
 template <typename T, typename Allocator>
-typename vector<T, Allocator>::const_iterator
-    vector<T, Allocator>::end() const
+typename vector<T, Allocator>::const_iterator vector<T, Allocator>::end() const
 {
     return const_iterator(m_pArray + m_nSize);
 }
@@ -469,18 +449,14 @@ typename vector<T, Allocator>::const_iterator vector<T, Allocator>::cend() const
 }
 
 template <typename T, typename Allocator>
-typename vector<T, Allocator>::iterator
-    vector<T, Allocator>::erase(
-        typename vector<T, Allocator>::iterator position)
+typename vector<T, Allocator>::iterator vector<T, Allocator>::erase(typename vector<T, Allocator>::iterator position)
 {
     return erase(position, position + 1);
 }
 
 template <typename T, typename Allocator>
-typename vector<T, Allocator>::iterator
-    vector<T, Allocator>::erase(
-        typename vector<T, Allocator>::iterator first,
-        typename vector<T, Allocator>::iterator last)
+typename vector<T, Allocator>::iterator vector<T, Allocator>::erase(typename vector<T, Allocator>::iterator first,
+                                                                    typename vector<T, Allocator>::iterator last)
 {
     assert(m_nSize > 0);
     assert(first.m_pElem >= m_pArray);
@@ -502,61 +478,49 @@ typename vector<T, Allocator>::iterator
 }
 
 template <typename T, typename Allocator>
-typename vector<T, Allocator>::reference
-    vector<T, Allocator>::front()
+typename vector<T, Allocator>::reference vector<T, Allocator>::front()
 {
     return operator[](0);
 }
 
 template <typename T, typename Allocator>
-typename vector<T, Allocator>::const_reference
-    vector<T, Allocator>::front() const
+typename vector<T, Allocator>::const_reference vector<T, Allocator>::front() const
 {
     return operator[](0);
 }
 
 template <typename T, typename Allocator>
-typename vector<T, Allocator>::allocator_type
-    vector<T, Allocator>::get_allocator() const
+typename vector<T, Allocator>::allocator_type vector<T, Allocator>::get_allocator() const
 {
     return m_allocator;
 }
 
 template <typename T, typename Allocator>
-typename vector<T, Allocator>::iterator
-    vector<T, Allocator>::insert(
-        typename vector<T, Allocator>::iterator iter,
-        const T& value)
+typename vector<T, Allocator>::iterator vector<T, Allocator>::insert(typename vector<T, Allocator>::iterator iter,
+                                                                     const T&                                value)
 {
-    size_type pos = (size_type) (iter.m_pElem - m_pArray);
+    size_type pos = (size_type)(iter.m_pElem - m_pArray);
     insert_elements_helper(iter, 1, value);
     return iterator(m_pArray + pos);
 }
 
 template <typename T, typename Allocator>
-void vector<T, Allocator>::insert(
-    iterator iter,
-    size_type size,
-    const T& value)
+void vector<T, Allocator>::insert(iterator iter, size_type size, const T& value)
 {
     insert_elements_helper(iter, size, value);
 }
 
 template <typename T, typename Allocator>
 template <typename InputIterator>
-void vector<T, Allocator>::insert(
-    iterator iter,
-    InputIterator first,
-    InputIterator last)
+void vector<T, Allocator>::insert(iterator iter, InputIterator first, InputIterator last)
 {
     insert_helper(iter, first, last, iterator_traits<InputIterator>::iterator_category());
 }
 
 template <typename T, typename Allocator>
-typename vector<T, Allocator>::size_type
-    vector<T, Allocator>::max_size() const
+typename vector<T, Allocator>::size_type vector<T, Allocator>::max_size() const
 {
-    return ((size_type) -1) >> 1;
+    return ((size_type)-1) >> 1;
 }
 
 template <typename T, typename Allocator>
@@ -569,7 +533,7 @@ vector<T, Allocator>& vector<T, Allocator>::operator=(const vector<Alt, AltAlloc
     m_nSize = vec.m_nSize;
     for (size_type i = 0; i < m_nSize; ++i)
     {
-        m_pArray[i] = (T) vec.m_pArray[i];
+        m_pArray[i] = (T)vec.m_pArray[i];
     }
     return *this;
 }
@@ -597,12 +561,12 @@ template <typename T, typename Allocator>
 vector<T, Allocator>& vector<T, Allocator>::operator=(vector<T, Allocator>&& vec)
 {
     m_allocator = vec.m_allocator;
-    m_pArray = vec.m_pArray;
-    m_nSize = vec.m_nSize;
+    m_pArray    = vec.m_pArray;
+    m_nSize     = vec.m_nSize;
     m_nCapacity = vec.m_nCapacity;
 
-    vec.m_pArray = nullptr;
-    vec.m_nSize = 0;
+    vec.m_pArray    = nullptr;
+    vec.m_nSize     = 0;
     vec.m_nCapacity = 0;
 
     return *this;
@@ -615,8 +579,7 @@ typename vector<T, Allocator>::reference vector<T, Allocator>::operator[](size_t
 }
 
 template <typename T, typename Allocator>
-typename vector<T, Allocator>::const_reference
-    vector<T, Allocator>::operator[](size_type n) const
+typename vector<T, Allocator>::const_reference vector<T, Allocator>::operator[](size_type n) const
 {
     return m_pArray[n];
 }
@@ -643,22 +606,19 @@ typename vector<T, Allocator>::reverse_iterator vector<T, Allocator>::rbegin()
 }
 
 template <typename T, typename Allocator>
-typename vector<T, Allocator>::const_reverse_iterator
-    vector<T, Allocator>::rbegin() const
+typename vector<T, Allocator>::const_reverse_iterator vector<T, Allocator>::rbegin() const
 {
     return const_reverse_iterator(m_pArray + m_nSize - 1);
 }
 
 template <typename T, typename Allocator>
-typename vector<T, Allocator>::reverse_iterator
-    vector<T, Allocator>::rend()
+typename vector<T, Allocator>::reverse_iterator vector<T, Allocator>::rend()
 {
     return reverse_iterator(m_pArray - 1);
 }
 
 template <typename T, typename Allocator>
-typename vector<T, Allocator>::const_reverse_iterator
-    vector<T, Allocator>::rend() const
+typename vector<T, Allocator>::const_reverse_iterator vector<T, Allocator>::rend() const
 {
     return const_reverse_iterator(m_pArray - 1);
 }
@@ -670,9 +630,7 @@ void vector<T, Allocator>::reserve(size_type n)
 }
 
 template <typename T, typename Allocator>
-void vector<T, Allocator>::resize(
-    size_type sz,
-    const T& c)
+void vector<T, Allocator>::resize(size_type sz, const T& c)
 {
     for (; m_nSize > sz; m_nSize--)
     {
@@ -716,7 +674,6 @@ void vector<T, Allocator>::construct_helper(size_type size, const T& value)
     m_nSize = size;
 }
 
-
 template <typename T, typename Allocator>
 template <typename InputIterator>
 void vector<T, Allocator>::construct_helper(InputIterator first, InputIterator last, int_not_an_iterator_tag)
@@ -755,7 +712,7 @@ void vector<T, Allocator>::insert_elements_helper(iterator iter, size_type size,
 
     ensure_capacity(m_nSize + size);
 
-    for (int src = (int)(m_nSize - 1), dst = (int)(m_nSize + size - 1); src >= (int) pos; --src, --dst)
+    for (int src = (int)(m_nSize - 1), dst = (int)(m_nSize + size - 1); src >= (int)pos; --src, --dst)
     {
         m_pArray[dst] = m_pArray[src];
     }
@@ -770,7 +727,10 @@ void vector<T, Allocator>::insert_elements_helper(iterator iter, size_type size,
 
 template <typename T, typename Allocator>
 template <typename InputIterator>
-void vector<T, Allocator>::insert_helper(iterator iter, InputIterator first, InputIterator last, int_not_an_iterator_tag)
+void vector<T, Allocator>::insert_helper(iterator      iter,
+                                         InputIterator first,
+                                         InputIterator last,
+                                         int_not_an_iterator_tag)
 {
     insert_elements_helper(iter, first, last);
 }
@@ -860,14 +820,12 @@ bool vector<T, Allocator>::ensure_capacity(size_type newCap)
     m_allocator.deallocate(m_pArray, m_nCapacity);
 
     // Update the pointers and capacity;
-    m_pArray = ptr;
+    m_pArray    = ptr;
     m_nCapacity = allocCap;
     return true;
 }
 
 } // end of namespace jitstd.
-
-
 
 // Implementation of vector iterators
 
@@ -876,23 +834,19 @@ namespace jitstd
 
 // iterator
 template <typename T, typename Allocator>
-vector<T, Allocator>::iterator::iterator()
-    : m_pElem(NULL)
+vector<T, Allocator>::iterator::iterator() : m_pElem(NULL)
 {
 }
 
 template <typename T, typename Allocator>
-vector<T, Allocator>::iterator::iterator(T* ptr)
-    : m_pElem(ptr)
+vector<T, Allocator>::iterator::iterator(T* ptr) : m_pElem(ptr)
 {
 }
 
 template <typename T, typename Allocator>
-vector<T, Allocator>::iterator::iterator(const iterator& it)
-    : m_pElem(it.m_pElem)
+vector<T, Allocator>::iterator::iterator(const iterator& it) : m_pElem(it.m_pElem)
 {
 }
-
 
 template <typename T, typename Allocator>
 typename vector<T, Allocator>::iterator& vector<T, Allocator>::iterator::operator++()
@@ -935,9 +889,8 @@ typename vector<T, Allocator>::iterator vector<T, Allocator>::iterator::operator
 }
 
 template <typename T, typename Allocator>
-typename vector<T, Allocator>::size_type
-    vector<T, Allocator>::iterator::operator-(
-        const typename vector<T, Allocator>::iterator& that)
+typename vector<T, Allocator>::size_type vector<T, Allocator>::iterator::operator-(
+    const typename vector<T, Allocator>::iterator& that)
 {
     return m_pElem - that.m_pElem;
 }
@@ -974,23 +927,19 @@ vector<T, Allocator>::iterator::operator T*()
 
 // const_iterator
 template <typename T, typename Allocator>
-vector<T, Allocator>::const_iterator::const_iterator()
-    : m_pElem(NULL)
+vector<T, Allocator>::const_iterator::const_iterator() : m_pElem(NULL)
 {
 }
 
 template <typename T, typename Allocator>
-vector<T, Allocator>::const_iterator::const_iterator(T* ptr)
-    : m_pElem(ptr)
+vector<T, Allocator>::const_iterator::const_iterator(T* ptr) : m_pElem(ptr)
 {
 }
 
 template <typename T, typename Allocator>
-vector<T, Allocator>::const_iterator::const_iterator(const const_iterator& it)
-    : m_pElem(it.m_pElem)
+vector<T, Allocator>::const_iterator::const_iterator(const const_iterator& it) : m_pElem(it.m_pElem)
 {
 }
-
 
 template <typename T, typename Allocator>
 typename vector<T, Allocator>::const_iterator& vector<T, Allocator>::const_iterator::operator++()
@@ -1033,9 +982,8 @@ typename vector<T, Allocator>::const_iterator vector<T, Allocator>::const_iterat
 }
 
 template <typename T, typename Allocator>
-typename vector<T, Allocator>::size_type
-    vector<T, Allocator>::const_iterator::operator-(
-        const typename vector<T, Allocator>::const_iterator& that)
+typename vector<T, Allocator>::size_type vector<T, Allocator>::const_iterator::operator-(
+    const typename vector<T, Allocator>::const_iterator& that)
 {
     return m_pElem - that.m_pElem;
 }
@@ -1058,7 +1006,6 @@ const T& vector<T, Allocator>::const_iterator::operator*() const
     return *m_pElem;
 }
 
-
 template <typename T, typename Allocator>
 const T* vector<T, Allocator>::const_iterator::operator&() const
 {
@@ -1071,26 +1018,21 @@ vector<T, Allocator>::const_iterator::operator const T*() const
     return &m_pElem;
 }
 
-
 // reverse_iterator
 template <typename T, typename Allocator>
-vector<T, Allocator>::reverse_iterator::reverse_iterator()
-    : m_pElem(NULL)
+vector<T, Allocator>::reverse_iterator::reverse_iterator() : m_pElem(NULL)
 {
 }
 
 template <typename T, typename Allocator>
-vector<T, Allocator>::reverse_iterator::reverse_iterator(T* ptr)
-    : m_pElem(ptr)
+vector<T, Allocator>::reverse_iterator::reverse_iterator(T* ptr) : m_pElem(ptr)
 {
 }
 
 template <typename T, typename Allocator>
-vector<T, Allocator>::reverse_iterator::reverse_iterator(const reverse_iterator& it)
-    : m_pElem(it.m_pElem)
+vector<T, Allocator>::reverse_iterator::reverse_iterator(const reverse_iterator& it) : m_pElem(it.m_pElem)
 {
 }
-
 
 template <typename T, typename Allocator>
 typename vector<T, Allocator>::reverse_iterator& vector<T, Allocator>::reverse_iterator::operator++()
@@ -1133,9 +1075,8 @@ typename vector<T, Allocator>::reverse_iterator vector<T, Allocator>::reverse_it
 }
 
 template <typename T, typename Allocator>
-typename vector<T, Allocator>::size_type
-    vector<T, Allocator>::reverse_iterator::operator-(
-        const typename vector<T, Allocator>::reverse_iterator& that)
+typename vector<T, Allocator>::size_type vector<T, Allocator>::reverse_iterator::operator-(
+    const typename vector<T, Allocator>::reverse_iterator& that)
 {
     return m_pElem - that.m_pElem;
 }
@@ -1172,14 +1113,12 @@ vector<T, Allocator>::reverse_iterator::operator T*()
 
 // const_reverse_iterator
 template <typename T, typename Allocator>
-vector<T, Allocator>::const_reverse_iterator::const_reverse_iterator()
-    : m_pElem(NULL)
+vector<T, Allocator>::const_reverse_iterator::const_reverse_iterator() : m_pElem(NULL)
 {
 }
 
 template <typename T, typename Allocator>
-vector<T, Allocator>::const_reverse_iterator::const_reverse_iterator(T* ptr)
-    : m_pElem(ptr)
+vector<T, Allocator>::const_reverse_iterator::const_reverse_iterator(T* ptr) : m_pElem(ptr)
 {
 }
 
@@ -1188,7 +1127,6 @@ vector<T, Allocator>::const_reverse_iterator::const_reverse_iterator(const const
     : m_pElem(it.m_pElem)
 {
 }
-
 
 template <typename T, typename Allocator>
 typename vector<T, Allocator>::const_reverse_iterator& vector<T, Allocator>::const_reverse_iterator::operator++()
@@ -1219,21 +1157,22 @@ typename vector<T, Allocator>::const_reverse_iterator& vector<T, Allocator>::con
 }
 
 template <typename T, typename Allocator>
-typename vector<T, Allocator>::const_reverse_iterator vector<T, Allocator>::const_reverse_iterator::operator+(difference_type n)
+typename vector<T, Allocator>::const_reverse_iterator vector<T, Allocator>::const_reverse_iterator::operator+(
+    difference_type n)
 {
     return const_reverse_iterator(m_pElem + n);
 }
 
 template <typename T, typename Allocator>
-typename vector<T, Allocator>::const_reverse_iterator vector<T, Allocator>::const_reverse_iterator::operator-(difference_type n)
+typename vector<T, Allocator>::const_reverse_iterator vector<T, Allocator>::const_reverse_iterator::operator-(
+    difference_type n)
 {
     return const_reverse_iterator(m_pElem - n);
 }
 
 template <typename T, typename Allocator>
-typename vector<T, Allocator>::size_type
-    vector<T, Allocator>::const_reverse_iterator::operator-(
-        const typename vector<T, Allocator>::const_reverse_iterator& that)
+typename vector<T, Allocator>::size_type vector<T, Allocator>::const_reverse_iterator::operator-(
+    const typename vector<T, Allocator>::const_reverse_iterator& that)
 {
     return m_pElem - that.m_pElem;
 }
@@ -1268,4 +1207,4 @@ vector<T, Allocator>::const_reverse_iterator::operator const T*() const
     return &m_pElem;
 }
 
-}
+} // namespace jitstd

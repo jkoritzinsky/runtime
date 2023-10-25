@@ -2868,7 +2868,8 @@ typedef JitHashTable<ValueNum, JitSmallPrimitiveKeyFuncs<ValueNum>, bool> ValueN
 
 class SmallValueNumSet
 {
-    union {
+    union
+    {
         ValueNum     m_inlineElements[4];
         ValueNumSet* m_set;
     };
@@ -2967,9 +2968,9 @@ ValueNum ValueNumStore::VNForMapSelectInner(ValueNumKind vnk, var_types type, Va
     if ((m_pComp->compCurBB != nullptr) && (m_pComp->compCurTree != nullptr) &&
         m_pComp->compCurBB->bbNatLoopNum != BasicBlock::NOT_IN_LOOP)
     {
-        memoryDependencies.ForEach([this](ValueNum vn) {
-            m_pComp->optRecordLoopMemoryDependence(m_pComp->compCurTree, m_pComp->compCurBB, vn);
-        });
+        memoryDependencies.ForEach(
+            [this](ValueNum vn)
+            { m_pComp->optRecordLoopMemoryDependence(m_pComp->compCurTree, m_pComp->compCurBB, vn); });
     }
 
     return result;
@@ -2999,10 +3000,12 @@ void ValueNumStore::MapSelectWorkCacheEntry::SetMemoryDependencies(Compiler* com
     }
 
     size_t i = 0;
-    set.ForEach([&i, arr](ValueNum vn) {
-        arr[i] = vn;
-        i++;
-    });
+    set.ForEach(
+        [&i, arr](ValueNum vn)
+        {
+            arr[i] = vn;
+            i++;
+        });
 }
 
 //------------------------------------------------------------------------------
@@ -3310,7 +3313,7 @@ TailCall:
                             {
                                 bool     usedRecursiveVN = false;
                                 ValueNum curResult       = VNForMapSelectWork(vnk, type, phiArgVN, index, pBudget,
-                                                                        &usedRecursiveVN, recMemoryDependencies);
+                                                                              &usedRecursiveVN, recMemoryDependencies);
 
                                 *pUsedRecursiveVN |= usedRecursiveVN;
                                 if (sameSelResult == ValueNumStore::RecursiveVN)
@@ -3343,8 +3346,8 @@ TailCall:
                                 GetMapSelectWorkCache()->Set(fstruct, entry);
                             }
 
-                            recMemoryDependencies.ForEach(
-                                [this, &memoryDependencies](ValueNum vn) { memoryDependencies.Add(m_pComp, vn); });
+                            recMemoryDependencies.ForEach([this, &memoryDependencies](ValueNum vn)
+                                                          { memoryDependencies.Add(m_pComp, vn); });
 
                             return sameSelResult;
                         }
@@ -3776,7 +3779,7 @@ ValueNum ValueNumStore::EvalFuncForConstantArgs(var_types typ, VNFunc func, Valu
                 }
             }
         }
-        else // both args are TYP_REF or both args are TYP_BYREF
+        else                                                // both args are TYP_REF or both args are TYP_BYREF
         {
             size_t arg0Val = ConstantValue<size_t>(arg0VN); // We represent ref/byref constants as size_t's.
             size_t arg1Val = ConstantValue<size_t>(arg1VN); // Also we consider null to be zero.
@@ -4706,15 +4709,16 @@ ValueNum ValueNumStore::EvalUsingMathIdentity(var_types typ, VNFunc func, ValueN
 {
     ValueNum resultVN = NoVN; // set default result to unsuccessful
 
-    if (typ == TYP_BYREF) // We don't want/need to optimize a zero byref
+    if (typ == TYP_BYREF)     // We don't want/need to optimize a zero byref
     {
-        return resultVN; // return the unsuccessful value
+        return resultVN;      // return the unsuccessful value
     }
 
     // (0 + x) == x
     // (x + 0) == x
     // This identity does not apply for floating point (when x == -0.0).
-    auto identityForAddition = [=]() -> ValueNum {
+    auto identityForAddition = [=]() -> ValueNum
+    {
         if (!varTypeIsFloating(typ))
         {
             ValueNum ZeroVN = VNZeroForType(typ);
@@ -4734,7 +4738,8 @@ ValueNum ValueNumStore::EvalUsingMathIdentity(var_types typ, VNFunc func, ValueN
     // (x - 0) == x
     // (x - x) == 0
     // This identity does not apply for floating point (when x == -0.0).
-    auto identityForSubtraction = [=](bool ovf) -> ValueNum {
+    auto identityForSubtraction = [=](bool ovf) -> ValueNum
+    {
         if (!varTypeIsFloating(typ))
         {
             ValueNum ZeroVN = VNZeroForType(typ);
@@ -4785,7 +4790,8 @@ ValueNum ValueNumStore::EvalUsingMathIdentity(var_types typ, VNFunc func, ValueN
     };
 
     // These identities do not apply for floating point.
-    auto identityForMultiplication = [=]() -> ValueNum {
+    auto identityForMultiplication = [=]() -> ValueNum
+    {
         if (!varTypeIsFloating(typ))
         {
             // (0 * x) == 0
@@ -5509,7 +5515,7 @@ ValueNum ValueNumStore::ExtendPtrVN(GenTree* opA, FieldSeq* fldSeq, ssize_t offs
     {
         fldSeq = m_pComp->GetFieldSeqStore()->Append(FieldSeqVNToFieldSeq(funcApp.m_args[1]), fldSeq);
         res    = VNForFunc(TYP_BYREF, VNF_PtrToStatic, funcApp.m_args[0], VNForFieldSeq(fldSeq),
-                        VNForIntPtrCon(ConstantValue<ssize_t>(funcApp.m_args[2]) + offset));
+                           VNForIntPtrCon(ConstantValue<ssize_t>(funcApp.m_args[2]) + offset));
     }
     else if (funcApp.m_func == VNF_PtrToArrElem)
     {
@@ -5550,9 +5556,9 @@ void Compiler::fgValueNumberLocalStore(GenTree*             storeNode,
     // Should not have been recorded as updating the GC heap.
     assert(!GetMemorySsaMap(GcHeap)->Lookup(storeNode));
 
-    auto processDef = [=](unsigned defLclNum, unsigned defSsaNum, ssize_t defOffset, unsigned defSize,
-                          ValueNumPair defValue) {
-
+    auto processDef =
+        [=](unsigned defLclNum, unsigned defSsaNum, ssize_t defOffset, unsigned defSize, ValueNumPair defValue)
+    {
         LclVarDsc* defVarDsc = lvaGetDesc(defLclNum);
 
         if (defSsaNum != SsaConfig::RESERVED_SSA_NUM)
@@ -9102,8 +9108,8 @@ void ValueNumStore::vnDumpValWithExc(Compiler* comp, VNFuncApp* valWithExc)
 {
     assert(valWithExc->m_func == VNF_ValWithExc); // Precondition.
 
-    ValueNum normVN = valWithExc->m_args[0]; // First arg is the VN from normal execution
-    ValueNum excVN  = valWithExc->m_args[1]; // Second arg is the set of possible exceptions
+    ValueNum normVN = valWithExc->m_args[0];      // First arg is the VN from normal execution
+    ValueNum excVN  = valWithExc->m_args[1];      // Second arg is the set of possible exceptions
 
     assert(IsVNFunc(excVN));
     VNFuncApp excSeq;
@@ -9151,8 +9157,8 @@ void ValueNumStore::vnDumpMapSelect(Compiler* comp, VNFuncApp* mapSelect)
 {
     assert(mapSelect->m_func == VNF_MapSelect); // Precondition.
 
-    ValueNum mapVN   = mapSelect->m_args[0]; // First arg is the map id
-    ValueNum indexVN = mapSelect->m_args[1]; // Second arg is the index
+    ValueNum mapVN   = mapSelect->m_args[0];    // First arg is the map id
+    ValueNum indexVN = mapSelect->m_args[1];    // Second arg is the index
 
     comp->vnPrint(mapVN, 0);
     printf("[");
@@ -9164,10 +9170,10 @@ void ValueNumStore::vnDumpMapStore(Compiler* comp, VNFuncApp* mapStore)
 {
     assert(mapStore->m_func == VNF_MapStore); // Precondition.
 
-    ValueNum mapVN    = mapStore->m_args[0]; // First arg is the map id
-    ValueNum indexVN  = mapStore->m_args[1]; // Second arg is the index
-    ValueNum newValVN = mapStore->m_args[2]; // Third arg is the new value
-    unsigned loopNum  = mapStore->m_args[3]; // Fourth arg is the loop num
+    ValueNum mapVN    = mapStore->m_args[0];  // First arg is the map id
+    ValueNum indexVN  = mapStore->m_args[1];  // Second arg is the index
+    ValueNum newValVN = mapStore->m_args[2];  // Third arg is the new value
+    unsigned loopNum  = mapStore->m_args[3];  // Fourth arg is the loop num
 
     comp->vnPrint(mapVN, 0);
     printf("[");
@@ -9366,7 +9372,7 @@ static genTreeOps genTreeOpsIllegalAsVNFunc[] = {GT_IND, // When we do heap memo
                                                  GT_CMPXCHG, GT_LCLHEAP, GT_BOX, GT_XORR, GT_XAND, GT_STORE_DYN_BLK,
                                                  GT_STORE_LCL_VAR, GT_STORE_LCL_FLD, GT_STOREIND, GT_STORE_BLK,
                                                  // These need special semantics:
-                                                 GT_COMMA, // == second argument (but with exception(s) from first).
+                                                 GT_COMMA,    // == second argument (but with exception(s) from first).
                                                  GT_ARR_ADDR, GT_BOUNDS_CHECK,
                                                  GT_BLK,      // May reference heap memory.
                                                  GT_INIT_VAL, // Not strictly a pass-through.
@@ -9645,7 +9651,7 @@ struct ValueNumberState
         : m_toDoAllPredsDone(comp->getAllocator(CMK_ValueNumber), /*minSize*/ 4)
         , m_toDoNotAllPredsDone(comp->getAllocator(CMK_ValueNumber), /*minSize*/ 4)
         , m_comp(comp)
-        , m_visited(new (comp, CMK_ValueNumber) BYTE[comp->fgBBNumMax + 1]())
+        , m_visited(new(comp, CMK_ValueNumber) BYTE[comp->fgBBNumMax + 1]())
     {
     }
 
@@ -9746,59 +9752,62 @@ struct ValueNumberState
 
         SetVisitBit(blk->bbNum, BVB_complete);
 
-        blk->VisitAllSuccs(m_comp, [&](BasicBlock* succ) {
+        blk->VisitAllSuccs(m_comp,
+                           [&](BasicBlock* succ)
+                           {
 #ifdef DEBUG_VN_VISIT
-            JITDUMP("   Succ(" FMT_BB ").\n", succ->bbNum);
+                               JITDUMP("   Succ(" FMT_BB ").\n", succ->bbNum);
 #endif // DEBUG_VN_VISIT
 
-            if (GetVisitBit(succ->bbNum, BVB_complete))
-            {
-                return BasicBlockVisit::Continue;
-            }
+                               if (GetVisitBit(succ->bbNum, BVB_complete))
+                               {
+                                   return BasicBlockVisit::Continue;
+                               }
 #ifdef DEBUG_VN_VISIT
-            JITDUMP("     Not yet completed.\n");
+                               JITDUMP("     Not yet completed.\n");
 #endif // DEBUG_VN_VISIT
 
-            bool allPredsVisited = true;
-            for (FlowEdge* pred = m_comp->BlockPredsWithEH(succ); pred != nullptr; pred = pred->getNextPredEdge())
-            {
-                BasicBlock* predBlock = pred->getSourceBlock();
-                if (!GetVisitBit(predBlock->bbNum, BVB_complete))
-                {
-                    allPredsVisited = false;
-                    break;
-                }
-            }
+                               bool allPredsVisited = true;
+                               for (FlowEdge* pred = m_comp->BlockPredsWithEH(succ); pred != nullptr;
+                                    pred           = pred->getNextPredEdge())
+                               {
+                                   BasicBlock* predBlock = pred->getSourceBlock();
+                                   if (!GetVisitBit(predBlock->bbNum, BVB_complete))
+                                   {
+                                       allPredsVisited = false;
+                                       break;
+                                   }
+                               }
 
-            if (allPredsVisited)
-            {
+                               if (allPredsVisited)
+                               {
 #ifdef DEBUG_VN_VISIT
-                JITDUMP("     All preds complete, adding to allDone.\n");
+                                   JITDUMP("     All preds complete, adding to allDone.\n");
 #endif // DEBUG_VN_VISIT
 
-                // Only last completion of last succ should add to this.
-                assert(!GetVisitBit(succ->bbNum, BVB_onAllDone));
-                m_toDoAllPredsDone.Push(succ);
-                SetVisitBit(succ->bbNum, BVB_onAllDone);
-            }
-            else
-            {
+                                   // Only last completion of last succ should add to this.
+                                   assert(!GetVisitBit(succ->bbNum, BVB_onAllDone));
+                                   m_toDoAllPredsDone.Push(succ);
+                                   SetVisitBit(succ->bbNum, BVB_onAllDone);
+                               }
+                               else
+                               {
 #ifdef DEBUG_VN_VISIT
-                JITDUMP("     Not all preds complete  Adding to notallDone, if necessary...\n");
+                                   JITDUMP("     Not all preds complete  Adding to notallDone, if necessary...\n");
 #endif // DEBUG_VN_VISIT
 
-                if (!GetVisitBit(succ->bbNum, BVB_onNotAllDone))
-                {
+                                   if (!GetVisitBit(succ->bbNum, BVB_onNotAllDone))
+                                   {
 #ifdef DEBUG_VN_VISIT
-                    JITDUMP("       Was necessary.\n");
+                                       JITDUMP("       Was necessary.\n");
 #endif // DEBUG_VN_VISIT
-                    m_toDoNotAllPredsDone.Push(succ);
-                    SetVisitBit(succ->bbNum, BVB_onNotAllDone);
-                }
-            }
+                                       m_toDoNotAllPredsDone.Push(succ);
+                                       SetVisitBit(succ->bbNum, BVB_onNotAllDone);
+                                   }
+                               }
 
-            return BasicBlockVisit::Continue;
-        });
+                               return BasicBlockVisit::Continue;
+                           });
     }
 
     bool ToDoExists()
@@ -11063,7 +11072,8 @@ bool Compiler::fgValueNumberConstLoad(GenTreeIndir* tree)
     }
 
     // Is given VN representing a frozen object handle
-    auto isCnsObjHandle = [](ValueNumStore* vnStore, ValueNum vn, CORINFO_OBJECT_HANDLE* handle) -> bool {
+    auto isCnsObjHandle = [](ValueNumStore* vnStore, ValueNum vn, CORINFO_OBJECT_HANDLE* handle) -> bool
+    {
         if (vnStore->IsVNObjHandle(vn))
         {
             *handle = vnStore->ConstantObjHandle(vn);
@@ -11238,8 +11248,8 @@ void Compiler::fgValueNumberTree(GenTree* tree)
 
             // These do not represent values.
             case GT_NO_OP:
-            case GT_JMP:   // Control flow
-            case GT_LABEL: // Control flow
+            case GT_JMP:      // Control flow
+            case GT_LABEL:    // Control flow
 #if !defined(FEATURE_EH_FUNCLETS)
             case GT_END_LFIN: // Control flow
 #endif
@@ -11724,7 +11734,7 @@ void Compiler::fgValueNumberTree(GenTree* tree)
 
                 GenTreeCmpXchg* const cmpXchg = tree->AsCmpXchg();
 
-                assert(tree->OperIsImplicitIndir()); // special node with an implicit indirections
+                assert(tree->OperIsImplicitIndir());         // special node with an implicit indirections
 
                 GenTree* location  = cmpXchg->gtOpLocation;  // arg1
                 GenTree* value     = cmpXchg->gtOpValue;     // arg2
@@ -11974,7 +11984,8 @@ void Compiler::fgValueNumberHWIntrinsic(GenTreeHWIntrinsic* tree)
             JITDUMP("\n");
         }
 
-        auto getOperandVNs = [this, addr](GenTree* operand, ValueNumPair* pNormVNPair, ValueNumPair* pExcVNPair) {
+        auto getOperandVNs = [this, addr](GenTree* operand, ValueNumPair* pNormVNPair, ValueNumPair* pExcVNPair)
+        {
             vnStore->VNPUnpackExc(operand->gtVNPair, pNormVNPair, pExcVNPair);
 
             // If we have a load operation we will use the fgValueNumberByrefExposedLoad
@@ -12170,8 +12181,8 @@ void Compiler::fgValueNumberCastTree(GenTree* tree)
 ValueNum ValueNumStore::VNForCast(ValueNum  srcVN,
                                   var_types castToType,
                                   var_types castFromType,
-                                  bool      srcIsUnsigned,    /* = false */
-                                  bool      hasOverflowCheck) /* = false */
+                                  bool      srcIsUnsigned, /* = false */
+                                  bool      hasOverflowCheck)   /* = false */
 {
 
     if ((castFromType == TYP_I_IMPL) && (castToType == TYP_BYREF) && IsVNHandle(srcVN))
@@ -12216,8 +12227,8 @@ ValueNum ValueNumStore::VNForCast(ValueNum  srcVN,
 ValueNumPair ValueNumStore::VNPairForCast(ValueNumPair srcVNPair,
                                           var_types    castToType,
                                           var_types    castFromType,
-                                          bool         srcIsUnsigned,    /* = false */
-                                          bool         hasOverflowCheck) /* = false */
+                                          bool         srcIsUnsigned, /* = false */
+                                          bool         hasOverflowCheck)      /* = false */
 {
     ValueNum srcLibVN = srcVNPair.GetLiberal();
     ValueNum srcConVN = srcVNPair.GetConservative();
@@ -13553,7 +13564,7 @@ void Compiler::fgValueNumberAddExceptionSet(GenTree* tree)
             case GT_CAST: // A cast with an overflow check
                 break;    // Already handled by VNPairForCast()
 
-            case GT_ADD: // An Overflow checking ALU operation
+            case GT_ADD:  // An Overflow checking ALU operation
             case GT_SUB:
             case GT_MUL:
                 assert(tree->gtOverflowEx());
@@ -13629,15 +13640,17 @@ void Compiler::fgDebugCheckExceptionSets()
             assert(tree->gtVNPair.BothDefined() || tree->OperIs(GT_PHI_ARG));
 
             ValueNumPair operandsExcSet = vnStore->VNPForEmptyExcSet();
-            tree->VisitOperands([&](GenTree* operand) -> GenTree::VisitResult {
+            tree->VisitOperands(
+                [&](GenTree* operand) -> GenTree::VisitResult
+                {
+                    CheckTree(operand, vnStore);
 
-                CheckTree(operand, vnStore);
+                    ValueNumPair operandVNP =
+                        operand->gtVNPair.BothDefined() ? operand->gtVNPair : vnStore->VNPForVoid();
+                    operandsExcSet = vnStore->VNPUnionExcSet(operandVNP, operandsExcSet);
 
-                ValueNumPair operandVNP = operand->gtVNPair.BothDefined() ? operand->gtVNPair : vnStore->VNPForVoid();
-                operandsExcSet          = vnStore->VNPUnionExcSet(operandVNP, operandsExcSet);
-
-                return GenTree::VisitResult::Continue;
-            });
+                    return GenTree::VisitResult::Continue;
+                });
 
             // Currently, we fail to properly maintain the exception sets for trees with user calls.
             if ((tree->gtFlags & GTF_CALL) != 0)
@@ -13684,7 +13697,7 @@ void Compiler::JitTestCheckVN()
 
     // First we have to know which nodes in the tree are reachable.
     typedef JitHashTable<GenTree*, JitPtrKeyFuncs<GenTree>, int> NodeToIntMap;
-    NodeToIntMap* reachable = FindReachableNodesInNodeTestData();
+    NodeToIntMap*                                                reachable = FindReachableNodesInNodeTestData();
 
     LabelToVNMap* labelToVN = new (getAllocatorDebugOnly()) LabelToVNMap(getAllocatorDebugOnly());
     VNToLabelMap* vnToLabel = new (getAllocatorDebugOnly()) VNToLabelMap(getAllocatorDebugOnly());
@@ -13819,9 +13832,7 @@ void Compiler::vnPrint(ValueNum vn, unsigned level)
 #endif // DEBUG
 
 // Methods of ValueNumPair.
-ValueNumPair::ValueNumPair() : m_liberal(ValueNumStore::NoVN), m_conservative(ValueNumStore::NoVN)
-{
-}
+ValueNumPair::ValueNumPair() : m_liberal(ValueNumStore::NoVN), m_conservative(ValueNumStore::NoVN) {}
 
 bool ValueNumPair::BothDefined() const
 {

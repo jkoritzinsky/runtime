@@ -155,9 +155,9 @@ void CodeGen::genEmitGSCookieCheck(bool pushReg)
         regGSCheck     = REG_EAX;
         regMaskGSCheck = RBM_EAX;
 #else  // !TARGET_X86
-        // Jmp calls: specify method handle using which JIT queries VM for its entry point
-        // address and hence it can neither be a VSD call nor PInvoke calli with cookie
-        // parameter.  Therefore, in case of jmp calls it is safe to use R11.
+       // Jmp calls: specify method handle using which JIT queries VM for its entry point
+       // address and hence it can neither be a VSD call nor PInvoke calli with cookie
+       // parameter.  Therefore, in case of jmp calls it is safe to use R11.
         regGSCheck = REG_R11;
 #endif // !TARGET_X86
     }
@@ -271,7 +271,7 @@ BasicBlock* CodeGen::genCallFinally(BasicBlock* block)
 #endif // JIT32_GCENCODER
     }
 
-#else // !FEATURE_EH_FUNCLETS
+#else  // !FEATURE_EH_FUNCLETS
 
     // If we are about to invoke a finally locally from a try block, we have to set the ShadowSP slot
     // corresponding to the finally's nesting level. When invoked in response to an exception, the
@@ -348,7 +348,7 @@ void CodeGen::genEHCatchRet(BasicBlock* block)
     GetEmitter()->emitIns_R_L(INS_lea, EA_PTR_DSP_RELOC, block->GetJumpDest(), REG_INTRET);
 }
 
-#else // !FEATURE_EH_FUNCLETS
+#else  // !FEATURE_EH_FUNCLETS
 
 void CodeGen::genEHFinallyOrFilterRet(BasicBlock* block)
 {
@@ -381,9 +381,9 @@ void CodeGen::genEHFinallyOrFilterRet(BasicBlock* block)
 
 //  Move an immediate value into an integer register
 
-void CodeGen::instGen_Set_Reg_To_Imm(emitAttr  size,
-                                     regNumber reg,
-                                     ssize_t   imm,
+void CodeGen::instGen_Set_Reg_To_Imm(emitAttr       size,
+                                     regNumber      reg,
+                                     ssize_t        imm,
                                      insFlags flags DEBUGARG(size_t targetHandle) DEBUGARG(GenTreeFlags gtFlags))
 {
     // reg cannot be a FP register
@@ -2116,8 +2116,8 @@ void CodeGen::genCodeForTreeNode(GenTree* treeNode)
 
             // The last slot is reserved for ICodeManager::FixContext(ppEndRegion)
             unsigned filterEndOffsetSlotOffs;
-            PREFIX_ASSUME(compiler->lvaLclSize(compiler->lvaShadowSPslotsVar) >
-                          TARGET_POINTER_SIZE); // below doesn't underflow.
+            PREFIX_ASSUME(compiler->lvaLclSize(compiler->lvaShadowSPslotsVar) > TARGET_POINTER_SIZE); // below doesn't
+                                                                                                      // underflow.
             filterEndOffsetSlotOffs =
                 (unsigned)(compiler->lvaLclSize(compiler->lvaShadowSPslotsVar) - TARGET_POINTER_SIZE);
 
@@ -2641,7 +2641,8 @@ void CodeGen::genCodeForMemmove(GenTreeBlk* tree)
             tempRegs[i] = tree->ExtractTempReg(RBM_ALLFLOAT);
         }
 
-        auto emitSimdLoadStore = [&](bool load) {
+        auto emitSimdLoadStore = [&](bool load)
+        {
             unsigned    offset      = 0;
             int         regIndex    = 0;
             instruction simdMov     = simdUnalignedMovIns();
@@ -2687,7 +2688,8 @@ void CodeGen::genCodeForMemmove(GenTreeBlk* tree)
         // Here we work with size 1..15 (x64)
         assert((size > 0) && (size < XMM_REGSIZE_BYTES));
 
-        auto emitScalarLoadStore = [&](bool load, int size, regNumber tempReg, int offset) {
+        auto emitScalarLoadStore = [&](bool load, int size, regNumber tempReg, int offset)
+        {
             var_types memType;
             switch (size)
             {
@@ -3205,7 +3207,8 @@ void CodeGen::genCodeForInitBlkUnroll(GenTreeBlk* node)
         instruction simdMov      = simdUnalignedMovIns();
         unsigned    bytesWritten = 0;
 
-        auto emitSimdMovs = [&]() {
+        auto emitSimdMovs = [&]()
+        {
             if (dstLclNum != BAD_VAR_NUM)
             {
                 emit->emitIns_S_R(simdMov, EA_ATTR(regSize), srcXmmReg, dstLclNum, dstOffset);
@@ -3463,7 +3466,8 @@ void CodeGen::genCodeForCpBlkUnroll(GenTreeBlk* node)
 
         instruction simdMov = simdUnalignedMovIns();
 
-        auto emitSimdMovs = [&]() {
+        auto emitSimdMovs = [&]()
+        {
             if (srcLclNum != BAD_VAR_NUM)
             {
                 emit->emitIns_R_S(simdMov, EA_ATTR(regSize), tempReg, srcLclNum, srcOffset);
@@ -6008,13 +6012,13 @@ void CodeGen::genCall(GenTreeCall* call)
                 else
 #endif // TARGET_X86
                     if (varTypeIsFloating(returnType))
-                {
-                    returnReg = REG_FLOATRET;
-                }
-                else
-                {
-                    returnReg = REG_INTRET;
-                }
+                    {
+                        returnReg = REG_FLOATRET;
+                    }
+                    else
+                    {
+                        returnReg = REG_INTRET;
+                    }
 
                 inst_Mov(returnType, call->GetRegNum(), returnReg, /* canSkip */ true);
             }
@@ -7593,7 +7597,7 @@ void CodeGen::genCkfinite(GenTree* treeNode)
     // if it is a finite value copy it to targetReg
     inst_Mov(targetType, targetReg, op1->GetRegNum(), /* canSkip */ true);
 
-#else // !TARGET_64BIT
+#else  // !TARGET_64BIT
 
     // If the target type is TYP_DOUBLE, we want to extract the high 32 bits into the register.
     // There is no easy way to do this. To not require an extra register, we'll use shuffles
@@ -7679,7 +7683,7 @@ int CodeGenInterface::genSPtoFPdelta() const
     // If Unix ever supports EnC, the RSP == RBP assumption will have to be reevaluated.
     delta = genTotalFrameSize();
 
-#else // !UNIX_AMD64_ABI
+#else  // !UNIX_AMD64_ABI
 
     // As per Amd64 ABI, RBP offset from initial RSP can be between 0 and 240 if
     // RBP needs to be reported in unwind codes.  This case would arise for methods
@@ -7957,8 +7961,8 @@ void CodeGen::genIntrinsic(GenTreeIntrinsic* treeNode)
         }
 
 #if defined(FEATURE_SIMD)
-        // The handling is a bit more complex so genSimdUpperSave/Restore
-        // handles genConsumeOperands and genProduceReg
+            // The handling is a bit more complex so genSimdUpperSave/Restore
+            // handles genConsumeOperands and genProduceReg
 
         case NI_SIMD_UpperRestore:
         {
@@ -8028,7 +8032,7 @@ unsigned CodeGen::getBaseVarForPutArgStk(GenTree* treeNode)
 #ifdef UNIX_AMD64_ABI
         assert(!varDsc->lvIsRegArg && varDsc->GetArgReg() == REG_STK);
 #else  // !UNIX_AMD64_ABI
-        // On Windows this assert is always true. The first argument will always be in REG_ARG_0 or REG_FLTARG_0.
+       // On Windows this assert is always true. The first argument will always be in REG_ARG_0 or REG_FLTARG_0.
         assert(varDsc->lvIsRegArg && (varDsc->GetArgReg() == REG_ARG_0 || varDsc->GetArgReg() == REG_FLTARG_0));
 #endif // !UNIX_AMD64_ABI
 #endif // !DEBUG
@@ -8754,8 +8758,8 @@ CodeGen::genCreateAndStoreGCInfo(unsigned codeSize, unsigned prologSize, unsigne
 }
 
 #ifdef JIT32_GCENCODER
-void* CodeGen::genCreateAndStoreGCInfoJIT32(unsigned codeSize,
-                                            unsigned prologSize,
+void* CodeGen::genCreateAndStoreGCInfoJIT32(unsigned            codeSize,
+                                            unsigned            prologSize,
                                             unsigned epilogSize DEBUGARG(void* codePtr))
 {
     BYTE    headerBuf[64];
@@ -9030,14 +9034,14 @@ void CodeGen::genEmitHelperCall(unsigned helper, int argSize, emitAttr retSize, 
 }
 
 /*****************************************************************************
-* Unit testing of the XArch emitter: generate a bunch of instructions into the prolog
-* (it's as good a place as any), then use DOTNET_JitLateDisasm=* to see if the late
-* disassembler thinks the instructions as the same as we do.
-*/
+ * Unit testing of the XArch emitter: generate a bunch of instructions into the prolog
+ * (it's as good a place as any), then use DOTNET_JitLateDisasm=* to see if the late
+ * disassembler thinks the instructions as the same as we do.
+ */
 
 // Uncomment "#define ALL_ARM64_EMITTER_UNIT_TESTS" to run all the unit tests here.
 // After adding a unit test, and verifying it works, put it under this #ifdef, so we don't see it run every time.
-//#define ALL_XARCH_EMITTER_UNIT_TESTS
+// #define ALL_XARCH_EMITTER_UNIT_TESTS
 
 #if defined(DEBUG) && defined(LATE_DISASM) && defined(TARGET_AMD64)
 void CodeGen::genAmd64EmitterUnitTests()
@@ -9181,8 +9185,8 @@ void CodeGen::genProfilingEnterCallback(regNumber initReg, bool* pInitRegZeroed)
 
     unsigned saveStackLvl2 = genStackLevel;
 
-// Important note: when you change enter probe layout, you must also update SKIP_ENTER_PROF_CALLBACK()
-// for x86 stack unwinding
+    // Important note: when you change enter probe layout, you must also update SKIP_ENTER_PROF_CALLBACK()
+    // for x86 stack unwinding
 
 #if defined(UNIX_X86_ABI)
     // Manually align the stack to be 16-byte aligned. This is similar to CodeGen::genAlignStackBeforeCall()
@@ -9441,7 +9445,7 @@ void CodeGen::genProfilingEnterCallback(regNumber initReg, bool* pInitRegZeroed)
         *pInitRegZeroed = false;
     }
 
-#else // !defined(UNIX_AMD64_ABI)
+#else  // !defined(UNIX_AMD64_ABI)
 
     // Emit profiler EnterCallback(ProfilerMethHnd, caller's SP)
     // R14 = ProfilerMethHnd
@@ -9565,7 +9569,7 @@ void CodeGen::genProfilingLeaveCallback(unsigned helper)
     // "mov r8, helper addr; call r8"
     genEmitHelperCall(helper, 0, EA_UNKNOWN, REG_ARG_2);
 
-#else // !defined(UNIX_AMD64_ABI)
+#else  // !defined(UNIX_AMD64_ABI)
 
     // RDI = ProfilerMethHnd
     if (compiler->compProfilerMethHndIndirected)
@@ -10144,7 +10148,7 @@ void CodeGen::genFnEpilog(BasicBlock* block)
                     // do an LEA to "pop off" the frame allocation.
                     needLea = true;
 #else  // !TARGET_AMD64
-                    // We will just generate "mov esp, ebp" and be done with it.
+       // We will just generate "mov esp, ebp" and be done with it.
                     needMovEspEbp = true;
 #endif // !TARGET_AMD64
                 }
@@ -10638,7 +10642,7 @@ void CodeGen::genCaptureFuncletPrologEpilogInfo()
                compiler->lvaGetInitialSPRelativeOffset(compiler->lvaPSPSym)); // same offset used in main function and
                                                                               // funclet!
     }
-#endif // DEBUG
+#endif                                                                        // DEBUG
 }
 
 #elif defined(TARGET_X86)
@@ -10747,7 +10751,7 @@ void CodeGen::genSetPSPSym(regNumber initReg, bool* pInitRegZeroed)
 
     GetEmitter()->emitIns_S_R(ins_Store(TYP_I_IMPL), EA_PTRSIZE, REG_SPBASE, compiler->lvaPSPSym, 0);
 
-#else // TARGET*
+#else  // TARGET*
 
     NYI("Set function PSP sym");
 
@@ -10832,7 +10836,7 @@ void CodeGen::genZeroInitFrameUsingBlockInit(int untrLclHi, int untrLclLo, regNu
         regNumber zeroSIMDReg = genRegNumFromMask(RBM_XMM8);
 #else
         // Windows first temp reg is xmm4
-        regNumber zeroSIMDReg = genRegNumFromMask(RBM_XMM4);
+        regNumber zeroSIMDReg        = genRegNumFromMask(RBM_XMM4);
 #endif // UNIX_AMD64_ABI
 
 #if defined(TARGET_AMD64)
@@ -10885,12 +10889,12 @@ void CodeGen::genZeroInitFrameUsingBlockInit(int untrLclHi, int untrLclLo, regNu
             assert(i == alignmentLoBlkSize);
         }
 #else  // !defined(TARGET_AMD64)
-        // While we aren't aligning the start, we still want to
-        // zero anything that is not in a 16 byte chunk at end
-        int alignmentBlkSize   = blkSize & -XMM_REGSIZE_BYTES;
-        int alignmentHiBlkSize = blkSize - alignmentBlkSize;
-        int alignedLclHi       = untrLclLo + alignmentBlkSize;
-        blkSize                = alignmentBlkSize;
+       // While we aren't aligning the start, we still want to
+       // zero anything that is not in a 16 byte chunk at end
+        int       alignmentBlkSize   = blkSize & -XMM_REGSIZE_BYTES;
+        int       alignmentHiBlkSize = blkSize - alignmentBlkSize;
+        int       alignedLclHi       = untrLclLo + alignmentBlkSize;
+        blkSize                      = alignmentBlkSize;
 
         assert((blkSize + alignmentHiBlkSize) == (untrLclHi - untrLclLo));
 #endif // !defined(TARGET_AMD64)

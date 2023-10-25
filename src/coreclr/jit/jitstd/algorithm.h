@@ -17,8 +17,8 @@ void insertion_sort(RandomAccessIterator first, RandomAccessIterator last, Less 
 {
     for (RandomAccessIterator i = first; i < last; ++i)
     {
-        RandomAccessIterator j = i;
-        auto temp = *(j + 1);
+        RandomAccessIterator j    = i;
+        auto                 temp = *(j + 1);
 
         for (; (j >= first) && less(temp, *j); --j)
         {
@@ -43,7 +43,7 @@ void quick_sort(RandomAccessIterator first, RandomAccessIterator last, Less less
     // JIT should ever need.
     RandomAccessIterator firstStack[32];
     RandomAccessIterator lastStack[32];
-    size_t depth = 0;
+    size_t               depth = 0;
 
     for (;;)
     {
@@ -62,7 +62,7 @@ void quick_sort(RandomAccessIterator first, RandomAccessIterator last, Less less
 
             depth--;
             first = firstStack[depth];
-            last = lastStack[depth];
+            last  = lastStack[depth];
             continue;
         }
 
@@ -88,7 +88,7 @@ void quick_sort(RandomAccessIterator first, RandomAccessIterator last, Less less
         // Note that first and last have already been partitioned so the loops below
         // start by moving the iterator to the next position of interest.
         RandomAccessIterator newFirst = first;
-        RandomAccessIterator newLast = last;
+        RandomAccessIterator newLast  = last;
 
         for (;;)
         {
@@ -143,10 +143,10 @@ void quick_sort(RandomAccessIterator first, RandomAccessIterator last, Less less
             }
         }
 
-        RandomAccessIterator leftFirst = first;
-        RandomAccessIterator leftLast = newLast;
+        RandomAccessIterator leftFirst  = first;
+        RandomAccessIterator leftLast   = newLast;
         RandomAccessIterator rightFirst = newLast + 1;
-        RandomAccessIterator rightLast = last;
+        RandomAccessIterator rightLast  = last;
 
         assert(depth < ARRAY_SIZE(firstStack));
 
@@ -156,29 +156,29 @@ void quick_sort(RandomAccessIterator first, RandomAccessIterator last, Less less
         if ((leftLast - leftFirst) < (rightLast - rightFirst))
         {
             firstStack[depth] = rightFirst;
-            lastStack[depth] = rightLast;
+            lastStack[depth]  = rightLast;
 
             first = leftFirst;
-            last = leftLast;
+            last  = leftLast;
         }
         else
         {
             firstStack[depth] = leftFirst;
-            lastStack[depth] = leftLast;
+            lastStack[depth]  = leftLast;
 
             first = rightFirst;
-            last = rightLast;
+            last  = rightLast;
         }
 
         depth++;
     }
 }
-}
+} // namespace
 
 // Sort the elements in range [first, last) in ascending order, where the order
 // is defined by the specified "less" predicate. This implementation does not
 // use a stable sort algorithm.
-template<typename RandomAccessIterator, typename Less>
+template <typename RandomAccessIterator, typename Less>
 void sort(RandomAccessIterator first, RandomAccessIterator last, Less less)
 {
     assert(first <= last);
@@ -198,4 +198,4 @@ void sort(RandomAccessIterator first, RandomAccessIterator last, Less less)
 #endif // DEBUG
     }
 }
-}
+} // namespace jitstd

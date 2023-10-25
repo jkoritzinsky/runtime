@@ -16,20 +16,20 @@ class interceptor_ICJI : public ICorJitInfo
 
 private:
     interceptor_ICJC* m_compiler;
-    ICorJitInfo* original_ICorJitInfo;
-    MethodContext* mc;
-    bool m_savedCollectionEarly;
+    ICorJitInfo*      original_ICorJitInfo;
+    MethodContext*    mc;
+    bool              m_savedCollectionEarly;
 
 public:
     interceptor_ICJI(interceptor_ICJC* compiler, ICorJitInfo* original, MethodContext* mc)
-        : m_compiler(compiler)
-        , original_ICorJitInfo(original)
-        , mc(mc)
-        , m_savedCollectionEarly(false)
+        : m_compiler(compiler), original_ICorJitInfo(original), mc(mc), m_savedCollectionEarly(false)
     {
     }
 
-    bool SavedCollectionEarly() const { return m_savedCollectionEarly; }
+    bool SavedCollectionEarly() const
+    {
+        return m_savedCollectionEarly;
+    }
 };
 
 #endif

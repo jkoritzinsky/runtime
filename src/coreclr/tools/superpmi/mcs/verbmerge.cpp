@@ -148,11 +148,11 @@ bool verbMerge::DirectoryFilterDirectories(WIN32_FIND_DATAW* findData)
 {
     if ((findData->dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0)
     {
-// It's a directory. See if we want to exclude it because of other reasons, such as:
-// 1. reparse points: avoid the possibility of loops
-// 2. system directories
-// 3. hidden directories
-// 4. "." or ".."
+        // It's a directory. See if we want to exclude it because of other reasons, such as:
+        // 1. reparse points: avoid the possibility of loops
+        // 2. system directories
+        // 3. hidden directories
+        // 4. "." or ".."
 
 #ifndef TARGET_UNIX // FILE_ATTRIBUTE_REPARSE_POINT is not defined in the PAL
         if ((findData->dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) != 0)
@@ -212,9 +212,7 @@ int verbMerge::FilterDirectory(LPCWSTR                      searchPattern,
     // First, build up a list, then create an array and sort it after we know how many elements there are.
     struct findDataList
     {
-        findDataList(WIN32_FIND_DATAW* newFindData, findDataList* newNext) : findData(*newFindData), next(newNext)
-        {
-        }
+        findDataList(WIN32_FIND_DATAW* newFindData, findDataList* newNext) : findData(*newFindData), next(newNext) {}
 
         static void DeleteList(findDataList* root)
         {
@@ -246,7 +244,7 @@ int verbMerge::FilterDirectory(LPCWSTR                      searchPattern,
     hSearch = FindFirstFileW(searchPattern, &findData);
 #else  // !TARGET_UNIX
     hSearch = FindFirstFileExW(searchPattern,
-                               FindExInfoBasic, // We don't care about the short names
+                               FindExInfoBasic,       // We don't care about the short names
                                &findData,
                                FindExSearchNameMatch, // standard name matching
                                NULL, FIND_FIRST_EX_LARGE_FETCH);
@@ -360,7 +358,7 @@ int verbMerge::AppendAllInDir(HANDLE              hFileOut,
                 goto CLEAN_UP;
             }
             size_t newBufferLen = u16_strlen(fileFullPath) + 30;
-            LPWSTR newBuffer = new WCHAR[newBufferLen];
+            LPWSTR newBuffer    = new WCHAR[newBufferLen];
             u16_strcpy_s(newBuffer, newBufferLen, W("\\\\?\\"));
             if (*fileFullPath == '\\') // It is UNC path, use \\?\UNC\serverName to access it.
             {
@@ -425,7 +423,7 @@ int verbMerge::AppendAllInDir(HANDLE              hFileOut,
             const _WIN32_FIND_DATAW& findData = fileArray[i];
 
             LPWSTR fileFullPath = MergePathStrings(dir, findData.cFileName);
-            result              = AppendAllInDir(hFileOut, fileFullPath, file, buffer, bufferSize, recursive, dedup, &dirSize);
+            result = AppendAllInDir(hFileOut, fileFullPath, file, buffer, bufferSize, recursive, dedup, &dirSize);
             delete[] fileFullPath;
             if (result != 0)
             {
@@ -460,8 +458,8 @@ CLEAN_UP:
 // If "recursive" is true, then the pattern is searched for in the specified directory (or implicit current directory)
 // and all sub-directories, recursively.
 //
-// If "dedup" is true, the we remove duplicates while we are merging. If "stripCR" is also true, we remove CompileResults
-// while deduplicating.
+// If "dedup" is true, the we remove duplicates while we are merging. If "stripCR" is also true, we remove
+// CompileResults while deduplicating.
 //
 // static
 int verbMerge::DoWork(const char* nameOfOutputFile, const char* pattern, bool recursive, bool dedup, bool stripCR)

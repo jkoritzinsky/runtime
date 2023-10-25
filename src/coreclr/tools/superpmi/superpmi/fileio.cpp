@@ -6,9 +6,9 @@ bool FileWriter::Printf(const char* fmt, ...)
     va_list args;
     va_start(args, fmt);
 
-    char stackBuffer[512];
+    char   stackBuffer[512];
     size_t bufferSize = sizeof(stackBuffer);
-    char* pBuffer = stackBuffer;
+    char*  pBuffer    = stackBuffer;
     while (true)
     {
         va_list argsCopy;
@@ -28,9 +28,8 @@ bool FileWriter::Printf(const char* fmt, ...)
         else
         {
             DWORD numWritten;
-            bool result =
-                WriteFile(m_file.Get(), pBuffer, static_cast<DWORD>(printed), &numWritten, nullptr) &&
-                (numWritten == static_cast<DWORD>(printed));
+            bool  result = WriteFile(m_file.Get(), pBuffer, static_cast<DWORD>(printed), &numWritten, nullptr) &&
+                          (numWritten == static_cast<DWORD>(printed));
 
             if (pBuffer != stackBuffer)
                 delete[] pBuffer;
@@ -55,7 +54,8 @@ bool FileWriter::CreateNew(const char* path, FileWriter* fw)
 
 bool FileLineReader::Open(const char* path, FileLineReader* fr)
 {
-    FileHandle file(CreateFile(path, GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr));
+    FileHandle file(
+        CreateFile(path, GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr));
     if (!file.IsValid())
     {
         return false;
@@ -72,7 +72,8 @@ bool FileLineReader::Open(const char* path, FileLineReader* fr)
         return false;
     }
 
-    FileMappingHandle mapping(CreateFileMapping(file.Get(), nullptr, PAGE_READONLY, size.u.HighPart, size.u.LowPart, nullptr));
+    FileMappingHandle mapping(
+        CreateFileMapping(file.Get(), nullptr, PAGE_READONLY, size.u.HighPart, size.u.LowPart, nullptr));
     if (!mapping.IsValid())
     {
         return false;

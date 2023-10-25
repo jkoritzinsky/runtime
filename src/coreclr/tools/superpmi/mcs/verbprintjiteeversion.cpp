@@ -15,18 +15,8 @@
 int verbPrintJITEEVersion::DoWork()
 {
     const GUID& g = JITEEVersionIdentifier;
-    printf("%08x-%04x-%04x-%02x%02x-%02x%02x%02x%02x%02x%02x\n",
-            g.Data1,
-            g.Data2,
-            g.Data3,
-            g.Data4[0],
-            g.Data4[1],
-            g.Data4[2],
-            g.Data4[3],
-            g.Data4[4],
-            g.Data4[5],
-            g.Data4[6],
-            g.Data4[7]);
+    printf("%08x-%04x-%04x-%02x%02x-%02x%02x%02x%02x%02x%02x\n", g.Data1, g.Data2, g.Data3, g.Data4[0], g.Data4[1],
+           g.Data4[2], g.Data4[3], g.Data4[4], g.Data4[5], g.Data4[6], g.Data4[7]);
 
     return 0;
 }

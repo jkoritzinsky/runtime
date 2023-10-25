@@ -16,7 +16,7 @@ std::string ConvertToUtf8(const WCHAR* str);
 
 #define MAX_LOG_LINE_SIZE 0x1000 // 4 KB
 
-bool closeRequested = false; // global variable to communicate CTRL+C between threads.
+bool closeRequested = false;     // global variable to communicate CTRL+C between threads.
 
 bool StartProcess(char* commandLine, HANDLE hStdOutput, HANDLE hStdError, HANDLE* hProcess)
 {
@@ -35,25 +35,25 @@ bool StartProcess(char* commandLine, HANDLE hStdOutput, HANDLE hStdError, HANDLE
     ZeroMemory(&pi, sizeof(pi));
 
 #if TARGET_UNIX
-    const unsigned cmdLen = (unsigned)strlen(commandLine) + 1;
-    WCHAR* cmdLineW = new WCHAR[cmdLen];
+    const unsigned cmdLen   = (unsigned)strlen(commandLine) + 1;
+    WCHAR*         cmdLineW = new WCHAR[cmdLen];
     MultiByteToWideChar(CP_UTF8, 0, commandLine, cmdLen, cmdLineW, cmdLen);
 #endif
     // Start the child process.
-    if (!CreateProcess(NULL,        // No module name (use command line)
+    if (!CreateProcess(NULL,     // No module name (use command line)
 #if TARGET_UNIX
-                       cmdLineW,    // Command line
+                       cmdLineW, // Command line
 #else
                        commandLine, // Command line
 #endif
-                       NULL,        // Process handle not inheritable
-                       NULL,        // Thread handle not inheritable
-                       TRUE,        // Set handle inheritance to TRUE (required to use STARTF_USESTDHANDLES)
-                       0,           // No creation flags
-                       NULL,        // Use parent's environment block
-                       NULL,        // Use parent's starting directory
-                       &si,         // Pointer to STARTUPINFO structure
-                       &pi))        // Pointer to PROCESS_INFORMATION structure
+                       NULL, // Process handle not inheritable
+                       NULL, // Thread handle not inheritable
+                       TRUE, // Set handle inheritance to TRUE (required to use STARTF_USESTDHANDLES)
+                       0,    // No creation flags
+                       NULL, // Use parent's environment block
+                       NULL, // Use parent's starting directory
+                       &si,  // Pointer to STARTUPINFO structure
+                       &pi)) // Pointer to PROCESS_INFORMATION structure
     {
         LogError("CreateProcess failed (%d). CommandLine: %s", GetLastError(), commandLine);
         *hProcess = INVALID_HANDLE_VALUE;
@@ -243,7 +243,7 @@ void ProcessChildStdOut(const CommandLine::Options& o,
             {
                 int childDiffs = 0;
                 int converted  = sscanf_s(buff, g_AsmDiffsSummaryFormatString, &childLoaded, &childJitted, &childFailed,
-                                         &childExcluded, &childMissing, &childDiffs);
+                                          &childExcluded, &childMissing, &childDiffs);
                 if (converted != 6)
                 {
                     LogError("Couldn't parse status message: \"%s\"", buff);
@@ -253,8 +253,8 @@ void ProcessChildStdOut(const CommandLine::Options& o,
             }
             else
             {
-                int converted =
-                    sscanf_s(buff, g_SummaryFormatString, &childLoaded, &childJitted, &childFailed, &childExcluded, &childMissing);
+                int converted = sscanf_s(buff, g_SummaryFormatString, &childLoaded, &childJitted, &childFailed,
+                                         &childExcluded, &childMissing);
                 if (converted != 5)
                 {
                     LogError("Couldn't parse status message: \"%s\"", buff);
@@ -302,15 +302,18 @@ int __cdecl compareInt(const void* arg1, const void* arg2)
 struct PerWorkerData
 {
     HANDLE hStdOutput = INVALID_HANDLE_VALUE;
-    HANDLE hStdError = INVALID_HANDLE_VALUE;
+    HANDLE hStdError  = INVALID_HANDLE_VALUE;
 
     char* failingMCListPath = nullptr;
-    char* detailsPath = nullptr;
-    char* stdOutputPath = nullptr;
-    char* stdErrorPath = nullptr;
+    char* detailsPath       = nullptr;
+    char* stdOutputPath     = nullptr;
+    char* stdErrorPath      = nullptr;
 };
 
-static void MergeWorkerMCLs(char* mclFilename, PerWorkerData* workerData, int workerCount, char* PerWorkerData::*mclPath)
+static void MergeWorkerMCLs(char*          mclFilename,
+                            PerWorkerData* workerData,
+                            int            workerCount,
+                            char* PerWorkerData::*mclPath)
 {
     int **MCL = new int *[workerCount], *MCLCount = new int[workerCount], totalCount = 0;
 
@@ -327,7 +330,7 @@ static void MergeWorkerMCLs(char* mclFilename, PerWorkerData* workerData, int wo
 
     for (int i = 0; i < workerCount; i++)
     {
-        for (int j             = 0; j < MCLCount[i]; j++)
+        for (int j = 0; j < MCLCount[i]; j++)
             mergedMCL[index++] = MCL[i][j];
     }
 
@@ -342,7 +345,10 @@ static void MergeWorkerMCLs(char* mclFilename, PerWorkerData* workerData, int wo
     delete[] mergedMCL;
 }
 
-static void MergeWorkerCsvs(char* csvFilename, PerWorkerData* workerData, int workerCount, char* PerWorkerData::* csvPath)
+static void MergeWorkerCsvs(char*          csvFilename,
+                            PerWorkerData* workerData,
+                            int            workerCount,
+                            char* PerWorkerData::*csvPath)
 {
     FileWriter fw;
     if (!FileWriter::CreateNew(csvFilename, &fw))
@@ -368,7 +374,7 @@ static void MergeWorkerCsvs(char* csvFilename, PerWorkerData* workerData, int wo
 
         while (reader.AdvanceLine())
         {
-             fw.Printf("%s\n", reader.GetCurrentLine());
+            fw.Printf("%s\n", reader.GetCurrentLine());
         }
 
         hasHeader = true;
@@ -387,9 +393,9 @@ static void MergeWorkerCsvs(char* csvFilename, PerWorkerData* workerData, int wo
 //    optionName   -   the jitOption name, can include [force] flag.
 //
 void addJitOptionArgument(LightWeightMap<DWORD, DWORD>* jitOptions,
-                          int&        bytesWritten,
-                          char*       spmiArgs,
-                          const char* optionName)
+                          int&                          bytesWritten,
+                          char*                         spmiArgs,
+                          const char*                   optionName)
 {
     if (jitOptions != nullptr)
     {
@@ -580,14 +586,14 @@ int doParallelSuperPMI(CommandLine::Options& o)
 
         if (wd.detailsPath != nullptr)
         {
-            bytesWritten += sprintf_s(cmdLine + bytesWritten, MAX_CMDLINE_SIZE - bytesWritten, " -details %s",
-                                      wd.detailsPath);
+            bytesWritten +=
+                sprintf_s(cmdLine + bytesWritten, MAX_CMDLINE_SIZE - bytesWritten, " -details %s", wd.detailsPath);
         }
 
         if (o.failureLimit > 0)
         {
-            bytesWritten += sprintf_s(cmdLine + bytesWritten, MAX_CMDLINE_SIZE - bytesWritten, " -failureLimit %d",
-                                      o.failureLimit);
+            bytesWritten +=
+                sprintf_s(cmdLine + bytesWritten, MAX_CMDLINE_SIZE - bytesWritten, " -failureLimit %d", o.failureLimit);
         }
 
         bytesWritten += sprintf_s(cmdLine + bytesWritten, MAX_CMDLINE_SIZE - bytesWritten, " -v ewmin %s", spmiArgs);
@@ -677,7 +683,8 @@ int doParallelSuperPMI(CommandLine::Options& o)
         {
             PerWorkerData& wd = perWorkerData[i];
             ProcessChildStdErr(wd.stdErrorPath);
-            ProcessChildStdOut(o, wd.stdOutputPath, &loaded, &jitted, &failed, &excluded, &missing, &diffs, &usageError);
+            ProcessChildStdOut(o, wd.stdOutputPath, &loaded, &jitted, &failed, &excluded, &missing, &diffs,
+                               &usageError);
 
             if (usageError)
                 break;

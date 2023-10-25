@@ -1047,8 +1047,8 @@ GenTree* Lowering::LowerSwitch(GenTree* node)
                 //                 |____ (ICon)        (The actual case constant)
                 GenTree* gtCaseCond = comp->gtNewOperNode(GT_EQ, TYP_INT, comp->gtNewLclvNode(tempLclNum, tempLclType),
                                                           comp->gtNewIconNode(i, genActualType(tempLclType)));
-                GenTree*   gtCaseBranch = comp->gtNewOperNode(GT_JTRUE, TYP_VOID, gtCaseCond);
-                LIR::Range caseRange    = LIR::SeqTree(comp, gtCaseBranch);
+                GenTree* gtCaseBranch = comp->gtNewOperNode(GT_JTRUE, TYP_VOID, gtCaseCond);
+                LIR::Range caseRange  = LIR::SeqTree(comp, gtCaseBranch);
                 currentBBRange->InsertAtEnd(std::move(caseRange));
             }
         }
@@ -1970,7 +1970,8 @@ bool Lowering::LowerCallMemcmp(GenTreeCall* call, GenTree** next)
                 GenTree* result = nullptr;
 
                 auto newBinaryOp = [](Compiler* comp, genTreeOps oper, var_types type, GenTree* op1,
-                                      GenTree* op2) -> GenTree* {
+                                      GenTree* op2) -> GenTree*
+                {
 #ifdef FEATURE_SIMD
                     if (varTypeIsSIMD(op1))
                     {
@@ -2341,7 +2342,7 @@ void Lowering::InsertProfTailCallHook(GenTreeCall* call, GenTree* insertionPoint
         insertionPoint = call;
     }
 
-#else // !defined(TARGET_X86)
+#else  // !defined(TARGET_X86)
 
     if (insertionPoint == nullptr)
     {
@@ -3487,7 +3488,7 @@ GenTree* Lowering::OptimizeConstCompare(GenTree* cmp)
 #ifdef TARGET_XARCH
                  || IsContainableMemoryOp(castOp)
 #endif
-                     );
+                );
 
             if (removeCast)
             {
@@ -4371,10 +4372,10 @@ void Lowering::LowerStoreLocCommon(GenTreeLclVarCommon* lclStore)
             }
             convertToStoreObj = false;
 #else  // TARGET_ARM64
-            // This optimization on arm64 allows more SIMD16 vars to be enregistered but it could cause
-            // regressions when there are many calls and before/after each one we have to store/save the upper
-            // half of these registers. So enable this for arm64 only when LSRA is taught not to allocate registers when
-            // it would have to spilled too many times.
+       // This optimization on arm64 allows more SIMD16 vars to be enregistered but it could cause
+       // regressions when there are many calls and before/after each one we have to store/save the upper
+       // half of these registers. So enable this for arm64 only when LSRA is taught not to allocate registers when
+       // it would have to spilled too many times.
             convertToStoreObj = true;
 #endif // TARGET_ARM64
         }
@@ -4691,8 +4692,8 @@ void Lowering::LowerCallStruct(GenTreeCall* call)
                     break;
                 }
 #endif // FEATURE_SIMD
-                // importer has a separate mechanism to retype calls to helpers,
-                // keep it for now.
+       // importer has a separate mechanism to retype calls to helpers,
+       // keep it for now.
                 assert(user->TypeIs(TYP_REF) || (user->TypeIs(TYP_I_IMPL) && comp->IsTargetAbi(CORINFO_NATIVEAOT_ABI)));
                 assert(call->IsHelperCall());
                 assert(returnType == user->TypeGet());
@@ -7680,7 +7681,7 @@ void Lowering::ContainCheckNode(GenTree* node)
 #if FEATURE_ARG_SPLIT
         case GT_PUTARG_SPLIT:
 #endif // FEATURE_ARG_SPLIT
-            // The regNum must have been set by the lowering of the call.
+       // The regNum must have been set by the lowering of the call.
             assert(node->GetRegNum() != REG_NA);
             break;
 #ifdef TARGET_XARCH
@@ -7833,7 +7834,8 @@ static bool GetStoreCoalescingData(Compiler* comp, GenTreeStoreInd* ind, StoreCo
         return false;
     }
 
-    auto isNodeInvariant = [](Compiler* comp, GenTree* node, bool allowNull) {
+    auto isNodeInvariant = [](Compiler* comp, GenTree* node, bool allowNull)
+    {
         if (node == nullptr)
         {
             return allowNull;
@@ -8258,7 +8260,7 @@ void Lowering::LowerStoreIndirCommon(GenTreeStoreInd* ind)
     //
     const bool isContainable = IsInvariantInRange(ind->Addr(), ind);
 #else
-    const bool     isContainable         = true;
+    const bool isContainable = true;
 #endif
     TryCreateAddrMode(ind->Addr(), isContainable, ind);
 
@@ -8322,7 +8324,7 @@ GenTree* Lowering::LowerIndir(GenTreeIndir* ind)
         //
         const bool isContainable = IsInvariantInRange(ind->Addr(), ind);
 #else
-        const bool isContainable         = true;
+        const bool isContainable = true;
 #endif
 
         TryCreateAddrMode(ind->Addr(), isContainable, ind);
@@ -8475,7 +8477,8 @@ bool Lowering::TryMakeIndirsAdjacent(GenTreeIndir* prevIndir, GenTreeIndir* indi
     GenTree* startDumpNode = BlockRange().GetTreeRange(prevIndir, &isClosed).FirstNode();
     GenTree* endDumpNode   = indir->gtNext;
 
-    auto dumpWithMarks = [=]() {
+    auto dumpWithMarks = [=]()
+    {
         if (!comp->verbose)
         {
             return;
@@ -8557,7 +8560,8 @@ bool Lowering::TryMakeIndirsAdjacent(GenTreeIndir* prevIndir, GenTreeIndir* indi
         }
 
         // Helper lambda to check if a single node interferes with 'indir'.
-        auto interferes = [=](GenTree* node) {
+        auto interferes = [=](GenTree* node)
+        {
             if (((node->gtFlags & GTF_ORDER_SIDEEFF) != 0) && node->OperSupportsOrderingSideEffect())
             {
                 // Cannot normally reorder GTF_ORDER_SIDEEFF and GTF_GLOB_REF,
@@ -8665,10 +8669,12 @@ bool Lowering::TryMakeIndirsAdjacent(GenTreeIndir* prevIndir, GenTreeIndir* indi
 void Lowering::MarkTree(GenTree* node)
 {
     node->gtLIRFlags |= LIR::Flags::Mark;
-    node->VisitOperands([=](GenTree* op) {
-        MarkTree(op);
-        return GenTree::VisitResult::Continue;
-    });
+    node->VisitOperands(
+        [=](GenTree* op)
+        {
+            MarkTree(op);
+            return GenTree::VisitResult::Continue;
+        });
 }
 
 //------------------------------------------------------------------------
@@ -8680,10 +8686,12 @@ void Lowering::MarkTree(GenTree* node)
 void Lowering::UnmarkTree(GenTree* node)
 {
     node->gtLIRFlags &= ~LIR::Flags::Mark;
-    node->VisitOperands([=](GenTree* op) {
-        UnmarkTree(op);
-        return GenTree::VisitResult::Continue;
-    });
+    node->VisitOperands(
+        [=](GenTree* op)
+        {
+            UnmarkTree(op);
+            return GenTree::VisitResult::Continue;
+        });
 }
 
 #endif // TARGET_ARM64
@@ -8723,7 +8731,7 @@ void Lowering::TransformUnusedIndirection(GenTreeIndir* ind, Compiler* comp, Bas
 #if defined(TARGET_ARM64) || defined(TARGET_LOONGARCH64) || defined(TARGET_RISCV64)
     bool useNullCheck = true;
 #elif defined(TARGET_ARM)
-    bool           useNullCheck          = false;
+    bool useNullCheck = false;
 #else  // TARGET_XARCH
     bool useNullCheck = !ind->Addr()->isContained();
     ind->ClearDontExtend();
@@ -8962,7 +8970,7 @@ void Lowering::TryRetypingFloatingPointStoreToIntegerStore(GenTree* store)
 #if defined(TARGET_XARCH) || defined(TARGET_ARM)
         bool shouldSwitchToInteger = true;
 #else // TARGET_ARM64 || TARGET_LOONGARCH64 || TARGET_RISCV64
-        bool       shouldSwitchToInteger = FloatingPointUtils::isPositiveZero(dblCns);
+        bool shouldSwitchToInteger = FloatingPointUtils::isPositiveZero(dblCns);
 #endif
 
         if (shouldSwitchToInteger)

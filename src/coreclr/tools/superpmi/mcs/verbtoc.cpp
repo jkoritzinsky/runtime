@@ -14,9 +14,7 @@ public:
     TOCElementNode* Next;
     TOCElement      tocElement;
 
-    TOCElementNode(int number, __int64 offset) : Next(nullptr), tocElement(number, offset)
-    {
-    }
+    TOCElementNode(int number, __int64 offset) : Next(nullptr), tocElement(number, offset) {}
 };
 
 int verbTOC::DoWork(const char* nameOfInput)

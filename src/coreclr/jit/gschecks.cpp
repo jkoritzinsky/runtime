@@ -457,9 +457,7 @@ void Compiler::gsParamsToShadows()
             DoPostOrder = true
         };
 
-        ReplaceShadowParamsVisitor(Compiler* compiler) : GenTreeVisitor<ReplaceShadowParamsVisitor>(compiler)
-        {
-        }
+        ReplaceShadowParamsVisitor(Compiler* compiler) : GenTreeVisitor<ReplaceShadowParamsVisitor>(compiler) {}
 
         Compiler::fgWalkResult PostOrderVisit(GenTree** use, GenTree* user)
         {

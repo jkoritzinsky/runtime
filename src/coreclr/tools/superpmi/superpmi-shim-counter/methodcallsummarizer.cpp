@@ -20,13 +20,13 @@ MethodCallSummarizer::MethodCallSummarizer(WCHAR* logPath)
 
 MethodCallSummarizer::~MethodCallSummarizer()
 {
-    delete [] dataFileName;
-    delete [] counts;
+    delete[] dataFileName;
+    delete[] counts;
     for (int i = 0; i < numNames; i++)
     {
-        delete [] names[i];
+        delete[] names[i];
     }
-    delete [] names;
+    delete[] names;
 }
 
 // lots of ways will be faster.. this happens to be decently simple and good enough for the task at hand and nicely
@@ -63,7 +63,7 @@ void MethodCallSummarizer::AddCall(const char* name)
     if (tnames != nullptr)
     {
         memcpy(names, tnames, numNames * sizeof(char*));
-        delete [] tnames;
+        delete[] tnames;
     }
 
     size_t tlen     = strlen(name);
@@ -74,7 +74,7 @@ void MethodCallSummarizer::AddCall(const char* name)
     if (tcounts != nullptr)
     {
         memcpy(counts, tcounts, numNames * sizeof(unsigned int));
-        delete [] tcounts;
+        delete[] tcounts;
     }
     counts[numNames] = 1;
 
@@ -86,7 +86,7 @@ void MethodCallSummarizer::SaveTextFile()
     char   buff[512];
     DWORD  bytesWritten = 0;
     HANDLE hFile        = CreateFileW(dataFileName, GENERIC_READ | GENERIC_WRITE, 0, NULL, CREATE_ALWAYS,
-                               FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN, NULL);
+                                      FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN, NULL);
 
     if (hFile == INVALID_HANDLE_VALUE)
     {

@@ -20,7 +20,7 @@
 #define USE_MSVCDIS
 
 // Disable CoreDisTools until coredistools.dll is statically-linked to the CRT, or until it is delayload linked.
-//#define USE_COREDISTOOLS
+// #define USE_COREDISTOOLS
 #endif // INTERNAL_BUILD
 
 // JIT_BUILD disables certain PAL_TRY debugging and Contracts features. Set this just as the JIT sets it.
@@ -36,7 +36,7 @@
 #endif
 
 #define MSC_ONLY(x) x
-#else // !_MSC_VER
+#else  // !_MSC_VER
 #define MSC_ONLY(x)
 #endif // !_MSC_VER
 
@@ -85,7 +85,7 @@
 #ifndef W
 #ifdef TARGET_UNIX
 #define W(str) u##str
-#else // TARGET_UNIX
+#else  // TARGET_UNIX
 #define W(str) L##str
 #endif // TARGET_UNIX
 #endif // !W
@@ -114,7 +114,7 @@
 
 #ifdef TARGET_UNIX
 #define PLATFORM_SHARED_LIB_SUFFIX_A PAL_SHLIB_SUFFIX
-#else // !TARGET_UNIX
+#else  // !TARGET_UNIX
 #define PLATFORM_SHARED_LIB_SUFFIX_A ".dll"
 #endif // !TARGET_UNIX
 
@@ -124,7 +124,7 @@
 #if !defined(_MSC_VER) && !defined(__llvm__)
 static inline void __debugbreak()
 {
-  DebugBreak();
+    DebugBreak();
 }
 #endif
 

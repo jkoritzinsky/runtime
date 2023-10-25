@@ -20,15 +20,9 @@ public:
     unsigned char* buff;
     DWORD          size;
 
-    MethodContextBuffer() : buff(nullptr), size(Completed)
-    {
-    }
-    MethodContextBuffer(DWORD error) : buff(nullptr), size(error)
-    {
-    }
-    MethodContextBuffer(unsigned char* b, DWORD e) : buff(b), size(e)
-    {
-    }
+    MethodContextBuffer() : buff(nullptr), size(Completed) {}
+    MethodContextBuffer(DWORD error) : buff(nullptr), size(error) {}
+    MethodContextBuffer(unsigned char* b, DWORD e) : buff(b), size(e) {}
 
     bool allDone()
     {

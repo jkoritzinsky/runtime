@@ -95,7 +95,7 @@ void ASMDumper::DumpToFile(HANDLE hFile, MethodContext* mc, CompileResult* cr)
 
     delete disasm;
 
-#else // !USE_MSVCDIS
+#else  // !USE_MSVCDIS
 
     buff_offset = 0;
     ZeroMemory(buff, bufflen * sizeof(char));

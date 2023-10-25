@@ -584,50 +584,52 @@ bool emitter::AreUpperBitsZero(regNumber reg, emitAttr size)
 
     bool result = false;
 
-    emitPeepholeIterateLastInstrs([&](instrDesc* id) {
-        if (emitIsInstrWritingToReg(id, reg))
+    emitPeepholeIterateLastInstrs(
+        [&](instrDesc* id)
         {
-            switch (id->idIns())
+            if (emitIsInstrWritingToReg(id, reg))
             {
-                // Conservative.
-                case INS_call:
-                    return PEEPHOLE_ABORT;
+                switch (id->idIns())
+                {
+                    // Conservative.
+                    case INS_call:
+                        return PEEPHOLE_ABORT;
 
-                // These instructions sign-extend.
-                case INS_cwde:
-                case INS_cdq:
-                case INS_movsx:
-                case INS_movsxd:
-                    return PEEPHOLE_ABORT;
+                    // These instructions sign-extend.
+                    case INS_cwde:
+                    case INS_cdq:
+                    case INS_movsx:
+                    case INS_movsxd:
+                        return PEEPHOLE_ABORT;
 
-                case INS_movzx:
-                    if ((size == EA_1BYTE) || (size == EA_2BYTE))
-                    {
-                        result = (id->idOpSize() <= size);
-                    }
-                    // movzx always zeroes the upper 32 bits.
-                    else if (size == EA_4BYTE)
-                    {
-                        result = true;
-                    }
-                    return PEEPHOLE_ABORT;
+                    case INS_movzx:
+                        if ((size == EA_1BYTE) || (size == EA_2BYTE))
+                        {
+                            result = (id->idOpSize() <= size);
+                        }
+                        // movzx always zeroes the upper 32 bits.
+                        else if (size == EA_4BYTE)
+                        {
+                            result = true;
+                        }
+                        return PEEPHOLE_ABORT;
 
-                default:
-                    break;
+                    default:
+                        break;
+                }
+
+                // otherwise rely on operation size.
+                if (size == EA_4BYTE)
+                {
+                    result = (id->idOpSize() == EA_4BYTE);
+                }
+                return PEEPHOLE_ABORT;
             }
-
-            // otherwise rely on operation size.
-            if (size == EA_4BYTE)
+            else
             {
-                result = (id->idOpSize() == EA_4BYTE);
+                return PEEPHOLE_CONTINUE;
             }
-            return PEEPHOLE_ABORT;
-        }
-        else
-        {
-            return PEEPHOLE_CONTINUE;
-        }
-    });
+        });
 
     return result;
 }
@@ -663,39 +665,41 @@ bool emitter::AreUpperBitsSignExtended(regNumber reg, emitAttr size)
 
     bool result = false;
 
-    emitPeepholeIterateLastInstrs([&](instrDesc* id) {
-        if (emitIsInstrWritingToReg(id, reg))
+    emitPeepholeIterateLastInstrs(
+        [&](instrDesc* id)
         {
-            switch (id->idIns())
+            if (emitIsInstrWritingToReg(id, reg))
             {
-                // Conservative.
-                case INS_call:
-                    return PEEPHOLE_ABORT;
+                switch (id->idIns())
+                {
+                    // Conservative.
+                    case INS_call:
+                        return PEEPHOLE_ABORT;
 
-                case INS_movsx:
-                case INS_movsxd:
-                    if ((size == EA_1BYTE) || (size == EA_2BYTE))
-                    {
-                        result = (id->idOpSize() <= size);
-                    }
-                    // movsx/movsxd always sign extends to 8 bytes. W-bit is set.
-                    else if (size == EA_4BYTE)
-                    {
-                        result = true;
-                    }
-                    break;
+                    case INS_movsx:
+                    case INS_movsxd:
+                        if ((size == EA_1BYTE) || (size == EA_2BYTE))
+                        {
+                            result = (id->idOpSize() <= size);
+                        }
+                        // movsx/movsxd always sign extends to 8 bytes. W-bit is set.
+                        else if (size == EA_4BYTE)
+                        {
+                            result = true;
+                        }
+                        break;
 
-                default:
-                    break;
+                    default:
+                        break;
+                }
+
+                return PEEPHOLE_ABORT;
             }
-
-            return PEEPHOLE_ABORT;
-        }
-        else
-        {
-            return PEEPHOLE_CONTINUE;
-        }
-    });
+            else
+            {
+                return PEEPHOLE_CONTINUE;
+            }
+        });
 
     return result;
 }
@@ -906,41 +910,43 @@ bool emitter::IsRedundantCmp(emitAttr size, regNumber reg1, regNumber reg2)
 
     bool result = false;
 
-    emitPeepholeIterateLastInstrs([&](instrDesc* id) {
-        instruction ins = id->idIns();
-
-        switch (ins)
+    emitPeepholeIterateLastInstrs(
+        [&](instrDesc* id)
         {
-            case INS_cmp:
-            {
-                // We only care about 'cmp reg, reg'.
-                if (id->idInsFmt() != IF_RRD_RRD)
-                    return PEEPHOLE_ABORT;
+            instruction ins = id->idIns();
 
-                if ((id->idReg1() == reg1) && (id->idReg2() == reg2))
+            switch (ins)
+            {
+                case INS_cmp:
                 {
-                    result = (size == id->idOpSize());
+                    // We only care about 'cmp reg, reg'.
+                    if (id->idInsFmt() != IF_RRD_RRD)
+                        return PEEPHOLE_ABORT;
+
+                    if ((id->idReg1() == reg1) && (id->idReg2() == reg2))
+                    {
+                        result = (size == id->idOpSize());
+                    }
+
+                    return PEEPHOLE_ABORT;
                 }
 
+                default:
+                    break;
+            }
+
+            if (emitDoesInsModifyFlags(ins))
+            {
                 return PEEPHOLE_ABORT;
             }
 
-            default:
-                break;
-        }
+            if (emitIsInstrWritingToReg(id, reg1) || emitIsInstrWritingToReg(id, reg2))
+            {
+                return PEEPHOLE_ABORT;
+            }
 
-        if (emitDoesInsModifyFlags(ins))
-        {
-            return PEEPHOLE_ABORT;
-        }
-
-        if (emitIsInstrWritingToReg(id, reg1) || emitIsInstrWritingToReg(id, reg2))
-        {
-            return PEEPHOLE_ABORT;
-        }
-
-        return PEEPHOLE_CONTINUE;
-    });
+            return PEEPHOLE_CONTINUE;
+        });
 
     return result;
 }
@@ -3156,7 +3162,7 @@ inline unsigned emitter::insEncodeReg012(const instrDesc* id, regNumber reg, emi
         // not the corresponding AH, CH, DH, or BH
         *code = AddRexPrefix(ins, *code); // REX
     }
-#endif // TARGET_AMD64
+#endif                                    // TARGET_AMD64
 
     unsigned regBits = RegEncoding(reg);
 
@@ -3199,7 +3205,7 @@ inline unsigned emitter::insEncodeReg345(const instrDesc* id, regNumber reg, emi
         // not the corresponding AH, CH, DH, or BH
         *code = AddRexPrefix(ins, *code); // REX
     }
-#endif // TARGET_AMD64
+#endif                                    // TARGET_AMD64
 
     unsigned regBits = RegEncoding(reg);
 
@@ -3534,7 +3540,7 @@ bool emitter::emitVerifyEncodable(instruction ins, emitAttr size, regNumber reg1
 #ifdef FEATURE_HW_INTRINSICS
         && (ins != INS_crc32)
 #endif
-            )
+    )
     {
         // reg1 must be a byte-able register
         if ((genRegMask(reg1) & RBM_BYTE_REGS) == 0)
@@ -4045,7 +4051,8 @@ UNATIVE_OFFSET emitter::emitInsSizeAM(instrDesc* id, code_t code)
 
         assert((attrSize == EA_4BYTE) || (attrSize == EA_PTRSIZE)                               // Only for x64
                || (attrSize == EA_16BYTE) || (attrSize == EA_32BYTE) || (attrSize == EA_64BYTE) // only for x64
-               || (ins == INS_movzx) || (ins == INS_movsx)
+               || (ins == INS_movzx) ||
+               (ins == INS_movsx)
                // The prefetch instructions are always 3 bytes and have part of their modr/m byte hardcoded
                || isPrefetch(ins));
         size = 3;
@@ -4460,14 +4467,15 @@ void emitter::emitIns(instruction ins)
             (ins == INS_cdq || ins == INS_int3 || ins == INS_lock || ins == INS_leave || ins == INS_movsb ||
              ins == INS_movsd || ins == INS_movsp || ins == INS_nop || ins == INS_r_movsb || ins == INS_r_movsd ||
              ins == INS_r_movsp || ins == INS_r_stosb || ins == INS_r_stosd || ins == INS_r_stosp || ins == INS_ret ||
-             ins == INS_sahf || ins == INS_stosb || ins == INS_stosd || ins == INS_stosp
+             ins == INS_sahf || ins == INS_stosb || ins == INS_stosd ||
+             ins == INS_stosp
              // These instructions take zero operands
              || ins == INS_vzeroupper || ins == INS_lfence || ins == INS_mfence || ins == INS_sfence ||
              ins == INS_pause || ins == INS_serialize);
 
         assert(assertCond);
     }
-#endif // DEBUG
+#endif                           // DEBUG
 
     assert(!hasRexPrefix(code)); // Can't have a REX bit with no operands, right?
 
@@ -5580,14 +5588,14 @@ void emitter::emitIns_R(instruction ins, emitAttr attr, regNumber reg)
 
             sz = 2; // x64 has no 1-byte opcode (it is the same encoding as the REX prefix)
 
-#else // !TARGET_AMD64
+#else               // !TARGET_AMD64
 
             if (size == EA_1BYTE)
                 sz = 2; // Use the long form as the small one has no 'w' bit
             else
                 sz = 1; // Use short form
 
-#endif // !TARGET_AMD64
+#endif              // !TARGET_AMD64
 
             break;
 
@@ -6990,9 +6998,9 @@ void emitter::emitIns_R_R_C(instruction          ins,
 }
 
 /*****************************************************************************
-*
-*  Add an instruction with three register operands.
-*/
+ *
+ *  Add an instruction with three register operands.
+ */
 
 void emitter::emitIns_R_R_R(instruction ins, emitAttr attr, regNumber targetReg, regNumber reg1, regNumber reg2)
 {
@@ -7116,16 +7124,16 @@ void emitter::emitIns_R_R_C_I(
 }
 
 /**********************************************************************************
-* emitIns_R_R_R_I: Add an instruction with three register operands and an immediate.
-*
-* Arguments:
-*    ins       - the instruction to add
-*    attr      - the emitter attribute for instruction
-*    targetReg - the target (destination) register
-*    reg1      - the first source register
-*    reg2      - the second source register
-*    ival      - the immediate value
-*/
+ * emitIns_R_R_R_I: Add an instruction with three register operands and an immediate.
+ *
+ * Arguments:
+ *    ins       - the instruction to add
+ *    attr      - the emitter attribute for instruction
+ *    targetReg - the target (destination) register
+ *    reg1      - the first source register
+ *    reg2      - the second source register
+ *    ival      - the immediate value
+ */
 
 void emitter::emitIns_R_R_R_I(
     instruction ins, emitAttr attr, regNumber targetReg, regNumber reg1, regNumber reg2, int ival)
@@ -7759,9 +7767,9 @@ void emitter::emitIns_R_AR(instruction ins, emitAttr attr, regNumber reg, regNum
     emitIns_R_ARX(ins, attr, reg, base, REG_NA, 1, disp);
 }
 
-void emitter::emitIns_R_AI(instruction ins,
-                           emitAttr    attr,
-                           regNumber   ireg,
+void emitter::emitIns_R_AI(instruction  ins,
+                           emitAttr     attr,
+                           regNumber    ireg,
                            ssize_t disp DEBUGARG(size_t targetHandle) DEBUGARG(GenTreeFlags gtFlags))
 {
     assert((CodeGen::instIsFP(ins) == false) && (EA_SIZE(attr) <= EA_8BYTE) && (ireg != REG_NA));
@@ -9676,7 +9684,7 @@ void emitter::emitIns_Call(EmitCallType          callType,
     if (m_debugInfoSize > 0)
     {
         INDEBUG(id->idDebugOnlyInfo()->idCallSig = sigInfo);
-        id->idDebugOnlyInfo()->idMemCookie       = (size_t)methHnd; // method token
+        id->idDebugOnlyInfo()->idMemCookie = (size_t)methHnd; // method token
     }
 
 #ifdef LATE_DISASM
@@ -11608,7 +11616,7 @@ void emitter::emitDispIns(
 #ifdef TARGET_AMD64
                 || ins == INS_shrx || ins == INS_shlx || ins == INS_sarx
 #endif
-                )
+            )
             {
                 // BMI bextr,bzhi, shrx, shlx and sarx encode the reg2 in VEX.vvvv and reg3 in modRM,
                 // which is different from most of other instructions
@@ -12786,7 +12794,7 @@ GOT_DSP:
         // In future if ever there is a need to enable this special case, also enable the logic
         // that sets isMoffset to true on amd64.
         unreached();
-#else // TARGET_X86
+#else  // TARGET_X86
 
         dst += emitOutputByte(dst, code);
         dst += emitOutputSizeT(dst, dsp);
@@ -12874,9 +12882,9 @@ GOT_DSP:
                         dst += emitOutputWord(dst, code | 0x0500);
                     }
 #else  // TARGET_AMD64
-                    // Amd64: addr fits within 32-bits and can be encoded as a displacement relative to zero.
-                    // This addr mode should never be used while generating relocatable ngen code nor if
-                    // the addr can be encoded as pc-relative address.
+       // Amd64: addr fits within 32-bits and can be encoded as a displacement relative to zero.
+       // This addr mode should never be used while generating relocatable ngen code nor if
+       // the addr can be encoded as pc-relative address.
                     noway_assert(!emitComp->opts.compReloc);
                     noway_assert(codeGen->genAddrRelocTypeHint((size_t)dsp) != IMAGE_REL_BASED_REL32);
                     noway_assert((int)dsp == dsp);
@@ -13793,7 +13801,7 @@ BYTE* emitter::emitOutputSV(BYTE* dst, instrDesc* id, code_t code, CnsVal* addc)
 
             case IF_SRW_CNS:
             case IF_SRW_RRD:
-            // += -= of a byref, no change
+                // += -= of a byref, no change
 
             case IF_SRW:
                 break;
@@ -14197,7 +14205,7 @@ BYTE* emitter::emitOutputCV(BYTE* dst, instrDesc* id, code_t code, CnsVal* addc)
         // In future if ever there is a need to enable this special case, also enable the logic
         // that sets isMoffset to true on amd64.
         unreached();
-#else // TARGET_X86
+#else  // TARGET_X86
 
         dst += emitOutputSizeT(dst, (ssize_t)target);
 
@@ -15805,7 +15813,7 @@ BYTE* emitter::emitOutputLJ(insGroup* ig, BYTE* dst, instrDesc* i)
             idAmd->idInsFmt(emitInsModeFormat(ins, IF_RRD_ARD));
             idAmd->idAddr()->iiaAddrMode.amBaseReg = REG_NA;
             idAmd->idAddr()->iiaAddrMode.amIndxReg = REG_NA;
-            emitSetAmdDisp(idAmd, distVal); // set the displacement
+            emitSetAmdDisp(idAmd, distVal);             // set the displacement
             idAmd->idSetIsDspReloc(id->idIsDspReloc());
             assert(emitGetInsAmdAny(idAmd) == distVal); // make sure "disp" is stored properly
 
@@ -16267,9 +16275,9 @@ size_t emitter::emitOutputInstr(insGroup* ig, instrDesc* id, BYTE** dp)
             break;
         }
 
-        /********************************************************************/
-        /*                Simple constant, local label, method              */
-        /********************************************************************/
+            /********************************************************************/
+            /*                Simple constant, local label, method              */
+            /********************************************************************/
 
         case IF_CNS:
         {
@@ -16359,9 +16367,9 @@ size_t emitter::emitOutputInstr(insGroup* ig, instrDesc* id, BYTE** dp)
 #ifdef TARGET_X86
                     dst += emitOutputWord(dst, code | 0x0500);
 #else  // TARGET_AMD64
-                    // Amd64: addr fits within 32-bits and can be encoded as a displacement relative to zero.
-                    // This addr mode should never be used while generating relocatable ngen code nor if
-                    // the addr can be encoded as pc-relative address.
+       // Amd64: addr fits within 32-bits and can be encoded as a displacement relative to zero.
+       // This addr mode should never be used while generating relocatable ngen code nor if
+       // the addr can be encoded as pc-relative address.
                     noway_assert(!emitComp->opts.compReloc);
                     noway_assert(codeGen->genAddrRelocTypeHint((size_t)addr) != IMAGE_REL_BASED_REL32);
                     noway_assert(static_cast<int>(reinterpret_cast<intptr_t>(addr)) == (ssize_t)addr);
@@ -16497,9 +16505,9 @@ size_t emitter::emitOutputInstr(insGroup* ig, instrDesc* id, BYTE** dp)
             break;
         }
 
-        /********************************************************************/
-        /*                      One register operand                        */
-        /********************************************************************/
+            /********************************************************************/
+            /*                      One register operand                        */
+            /********************************************************************/
 
         case IF_RRD:
         case IF_RWR:
@@ -16510,9 +16518,9 @@ size_t emitter::emitOutputInstr(insGroup* ig, instrDesc* id, BYTE** dp)
             break;
         }
 
-        /********************************************************************/
-        /*                 Register and register/constant                   */
-        /********************************************************************/
+            /********************************************************************/
+            /*                 Register and register/constant                   */
+            /********************************************************************/
 
         case IF_RRW_SHF:
         {
@@ -16737,9 +16745,9 @@ size_t emitter::emitOutputInstr(insGroup* ig, instrDesc* id, BYTE** dp)
             break;
         }
 
-        /********************************************************************/
-        /*                      Address mode operand                        */
-        /********************************************************************/
+            /********************************************************************/
+            /*                      Address mode operand                        */
+            /********************************************************************/
 
         case IF_ARD:
         case IF_AWR:
@@ -16975,9 +16983,9 @@ size_t emitter::emitOutputInstr(insGroup* ig, instrDesc* id, BYTE** dp)
             break;
         }
 
-        /********************************************************************/
-        /*                      Stack-based operand                         */
-        /********************************************************************/
+            /********************************************************************/
+            /*                      Stack-based operand                         */
+            /********************************************************************/
 
         case IF_SRD:
         case IF_SWR:
@@ -17238,9 +17246,9 @@ size_t emitter::emitOutputInstr(insGroup* ig, instrDesc* id, BYTE** dp)
             unreached();
         }
 
-        /********************************************************************/
-        /*                    Direct memory address                         */
-        /********************************************************************/
+            /********************************************************************/
+            /*                    Direct memory address                         */
+            /********************************************************************/
 
         case IF_MRD:
         case IF_MRW:
@@ -17539,9 +17547,9 @@ size_t emitter::emitOutputInstr(insGroup* ig, instrDesc* id, BYTE** dp)
             unreached();
         }
 
-        /********************************************************************/
-        /*                            oops                                  */
-        /********************************************************************/
+            /********************************************************************/
+            /*                            oops                                  */
+            /********************************************************************/
 
         default:
 
@@ -17966,7 +17974,7 @@ emitter::insExecutionCharacteristics emitter::getInsExecutionCharacteristics(ins
 #ifdef TARGET_AMD64
                          || ins == INS_movsxd
 #endif
-                         )
+                )
                 {
                     result.insLatency += PERFSCORE_LATENCY_2C;
                 }

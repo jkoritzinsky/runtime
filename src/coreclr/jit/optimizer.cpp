@@ -44,9 +44,7 @@ void Compiler::optInit()
     optCSEattempt        = 0;
 }
 
-DataFlow::DataFlow(Compiler* pCompiler) : m_pCompiler(pCompiler)
-{
-}
+DataFlow::DataFlow(Compiler* pCompiler) : m_pCompiler(pCompiler) {}
 
 //------------------------------------------------------------------------
 // optSetBlockWeights: adjust block weights, as follows:
@@ -184,7 +182,8 @@ void Compiler::optScaleLoopBlocks(BasicBlock* begBlk, BasicBlock* endBlk)
     // At least one backedge must have been found (the one from endBlk).
     noway_assert(backedgeList);
 
-    auto reportBlockWeight = [&](BasicBlock* blk, const char* message) {
+    auto reportBlockWeight = [&](BasicBlock* blk, const char* message)
+    {
 #ifdef DEBUG
         if (verbose)
         {
@@ -409,7 +408,8 @@ void Compiler::optUpdateLoopsBeforeRemoveBlock(BasicBlock* block, bool skipUnmar
         // the table are made.
         INDEBUG(bool reportedBefore = false);
 
-        auto reportBefore = [&]() {
+        auto reportBefore = [&]()
+        {
 #ifdef DEBUG
             if (verbose && !reportedBefore)
             {
@@ -421,7 +421,8 @@ void Compiler::optUpdateLoopsBeforeRemoveBlock(BasicBlock* block, bool skipUnmar
 #endif // DEBUG
         };
 
-        auto reportAfter = [&]() {
+        auto reportAfter = [&]()
+        {
 #ifdef DEBUG
             if (verbose && reportedBefore)
             {
@@ -1568,17 +1569,17 @@ class LoopSearch
     Compiler*    comp;
 
     // See LoopSearch class comment header for a diagram relating these fields:
-    BasicBlock* head;   // Predecessor of unique entry edge
-    BasicBlock* top;    // Successor of back-edge from BOTTOM
-    BasicBlock* bottom; // Predecessor of back-edge to TOP, also lexically last in-loop block
-    BasicBlock* entry;  // Successor of unique entry edge
+    BasicBlock* head;              // Predecessor of unique entry edge
+    BasicBlock* top;               // Successor of back-edge from BOTTOM
+    BasicBlock* bottom;            // Predecessor of back-edge to TOP, also lexically last in-loop block
+    BasicBlock* entry;             // Successor of unique entry edge
 
-    BasicBlock*   lastExit;       // Most recently discovered exit block
-    unsigned char exitCount;      // Number of discovered exit edges
-    unsigned int  oldBlockMaxNum; // Used to identify new blocks created during compaction
-    BlockSet      bottomBlocks;   // BOTTOM blocks of already-recorded loops
+    BasicBlock*   lastExit;        // Most recently discovered exit block
+    unsigned char exitCount;       // Number of discovered exit edges
+    unsigned int  oldBlockMaxNum;  // Used to identify new blocks created during compaction
+    BlockSet      bottomBlocks;    // BOTTOM blocks of already-recorded loops
 #ifdef DEBUG
-    bool forgotExit = false; // Flags a rare case where lastExit gets nulled out, for assertions
+    bool forgotExit = false;       // Flags a rare case where lastExit gets nulled out, for assertions
 #endif
     bool changedFlowGraph = false; // Signals that loop compaction has modified the flow graph
 
@@ -2471,7 +2472,7 @@ private:
         }
     }
 };
-} // end (anonymous) namespace
+} // namespace
 
 //------------------------------------------------------------------------
 // optFindNaturalLoops: Find the natural loops, using dominators. Note that the test for
@@ -3037,8 +3038,8 @@ bool Compiler::optCanonicalizeLoop(unsigned char loopInd)
     // Check if this loopInd head is also the bottom of some sibling.
     // If so, add a block in between to serve as the new head.
     //
-    auto repairLoop = [this](unsigned char loopInd, unsigned char sibling) {
-
+    auto repairLoop = [this](unsigned char loopInd, unsigned char sibling)
+    {
         BasicBlock* const h        = optLoopTable[loopInd].lpHead;
         BasicBlock* const siblingB = optLoopTable[sibling].lpBottom;
 
@@ -3529,7 +3530,7 @@ bool Compiler::optIterSmallOverflow(int iterAtExit, var_types incrType)
             type_MAX = USHRT_MAX;
             break;
 
-        case TYP_UINT: // Detected by checking for 32bit ....
+        case TYP_UINT:    // Detected by checking for 32bit ....
         case TYP_INT:
             return false; // ... overflow same as done for TYP_INT
 
@@ -3578,7 +3579,7 @@ bool Compiler::optIterSmallUnderflow(int iterAtExit, var_types decrType)
             type_MIN = 0;
             break;
 
-        case TYP_UINT: // Detected by checking for 32bit ....
+        case TYP_UINT:    // Detected by checking for 32bit ....
         case TYP_INT:
             return false; // ... underflow same as done for TYP_INT
 
@@ -3644,7 +3645,7 @@ bool Compiler::optComputeLoopRep(int        constInit,
 
     switch (iterOperType)
     {
-// For small types, the iteration operator will narrow these values if big
+        // For small types, the iteration operator will narrow these values if big
 
 #define INIT_ITER_BY_TYPE(type)                                                                                        \
     constInitX = (type)constInit;                                                                                      \
@@ -3663,7 +3664,7 @@ bool Compiler::optComputeLoopRep(int        constInit,
             INIT_ITER_BY_TYPE(unsigned short);
             break;
 
-        // For the big types, 32 bit arithmetic is performed
+            // For the big types, 32 bit arithmetic is performed
 
         case TYP_INT:
             if (unsTest)
@@ -4115,8 +4116,8 @@ PhaseStatus Compiler::optUnrollLoops()
         genTreeOps testOper;     // type of loop test (i.e. GT_LE, GT_GE, etc.)
         bool       unsTest;      // Is the comparison unsigned?
 
-        unsigned loopRetCount; // number of BBJ_RETURN blocks in loop
-        unsigned totalIter;    // total number of iterations in the constant loop
+        unsigned loopRetCount;   // number of BBJ_RETURN blocks in loop
+        unsigned totalIter;      // total number of iterations in the constant loop
 
         const unsigned loopFlags = loop.lpFlags;
 
@@ -4785,9 +4786,7 @@ Compiler::OptInvertCountTreeInfoType Compiler::optInvertCountTreeInfo(GenTree* t
 
         Compiler::OptInvertCountTreeInfoType Result = {};
 
-        CountTreeInfoVisitor(Compiler* comp) : GenTreeVisitor(comp)
-        {
-        }
+        CountTreeInfoVisitor(Compiler* comp) : GenTreeVisitor(comp) {}
 
         fgWalkResult PreOrderVisit(GenTree** use, GenTree* user)
         {
@@ -5843,8 +5842,8 @@ bool Compiler::optNarrowTree(GenTree* tree, var_types srct, var_types dstt, Valu
 
                 return true;
 
-            /* Operands that are in memory can usually be narrowed
-               simply by changing their gtType */
+                /* Operands that are in memory can usually be narrowed
+                   simply by changing their gtType */
 
             case GT_LCL_VAR:
                 /* We only allow narrowing long -> int for a GT_LCL_VAR */
@@ -6130,9 +6129,7 @@ bool Compiler::optIsVarAssignedWithDesc(Statement* stmt, isVarAssgDsc* dsc)
             UseExecutionOrder = true,
         };
 
-        IsVarAssignedVisitor(Compiler* comp, isVarAssgDsc* dsc) : GenTreeVisitor(comp), m_dsc(dsc)
-        {
-        }
+        IsVarAssignedVisitor(Compiler* comp, isVarAssgDsc* dsc) : GenTreeVisitor(comp), m_dsc(dsc) {}
 
         fgWalkResult PreOrderVisit(GenTree** use, GenTree* user)
         {
@@ -7452,9 +7449,9 @@ void Compiler::optHoistLoopBlocks(unsigned loopNum, ArrayStack<BasicBlock*>* blo
                 // To be invariant the variable must be in SSA ...
                 bool isInvariant = lclVar->HasSsaName();
                 // and the SSA definition must be outside the loop we're hoisting from ...
-                isInvariant = isInvariant &&
-                              !m_compiler->optLoopTable[m_loopNum].lpContains(
-                                  m_compiler->lvaGetDesc(lclNum)->GetPerSsaData(lclVar->GetSsaNum())->GetBlock());
+                isInvariant =
+                    isInvariant && !m_compiler->optLoopTable[m_loopNum].lpContains(
+                                       m_compiler->lvaGetDesc(lclNum)->GetPerSsaData(lclVar->GetSsaNum())->GetBlock());
                 // and the VN of the tree is considered invariant as well.
                 //
                 // TODO-CQ: This VN invariance check should not be necessary and in some cases it is conservative - it

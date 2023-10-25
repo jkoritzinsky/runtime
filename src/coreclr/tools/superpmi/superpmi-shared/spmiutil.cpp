@@ -168,10 +168,20 @@ void ReplaceIllegalCharacters(WCHAR* fileName)
         {
             switch (ch)
             {
-                case W('('): case W(')'): case W('='): case W('<'):
-                case W('>'): case W(':'): case W('/'): case W('\\'):
-                case W('|'): case W('?'): case W('!'): case W('*'):
-                case W('.'): case W(','):
+                case W('('):
+                case W(')'):
+                case W('='):
+                case W('<'):
+                case W('>'):
+                case W(':'):
+                case W('/'):
+                case W('\\'):
+                case W('|'):
+                case W('?'):
+                case W('!'):
+                case W('*'):
+                case W('.'):
+                case W(','):
                     *quote = W('_');
                     break;
                 case W('"'):
@@ -194,8 +204,8 @@ WCHAR* GetResultFileName(const WCHAR* folderPath, const WCHAR* fileName, const W
 
     // See how long the folder part is, and start building the file path with the folder part.
     //
-    WCHAR* fullPath = new WCHAR[MAX_PATH];
-    fullPath[0] = W('\0');
+    WCHAR* fullPath               = new WCHAR[MAX_PATH];
+    fullPath[0]                   = W('\0');
     const size_t folderPathLength = GetFullPathNameW(folderPath, MAX_PATH, (LPWSTR)fullPath, NULL);
 
     if (folderPathLength == 0)
@@ -212,14 +222,15 @@ WCHAR* GetResultFileName(const WCHAR* folderPath, const WCHAR* fileName, const W
     //
     if ((fullPathLength + randomStringLength) > maxPathLength)
     {
-        LogError("GetResultFileName - folder path '%ws' length + minimal file name exceeds limit %d", fullPath, maxPathLength);
+        LogError("GetResultFileName - folder path '%ws' length + minimal file name exceeds limit %d", fullPath,
+                 maxPathLength);
         return nullptr;
     }
 
     // Now figure out the file name part.
     //
-    const size_t maxFileNameLength = maxPathLength - fullPathLength;
-    size_t usableFileNameLength = min(fileNameLength, maxFileNameLength - randomStringLength);
+    const size_t maxFileNameLength    = maxPathLength - fullPathLength;
+    size_t       usableFileNameLength = min(fileNameLength, maxFileNameLength - randomStringLength);
     fullPathLength += usableFileNameLength + randomStringLength;
 
     // Append the file name part
@@ -336,7 +347,7 @@ void PutThumb2BlRel24(UINT16* p, INT32 imm24)
     Opcode0 &= 0xF800;
     Opcode1 &= 0xD000;
 
-    UINT32 S = (imm24 & 0x1000000) >> 24;
+    UINT32 S  = (imm24 & 0x1000000) >> 24;
     UINT32 J1 = ((imm24 & 0x0800000) >> 23) ^ S ^ 1;
     UINT32 J2 = ((imm24 & 0x0400000) >> 22) ^ S ^ 1;
 
@@ -375,8 +386,8 @@ bool GetArm64MovkConstant(UINT32* p, unsigned* pReg, unsigned* pCon, unsigned* p
     UINT32 instr = *p;
     if ((instr & 0xff800000) == 0xf2800000)
     {
-        *pReg = instr & 0x1f;
-        *pCon = (instr >> 5) & 0xffff;
+        *pReg   = instr & 0x1f;
+        *pCon   = (instr >> 5) & 0xffff;
         *pShift = ((instr >> 21) & 0x3) * 16;
         return true;
     }
@@ -390,7 +401,7 @@ void PutArm64MovkConstant(UINT32* p, unsigned con)
     *p = (*p & ~(0xffff << 5)) | ((con & 0xffff) << 5);
 }
 
-template<typename TPrint>
+template <typename TPrint>
 static std::string getFromPrinter(TPrint print)
 {
     char buffer[256];
@@ -405,7 +416,7 @@ static std::string getFromPrinter(TPrint print)
     else
     {
         std::vector<char> vec(requiredBufferSize);
-        size_t printed = print(vec.data(), requiredBufferSize, nullptr);
+        size_t            printed = print(vec.data(), requiredBufferSize, nullptr);
         assert(printed == requiredBufferSize - 1);
         return std::string(vec.data());
     }
@@ -413,25 +424,23 @@ static std::string getFromPrinter(TPrint print)
 
 std::string getMethodName(MethodContext* mc, CORINFO_METHOD_HANDLE methHnd)
 {
-    return getFromPrinter([&](char* buffer, size_t bufferSize, size_t* requiredBufferSize) {
-        return mc->repPrintMethodName(methHnd, buffer, bufferSize, requiredBufferSize);
-        });
+    return getFromPrinter([&](char* buffer, size_t bufferSize, size_t* requiredBufferSize)
+                          { return mc->repPrintMethodName(methHnd, buffer, bufferSize, requiredBufferSize); });
 }
 
 std::string getClassName(MethodContext* mc, CORINFO_CLASS_HANDLE clsHnd)
 {
-    return getFromPrinter([&](char* buffer, size_t bufferSize, size_t* requiredBufferSize) {
-        return mc->repPrintClassName(clsHnd, buffer, bufferSize, requiredBufferSize);
-        });
+    return getFromPrinter([&](char* buffer, size_t bufferSize, size_t* requiredBufferSize)
+                          { return mc->repPrintClassName(clsHnd, buffer, bufferSize, requiredBufferSize); });
 }
 
 std::string ConvertToUtf8(const WCHAR* str)
 {
     unsigned len = WszWideCharToMultiByte(CP_UTF8, 0, str, -1, nullptr, 0, nullptr, nullptr);
     if (len == 0)
-        return{};
+        return {};
 
     std::vector<char> buf(len + 1);
     WszWideCharToMultiByte(CP_UTF8, 0, str, -1, buf.data(), len + 1, nullptr, nullptr);
-    return std::string{ buf.data() };
+    return std::string{buf.data()};
 }

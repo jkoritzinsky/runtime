@@ -18,8 +18,8 @@
 #if 0
 #ifndef TARGET_UNIX // No just-in-time debugger under PAL
 #define FEATURE_JIT_DEBUGGING
-#endif // !TARGET_UNIX
-#endif // 0
+#endif              // !TARGET_UNIX
+#endif              // 0
 
 #ifndef FEATURE_JIT_DEBUGGING
 

@@ -18,23 +18,23 @@ enum class ReplayResult
 
 struct ReplayResults
 {
-    ReplayResult Result = ReplayResult::Success;
-    bool IsMinOpts = false;
-    uint32_t NumCodeBytes = 0;
-    uint64_t NumExecutedInstructions = 0;
+    ReplayResult Result                  = ReplayResult::Success;
+    bool         IsMinOpts               = false;
+    uint32_t     NumCodeBytes            = 0;
+    uint64_t     NumExecutedInstructions = 0;
 };
 
 class JitInstance
 {
 private:
-    char*          PathToOriginalJit;
-    char*          PathToTempJit;
-    HMODULE        hLib;
-    PgetJit        pngetJit;
-    PjitStartup    pnjitStartup;
-    ICorJitHost*   jitHost;
-    ICorJitInfo*   icji;
-    SimpleTimer    stj;
+    char*        PathToOriginalJit;
+    char*        PathToTempJit;
+    HMODULE      hLib;
+    PgetJit      pngetJit;
+    PjitStartup  pnjitStartup;
+    ICorJitHost* jitHost;
+    ICorJitInfo* icji;
+    SimpleTimer  stj;
 
     LightWeightMap<DWORD, DWORD>* forceOptions;
     LightWeightMap<DWORD, DWORD>* options;
@@ -45,7 +45,6 @@ private:
     void timeResult(CORINFO_METHOD_INFO info, unsigned flags);
 
 public:
-
     bool forceClearAltJitFlag;
     bool forceSetAltJitFlag;
 
@@ -55,15 +54,15 @@ public:
     ICorJitCompiler* pJitInstance;
 
     // Allocate and initialize the jit provided
-    static JitInstance* InitJit(char*          nameOfJit,
-                                bool           breakOnAssert,
-                                SimpleTimer*   st1,
-                                MethodContext* firstContext,
+    static JitInstance* InitJit(char*                         nameOfJit,
+                                bool                          breakOnAssert,
+                                SimpleTimer*                  st1,
+                                MethodContext*                firstContext,
                                 LightWeightMap<DWORD, DWORD>* forceOptions,
                                 LightWeightMap<DWORD, DWORD>* options);
 
     HRESULT StartUp(char* PathToJit, bool copyJit, bool breakOnDebugBreakorAV, MethodContext* firstContext);
-    bool reLoad(MethodContext* firstContext);
+    bool    reLoad(MethodContext* firstContext);
 
     bool callJitStartup(ICorJitHost* newHost);
 
@@ -79,8 +78,8 @@ public:
 
     void* allocateArray(size_t size);
     void* allocateLongLivedArray(size_t size);
-    void freeArray(void* array);
-    void freeLongLivedArray(void* array);
+    void  freeArray(void* array);
+    void  freeLongLivedArray(void* array);
 };
 
 #endif

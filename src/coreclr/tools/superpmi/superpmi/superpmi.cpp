@@ -25,11 +25,12 @@ extern int doParallelSuperPMI(CommandLine::Options& o);
 // NOTE: these output status strings are parsed by parallelsuperpmi.cpp::ProcessChildStdOut().
 // There must be a single, fixed prefix common to all strings, to ease the determination of when
 // to parse the string fully.
-const char* const g_AllFormatStringFixedPrefix  = "Loaded ";
-const char* const g_SummaryFormatString         = "Loaded %d  Jitted %d  FailedCompile %d Excluded %d Missing %d";
-const char* const g_AsmDiffsSummaryFormatString = "Loaded %d  Jitted %d  FailedCompile %d Excluded %d Missing %d Diffs %d";
+const char* const g_AllFormatStringFixedPrefix = "Loaded ";
+const char* const g_SummaryFormatString        = "Loaded %d  Jitted %d  FailedCompile %d Excluded %d Missing %d";
+const char* const g_AsmDiffsSummaryFormatString =
+    "Loaded %d  Jitted %d  FailedCompile %d Excluded %d Missing %d Diffs %d";
 
-//#define SuperPMI_ChewMemory 0x7FFFFFFF //Amount of address space to consume on startup
+// #define SuperPMI_ChewMemory 0x7FFFFFFF //Amount of address space to consume on startup
 
 void SetSuperPmiTargetArchitecture(const char* targetArchitecture)
 {
@@ -75,9 +76,9 @@ enum class NearDifferResult
 // avoids compiler error.
 //
 static NearDifferResult InvokeNearDiffer(NearDiffer*           nearDiffer,
-                                   MethodContext**       mc,
-                                   CompileResult**       crl,
-                                   MethodContextReader** reader)
+                                         MethodContext**       mc,
+                                         CompileResult**       crl,
+                                         MethodContextReader** reader)
 {
 
     struct Param : FilterSuperPMIExceptionsParam_CaptureException
@@ -125,36 +126,34 @@ static const char* ResultToString(ReplayResult result)
 {
     switch (result)
     {
-    case ReplayResult::Success:
-        return "Success";
-    case ReplayResult::Error:
-        return "Error";
-    case ReplayResult::Miss:
-        return "Miss";
-    default:
-        return "Unknown";
+        case ReplayResult::Success:
+            return "Success";
+        case ReplayResult::Error:
+            return "Error";
+        case ReplayResult::Miss:
+            return "Miss";
+        default:
+            return "Unknown";
     }
 }
 
 static bool PrintDiffsCsvHeader(FileWriter& fw)
 {
-    return fw.Printf("Context,Context size,Base result,Diff result,MinOpts,Has diff,Base size,Diff size,Base instructions,Diff instructions\n");
+    return fw.Printf("Context,Context size,Base result,Diff result,MinOpts,Has diff,Base size,Diff size,Base "
+                     "instructions,Diff instructions\n");
 }
 
-static bool PrintDiffsCsvRow(
-    FileWriter& fw,
-    int context, uint32_t contextSize,
-    const ReplayResults& baseRes,
-    const ReplayResults& diffRes,
-    bool hasDiff)
+static bool PrintDiffsCsvRow(FileWriter&          fw,
+                             int                  context,
+                             uint32_t             contextSize,
+                             const ReplayResults& baseRes,
+                             const ReplayResults& diffRes,
+                             bool                 hasDiff)
 {
-    return fw.Printf("%d,%u,%s,%s,%s,%s,%u,%u,%lld,%lld\n",
-        context, contextSize,
-        ResultToString(baseRes.Result), ResultToString(diffRes.Result),
-        baseRes.IsMinOpts ? "True" : "False",
-        hasDiff ? "True" : "False",
-        baseRes.NumCodeBytes, diffRes.NumCodeBytes,
-        baseRes.NumExecutedInstructions, diffRes.NumExecutedInstructions);
+    return fw.Printf("%d,%u,%s,%s,%s,%s,%u,%u,%lld,%lld\n", context, contextSize, ResultToString(baseRes.Result),
+                     ResultToString(diffRes.Result), baseRes.IsMinOpts ? "True" : "False", hasDiff ? "True" : "False",
+                     baseRes.NumCodeBytes, diffRes.NumCodeBytes, baseRes.NumExecutedInstructions,
+                     diffRes.NumExecutedInstructions);
 }
 
 static bool PrintReplayCsvHeader(FileWriter& fw)
@@ -162,16 +161,10 @@ static bool PrintReplayCsvHeader(FileWriter& fw)
     return fw.Printf("Context,Context size,Result,MinOpts,Size,Instructions\n");
 }
 
-static bool PrintReplayCsvRow(
-    FileWriter& fw,
-    int context, uint32_t contextSize,
-    const ReplayResults& res)
+static bool PrintReplayCsvRow(FileWriter& fw, int context, uint32_t contextSize, const ReplayResults& res)
 {
-    return fw.Printf("%d,%u,%s,%s,%u,%lld\n",
-        context, contextSize,
-        ResultToString(res.Result),
-        res.IsMinOpts ? "True" : "False",
-        res.NumCodeBytes, res.NumExecutedInstructions);
+    return fw.Printf("%d,%u,%s,%s,%u,%lld\n", context, contextSize, ResultToString(res.Result),
+                     res.IsMinOpts ? "True" : "False", res.NumCodeBytes, res.NumExecutedInstructions);
 }
 
 // Run superpmi. The return value is as follows:
@@ -198,8 +191,8 @@ int __cdecl main(int argc, char* argv[])
     SimpleTimer st3;
     SimpleTimer st4;
     st2.Start();
-    JitInstance* jit = nullptr;
-    JitInstance* jit2 = nullptr;
+    JitInstance*        jit                = nullptr;
+    JitInstance*        jit2               = nullptr;
     MethodStatsEmitter* methodStatsEmitter = nullptr;
 
 #ifdef SuperPMI_ChewMemory
@@ -215,8 +208,8 @@ int __cdecl main(int argc, char* argv[])
     } while ((size_t)lpvAddr < SuperPMI_ChewMemory);
 #endif
 
-    bool   collectThroughput = false;
-    MCList failingToReplayMCL;
+    bool       collectThroughput = false;
+    MCList     failingToReplayMCL;
     FileWriter detailsCsv;
 
     CommandLine::Options o;
@@ -345,8 +338,8 @@ int __cdecl main(int argc, char* argv[])
             if (o.applyDiff)
             {
                 LogVerbose(" %2.1f%% - Loaded %d  Jitted %d  Diffs %d  FailedCompile %d at %d per second",
-                           reader->PercentComplete(), loadedCount, jittedCount, diffsCount,
-                           failToReplayCount, (int)((double)500 / st1.GetSeconds()));
+                           reader->PercentComplete(), loadedCount, jittedCount, diffsCount, failToReplayCount,
+                           (int)((double)500 / st1.GetSeconds()));
             }
             else
             {
@@ -360,8 +353,8 @@ int __cdecl main(int argc, char* argv[])
         // Now read the data into a MethodContext. This could throw if the method context data is corrupt.
 
         loadedCount++;
-        const int mcIndex = reader->GetMethodContextIndex();
-        MethodContext* mc = nullptr;
+        const int      mcIndex = reader->GetMethodContextIndex();
+        MethodContext* mc      = nullptr;
         if (!MethodContext::Initialize(mcIndex, mcb.buff, mcb.size, &mc))
         {
             return (int)SpmiResult::GeneralFailure;
@@ -431,8 +424,8 @@ int __cdecl main(int argc, char* argv[])
         st3.Start();
         ReplayResults res = jit->CompileMethod(mc, reader->GetMethodContextIndex(), collectThroughput);
         st3.Stop();
-        LogDebug("Method %d compiled%s in %fms, result %d",
-            reader->GetMethodContextIndex(), (o.nameOfJit2 == nullptr) ? "" : " by JIT1", st3.GetMilliseconds(), res);
+        LogDebug("Method %d compiled%s in %fms, result %d", reader->GetMethodContextIndex(),
+                 (o.nameOfJit2 == nullptr) ? "" : " by JIT1", st3.GetMilliseconds(), res);
 
         if (res.Result == ReplayResult::Success)
         {
@@ -445,12 +438,12 @@ int __cdecl main(int argc, char* argv[])
         {
             errorCount++;
             LogError("Method %d of size %d failed to load and compile correctly%s (%s).",
-                        reader->GetMethodContextIndex(), mc->methodSize,
-                        (o.nameOfJit2 == nullptr) ? "" : " by JIT1", o.nameOfJit);
+                     reader->GetMethodContextIndex(), mc->methodSize, (o.nameOfJit2 == nullptr) ? "" : " by JIT1",
+                     o.nameOfJit);
             if (errorCount == o.failureLimit)
             {
-                LogError("More than %d methods failed%s. Skip compiling remaining methods.",
-                    o.failureLimit, (o.nameOfJit2 == nullptr) ? "" : " by JIT1");
+                LogError("More than %d methods failed%s. Skip compiling remaining methods.", o.failureLimit,
+                         (o.nameOfJit2 == nullptr) ? "" : " by JIT1");
                 break;
             }
             if ((o.reproName != nullptr) && (o.indexCount == -1))
@@ -458,7 +451,7 @@ int __cdecl main(int argc, char* argv[])
                 char buff[500];
                 sprintf_s(buff, 500, "%s-%d.mc", o.reproName, reader->GetMethodContextIndex());
                 HANDLE hFileOut = CreateFileA(buff, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS,
-                                                FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN, NULL);
+                                              FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN, NULL);
                 if (hFileOut == INVALID_HANDLE_VALUE)
                 {
                     LogError("Failed to open output '%s'. GetLastError()=%u", buff, GetLastError());
@@ -510,7 +503,8 @@ int __cdecl main(int argc, char* argv[])
                          reader->GetMethodContextIndex(), mc->methodSize, o.nameOfJit2);
                 if (errorCount2 == o.failureLimit)
                 {
-                    LogError("More than %d methods compilation failed by JIT2. Skip compiling remaining methods.", o.failureLimit);
+                    LogError("More than %d methods compilation failed by JIT2. Skip compiling remaining methods.",
+                             o.failureLimit);
                     break;
                 }
             }
@@ -654,23 +648,15 @@ int __cdecl main(int argc, char* argv[])
 
                 if (o.details != nullptr)
                 {
-                    PrintDiffsCsvRow(
-                        detailsCsv,
-                        reader->GetMethodContextIndex(),
-                        mcb.size,
-                        res, res2,
-                        /* hasDiff */ diffResult != NearDifferResult::SuccessWithoutDiff);
+                    PrintDiffsCsvRow(detailsCsv, reader->GetMethodContextIndex(), mcb.size, res, res2,
+                                     /* hasDiff */ diffResult != NearDifferResult::SuccessWithoutDiff);
                 }
             }
             else
             {
                 if (o.details != nullptr)
                 {
-                    PrintReplayCsvRow(
-                        detailsCsv,
-                        reader->GetMethodContextIndex(),
-                        mcb.size,
-                        res);
+                    PrintReplayCsvRow(detailsCsv, reader->GetMethodContextIndex(), mcb.size, res);
                 }
             }
         }
@@ -694,11 +680,8 @@ int __cdecl main(int argc, char* argv[])
             {
                 if (o.applyDiff)
                 {
-                    PrintDiffsCsvRow(
-                        detailsCsv,
-                        reader->GetMethodContextIndex(), mcb.size,
-                        res, res2,
-                        /* hasDiff */ false);
+                    PrintDiffsCsvRow(detailsCsv, reader->GetMethodContextIndex(), mcb.size, res, res2,
+                                     /* hasDiff */ false);
                 }
                 else
                 {
@@ -715,8 +698,8 @@ int __cdecl main(int argc, char* argv[])
     // NOTE: these output status strings are parsed by parallelsuperpmi.cpp::ProcessChildStdOut().
     if (o.applyDiff)
     {
-        LogInfo(g_AsmDiffsSummaryFormatString, loadedCount, jittedCount, failToReplayCount, excludedCount,
-                missingCount, diffsCount);
+        LogInfo(g_AsmDiffsSummaryFormatString, loadedCount, jittedCount, failToReplayCount, excludedCount, missingCount,
+                diffsCount);
     }
     else
     {

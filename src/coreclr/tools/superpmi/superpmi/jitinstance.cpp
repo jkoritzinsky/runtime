@@ -24,14 +24,14 @@ JitInstance* JitInstance::InitJit(char*                         nameOfJit,
     }
 
     jit->forceOptions = forceOptions;
-    jit->options = options;
+    jit->options      = options;
 
     // The flag to cause the JIT to be invoked as an altjit is stored in the jit flags, not in
     // the environment. If the user uses the "-jitoption force" flag to force AltJit off
     // or to force it on, then propagate that to the jit flags.
     jit->forceClearAltJitFlag = false;
-    jit->forceSetAltJitFlag = false;
-    const WCHAR* altJitFlag = jit->getForceOption(W("AltJit"));
+    jit->forceSetAltJitFlag   = false;
+    const WCHAR* altJitFlag   = jit->getForceOption(W("AltJit"));
     if (altJitFlag != nullptr)
     {
         if (u16_strcmp(altJitFlag, W("")) == 0)
@@ -190,7 +190,7 @@ HRESULT JitInstance::StartUp(char* PathToJit, bool copyJit, bool breakOnDebugBre
         LogError("GetProcAddress 'getJit' failed (0x%08x)", ::GetLastError());
         return -1;
     }
-    pnjitStartup    = (PjitStartup)::GetProcAddress(hLib, "jitStartup");
+    pnjitStartup = (PjitStartup)::GetProcAddress(hLib, "jitStartup");
 
     // Setup ICorJitHost and call jitStartup if necessary
     if (pnjitStartup != nullptr)
@@ -250,7 +250,7 @@ bool JitInstance::reLoad(MethodContext* firstContext)
         LogError("GetProcAddress 'getJit' failed (0x%08x)", ::GetLastError());
         return false;
     }
-    pnjitStartup    = (PjitStartup)::GetProcAddress(hLib, "jitStartup");
+    pnjitStartup = (PjitStartup)::GetProcAddress(hLib, "jitStartup");
 
     // Setup ICorJitHost and call jitStartup if necessary
     if (pnjitStartup != nullptr)
@@ -336,18 +336,18 @@ ReplayResults JitInstance::CompileMethod(MethodContext* MethodToCompile, int mcI
         CORJIT_FLAGS jitFlags;
         pParam->pThis->mc->repGetJitFlags(&jitFlags, sizeof(jitFlags));
 
-        pParam->results.IsMinOpts =
-            jitFlags.IsSet(CORJIT_FLAGS::CORJIT_FLAG_DEBUG_CODE) ||
-            jitFlags.IsSet(CORJIT_FLAGS::CORJIT_FLAG_MIN_OPT) ||
-            jitFlags.IsSet(CORJIT_FLAGS::CORJIT_FLAG_TIER0);
+        pParam->results.IsMinOpts = jitFlags.IsSet(CORJIT_FLAGS::CORJIT_FLAG_DEBUG_CODE) ||
+                                    jitFlags.IsSet(CORJIT_FLAGS::CORJIT_FLAG_MIN_OPT) ||
+                                    jitFlags.IsSet(CORJIT_FLAGS::CORJIT_FLAG_TIER0);
 
         if (pParam->collectThroughput)
         {
             pParam->pThis->lt.Start();
         }
         pParam->pThis->pJitInstance->setTargetOS(os);
-        CorJitResult jitResult = pParam->pThis->pJitInstance->compileMethod(pParam->pThis->icji, &pParam->info,
-                                                                       pParam->flags, &NEntryBlock, &NCodeSizeBlock);
+        CorJitResult jitResult =
+            pParam->pThis->pJitInstance->compileMethod(pParam->pThis->icji, &pParam->info, pParam->flags, &NEntryBlock,
+                                                       &NCodeSizeBlock);
         if (pParam->collectThroughput)
         {
             pParam->pThis->lt.Stop();
@@ -366,8 +366,8 @@ ReplayResults JitInstance::CompileMethod(MethodContext* MethodToCompile, int mcI
 
         if (jitResult == CORJIT_SKIPPED)
         {
-            SPMI_TARGET_ARCHITECTURE targetArch = GetSpmiTargetArchitecture();
-            bool matchesTargetArch              = false;
+            SPMI_TARGET_ARCHITECTURE targetArch        = GetSpmiTargetArchitecture();
+            bool                     matchesTargetArch = false;
 
             switch (pParam->pThis->mc->repGetExpectedTargetArchitecture())
             {
@@ -408,7 +408,8 @@ ReplayResults JitInstance::CompileMethod(MethodContext* MethodToCompile, int mcI
             pParam->pThis->mc->cr->recAllocMemCapture();
             pParam->pThis->mc->cr->recAllocGCInfoCapture();
 
-            pParam->pThis->mc->cr->recMessageLog(jitResult == CORJIT_OK ? "Successful Compile" : "Successful Compile (BADCODE)");
+            pParam->pThis->mc->cr->recMessageLog(jitResult == CORJIT_OK ? "Successful Compile"
+                                                                        : "Successful Compile (BADCODE)");
 
             pParam->results.NumCodeBytes = NCodeSizeBlock;
         }
@@ -565,7 +566,7 @@ void JitInstance::freeArray(void* array)
 // Used to free memory allocated by JitInstance::allocateLongLivedArray.
 void JitInstance::freeLongLivedArray(void* array)
 {
-    delete [] (BYTE*)array;
+    delete[] (BYTE*)array;
 }
 
 // Helper for calling pnjitStartup. Needed to allow SEH here.

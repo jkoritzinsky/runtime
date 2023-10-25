@@ -86,13 +86,14 @@ void Compiler::fgDebugCheckUpdate()
     {
         /* no unreachable blocks */
 
-        if ((block->countOfInEdges() == 0) && !(block->bbFlags & BBF_DONT_REMOVE)
+        if ((block->countOfInEdges() == 0) &&
+            !(block->bbFlags & BBF_DONT_REMOVE)
 #if defined(FEATURE_EH_FUNCLETS) && defined(TARGET_ARM)
             // With funclets, we never get rid of the BBJ_ALWAYS part of a BBJ_CALLFINALLY/BBJ_ALWAYS pair,
             // even if we can prove that the finally block never returns.
             && !block->isBBCallAlwaysPairTail()
 #endif // FEATURE_EH_FUNCLETS
-                )
+        )
         {
             noway_assert(!"Unreachable block not removed!");
         }
@@ -440,7 +441,7 @@ const char* ConvertToUtf8(LPCWSTR wideString, CompAllocator& allocator)
 
     return alloc;
 }
-}
+} // namespace
 #endif
 
 //------------------------------------------------------------------------
@@ -772,12 +773,12 @@ bool Compiler::fgDumpFlowGraph(Phases phase, PhasePosition pos)
     const bool useBlockId   = JitConfig.JitDumpFgBlockID() != 0;
     const bool displayBlockFlags = JitConfig.JitDumpFgBlockFlags() != 0;
 #else  // !DEBUG
-    const bool             createDotFile     = true;
-    const bool             includeEH         = false;
-    const bool             includeLoops      = false;
-    const bool             constrained       = true;
-    const bool             useBlockId        = false;
-    const bool             displayBlockFlags = false;
+    const bool createDotFile     = true;
+    const bool includeEH         = false;
+    const bool includeLoops      = false;
+    const bool constrained       = true;
+    const bool useBlockId        = false;
+    const bool displayBlockFlags = false;
 #endif // !DEBUG
 
     FILE* fgxFile = fgOpenFlowGraphFile(&dontClose, phase, pos, createDotFile ? "dot" : "fgx");
@@ -1759,7 +1760,7 @@ bool Compiler::fgDumpFlowGraph(Phases phase, PhasePosition pos)
 #ifdef DEBUG
                 const bool displayLoopFlags = JitConfig.JitDumpFgLoopFlags() != 0;
 #else  // !DEBUG
-                const bool displayLoopFlags  = false;
+                const bool displayLoopFlags = false;
 #endif // !DEBUG
 
                 char name[30];
@@ -2545,9 +2546,7 @@ void Compiler::fgStress64RsltMul()
 class BBPredsChecker
 {
 public:
-    BBPredsChecker(Compiler* compiler) : comp(compiler)
-    {
-    }
+    BBPredsChecker(Compiler* compiler) : comp(compiler) {}
 
     unsigned CheckBBPreds(BasicBlock* block, unsigned curTraversalStamp);
 
@@ -3115,7 +3114,7 @@ void Compiler::fgDebugCheckBBlist(bool checkBBNum /* = false */, bool checkBBRef
 #ifndef JIT32_GCENCODER
     copiedForGenericsCtxt = ((info.compMethodInfo->options & CORINFO_GENERICS_CTXT_FROM_THIS) != 0);
 #else  // JIT32_GCENCODER
-    copiedForGenericsCtxt                    = false;
+    copiedForGenericsCtxt = false;
 #endif // JIT32_GCENCODER
 
     // This if only in support of the noway_asserts it contains.
@@ -3333,12 +3332,14 @@ void Compiler::fgDebugCheckFlags(GenTree* tree)
             break;
     }
 
-    tree->VisitOperands([&](GenTree* operand) -> GenTree::VisitResult {
-        fgDebugCheckFlags(operand);
-        expectedFlags |= (operand->gtFlags & GTF_ALL_EFFECT);
+    tree->VisitOperands(
+        [&](GenTree* operand) -> GenTree::VisitResult
+        {
+            fgDebugCheckFlags(operand);
+            expectedFlags |= (operand->gtFlags & GTF_ALL_EFFECT);
 
-        return GenTree::VisitResult::Continue;
-    });
+            return GenTree::VisitResult::Continue;
+        });
 
     fgDebugCheckFlagsHelper(tree, actualFlags, expectedFlags);
 }
@@ -3548,9 +3549,7 @@ void Compiler::fgDebugCheckLinkedLocals()
             UseExecutionOrder = true,
         };
 
-        DebugLocalSequencer(Compiler* comp) : GenTreeVisitor(comp), m_locals(comp->getAllocator(CMK_DebugOnly))
-        {
-        }
+        DebugLocalSequencer(Compiler* comp) : GenTreeVisitor(comp), m_locals(comp->getAllocator(CMK_DebugOnly)) {}
 
         void Sequence(Statement* stmt)
         {
@@ -3945,13 +3944,9 @@ private:
         unsigned m_ssaNum;
 
     public:
-        SsaKey() : m_lclNum(BAD_VAR_NUM), m_ssaNum(SsaConfig::RESERVED_SSA_NUM)
-        {
-        }
+        SsaKey() : m_lclNum(BAD_VAR_NUM), m_ssaNum(SsaConfig::RESERVED_SSA_NUM) {}
 
-        SsaKey(unsigned lclNum, unsigned ssaNum) : m_lclNum(lclNum), m_ssaNum(ssaNum)
-        {
-        }
+        SsaKey(unsigned lclNum, unsigned ssaNum) : m_lclNum(lclNum), m_ssaNum(ssaNum) {}
 
         static bool Equals(const SsaKey& x, const SsaKey& y)
         {

@@ -212,7 +212,7 @@ size_t gcPtrMapISize; // GC pointer map size: interruptible methods
 size_t gcHeaderNSize; // GC header      size: non-interruptible methods
 size_t gcPtrMapNSize; // GC pointer map size: non-interruptible methods
 
-#endif // DISPLAY_SIZES
+#endif                // DISPLAY_SIZES
 
 /*****************************************************************************
  *
@@ -652,11 +652,11 @@ var_types Compiler::getArgTypeForStruct(CORINFO_CLASS_HANDLE clsHnd,
         // have a struct that is larger than that.
         //
         if (structSize <= MAX_PASS_SINGLEREG_BYTES)
-    {
-        // We set the "primitive" useType based upon the structSize
-        // and also examine the clsHnd to see if it is an HFA of count one
-        useType = getPrimitiveTypeForStruct(structSize, clsHnd, isVarArg);
-    }
+        {
+            // We set the "primitive" useType based upon the structSize
+            // and also examine the clsHnd to see if it is an HFA of count one
+            useType = getPrimitiveTypeForStruct(structSize, clsHnd, isVarArg);
+        }
 #else
     if (isTrivialPointerSizedStruct(clsHnd))
     {
@@ -754,7 +754,7 @@ var_types Compiler::getArgTypeForStruct(CORINFO_CLASS_HANDLE clsHnd,
                 howToPassStruct = SPK_ByValue;
                 useType         = TYP_STRUCT;
 
-#else //  TARGET_XXX
+#else  //  TARGET_XXX
 
                 noway_assert(!"Unhandled TARGET in getArgTypeForStruct (with FEATURE_MULTIREG_ARGS=1)");
 
@@ -781,7 +781,7 @@ var_types Compiler::getArgTypeForStruct(CORINFO_CLASS_HANDLE clsHnd,
             howToPassStruct = SPK_ByReference;
             useType         = TYP_UNKNOWN;
 
-#else //  TARGET_XXX
+#else  //  TARGET_XXX
 
             noway_assert(!"Unhandled TARGET in getArgTypeForStruct");
 
@@ -1081,7 +1081,7 @@ var_types Compiler::getReturnTypeForStruct(CORINFO_CLASS_HANDLE     clsHnd,
                 howToReturnStruct = SPK_ByValue;
                 useType           = TYP_STRUCT;
 
-#else //  TARGET_XXX
+#else  //  TARGET_XXX
 
                 noway_assert(!"Unhandled TARGET in getReturnTypeForStruct (with FEATURE_MULTIREG_ARGS=1)");
 
@@ -1128,9 +1128,7 @@ struct FileLine
     unsigned m_line;
     char*    m_condStr;
 
-    FileLine() : m_file(nullptr), m_line(0), m_condStr(nullptr)
-    {
-    }
+    FileLine() : m_file(nullptr), m_line(0), m_condStr(nullptr) {}
 
     FileLine(const char* file, unsigned line, const char* condStr) : m_line(line)
     {
@@ -1171,7 +1169,7 @@ struct FileLine
 };
 
 typedef JitHashTable<FileLine, FileLine, size_t, HostAllocator> FileLineToCountMap;
-FileLineToCountMap* NowayAssertMap;
+FileLineToCountMap*                                             NowayAssertMap;
 
 void Compiler::RecordNowayAssert(const char* filename, unsigned line, const char* condStr)
 {
@@ -1204,9 +1202,7 @@ struct NowayAssertCountMap
     size_t   count;
     FileLine fl;
 
-    NowayAssertCountMap() : count(0)
-    {
-    }
+    NowayAssertCountMap() : count(0) {}
 
     struct compare
     {
@@ -1430,10 +1426,12 @@ void Compiler::compShutdown()
             opers[op] = {GenTree::s_gtNodeCounts[op], GenTree::s_gtTrueSizes[op], static_cast<genTreeOps>(op)};
         }
 
-        jitstd::sort(opers, opers + ArrLen(opers), [](const OperInfo& l, const OperInfo& r) {
-            // We'll be sorting in descending order.
-            return l.Count >= r.Count;
-        });
+        jitstd::sort(opers, opers + ArrLen(opers),
+                     [](const OperInfo& l, const OperInfo& r)
+                     {
+                         // We'll be sorting in descending order.
+                         return l.Count >= r.Count;
+                     });
 
         unsigned remainingCount      = totalCount;
         unsigned remainingCountLarge = 0;
@@ -1680,7 +1678,7 @@ void Compiler::compShutdown()
 #if LOOP_HOIST_STATS
 #ifdef DEBUG // Always display loop stats in retail
     if (JitConfig.DisplayLoopHoistStats() != 0)
-#endif // DEBUG
+#endif       // DEBUG
     {
         PrintAggregateLoopHoistStats(jitstdout());
     }
@@ -1992,12 +1990,10 @@ void Compiler::compInit(ArenaAllocator*       pAlloc,
  *  Destructor
  */
 
-void Compiler::compDone()
-{
-}
+void Compiler::compDone() {}
 
-void* Compiler::compGetHelperFtn(CorInfoHelpFunc ftnNum,        /* IN  */
-                                 void**          ppIndirection) /* OUT */
+void* Compiler::compGetHelperFtn(CorInfoHelpFunc ftnNum, /* IN  */
+                                 void**          ppIndirection)   /* OUT */
 {
     void* addr;
 
@@ -2155,7 +2151,7 @@ const char* Compiler::compRegVarName(regNumber reg, bool displayVar, bool isFloa
                                                                 // consecutive calls before printing
             static int index = 0;                               // for circular index into the name array
 
-            index = (index + 1) % 2; // circular reuse of index
+            index = (index + 1) % 2;                            // circular reuse of index
             sprintf_s(nameVarReg[index], NAME_VAR_REG_BUFFER_LEN, "%s'%s'", getRegName(reg), VarNameToStr(varName));
 
             return nameVarReg[index];
@@ -2571,7 +2567,7 @@ void Compiler::compInitOptions(JitFlags* jitFlags)
         }
     }
 
-#else // !DEBUG
+#else  // !DEBUG
 
     const char* altJitVal;
     if (jitFlags->IsSet(JitFlags::JIT_FLAG_PREJIT))
@@ -3055,7 +3051,7 @@ void Compiler::compInitOptions(JitFlags* jitFlags)
     }
 #endif // DEBUG
 
-//-------------------------------------------------------------------------
+    //-------------------------------------------------------------------------
 
 #ifdef DEBUG
     assert(!codeGen->isGCTypeFixed());
@@ -3313,11 +3309,10 @@ void Compiler::compInitOptions(JitFlags* jitFlags)
             printf("OPTIONS: OSR variant with entry point 0x%x\n", info.compILEntry);
         }
 
-        printf("OPTIONS: compCodeOpt = %s\n",
-               (opts.compCodeOpt == BLENDED_CODE)
-                   ? "BLENDED_CODE"
-                   : (opts.compCodeOpt == SMALL_CODE) ? "SMALL_CODE"
-                                                      : (opts.compCodeOpt == FAST_CODE) ? "FAST_CODE" : "UNKNOWN_CODE");
+        printf("OPTIONS: compCodeOpt = %s\n", (opts.compCodeOpt == BLENDED_CODE) ? "BLENDED_CODE"
+                                              : (opts.compCodeOpt == SMALL_CODE) ? "SMALL_CODE"
+                                              : (opts.compCodeOpt == FAST_CODE)  ? "FAST_CODE"
+                                                                                 : "UNKNOWN_CODE");
 
         printf("OPTIONS: compDbgCode = %s\n", dspBool(opts.compDbgCode));
         printf("OPTIONS: compDbgInfo = %s\n", dspBool(opts.compDbgInfo));
@@ -3898,8 +3893,9 @@ void Compiler::compSetOptimizationLevel()
         }
         if (theMinOptsValue == true)
         {
-            JITLOG((LL_INFO10000, "IL Code Size,Instr %4d,%4d, Basic Block count %3d, Local Variable Num,Ref count "
-                                  "%3d,%3d for method %s\n",
+            JITLOG((LL_INFO10000,
+                    "IL Code Size,Instr %4d,%4d, Basic Block count %3d, Local Variable Num,Ref count "
+                    "%3d,%3d for method %s\n",
                     info.compILCodeSize, opts.instrCount, fgBBcount, lvaCount, opts.lvRefCount, info.compFullName));
             if (JitConfig.JitBreakOnMinOpts() != 0)
             {
@@ -4367,7 +4363,7 @@ void Compiler::compFunctionTraceStart()
                info.compFullName, info.compMethodHash(),
                compGetTieringName()); /* } editor brace matching workaround for this printf */
     }
-#endif // DEBUG
+#endif                                // DEBUG
 }
 
 void Compiler::compFunctionTraceEnd(void* methodCodePtr, ULONG methodCodeSize, bool isNYI)
@@ -4454,7 +4450,8 @@ void Compiler::compCompile(void** methodCodePtr, uint32_t* methodCodeSize, JitFl
 
     // Prepare for importation
     //
-    auto preImportPhase = [this]() {
+    auto preImportPhase = [this]()
+    {
         if (compIsForInlining())
         {
             // Notify root instance that an inline attempt is about to import IL
@@ -4748,7 +4745,8 @@ void Compiler::compCompile(void** methodCodePtr, uint32_t* methodCodeSize, JitFl
 
     // Morph the trees in all the blocks of the method
     //
-    auto morphGlobalPhase = [this]() {
+    auto morphGlobalPhase = [this]()
+    {
         unsigned prevBBCount = fgBBcount;
         fgMorphBlocks();
 
@@ -5225,7 +5223,7 @@ void Compiler::compCompile(void** methodCodePtr, uint32_t* methodCodeSize, JitFl
 #endif
         fprintf(compJitFuncInfoFile, ""); // in our logic this causes a flush
     }
-#endif // FUNC_INFO_LOGGING
+#endif                                    // FUNC_INFO_LOGGING
 }
 
 #if FEATURE_LOOP_ALIGN
@@ -5781,9 +5779,7 @@ void Compiler::RecomputeLoopInfo()
 }
 
 /*****************************************************************************/
-void Compiler::ProcessShutdownWork(ICorStaticInfo* statInfo)
-{
-}
+void Compiler::ProcessShutdownWork(ICorStaticInfo* statInfo) {}
 
 /*****************************************************************************/
 
@@ -5879,7 +5875,7 @@ int Compiler::compCompile(CORINFO_MODULE_HANDLE classPtr,
             {
 #if defined(DEBUG) && !defined(HOST_UNIX) // no 'perror' in the PAL
                 perror("Failed to open JitFuncInfoLogFile");
-#endif // defined(DEBUG) && !defined(HOST_UNIX)
+#endif                                    // defined(DEBUG) && !defined(HOST_UNIX)
             }
         }
     }
@@ -5958,12 +5954,12 @@ int Compiler::compCompile(CORINFO_MODULE_HANDLE classPtr,
         // We need to assume, by default, that all flags coming from the VM are invalid.
         instructionSetFlags.Reset();
 
-// We then add each available instruction set for the target architecture provided
-// that the corresponding JitConfig switch hasn't explicitly asked for it to be
-// disabled. This allows us to default to "everything" supported for altjit scenarios
-// while also still allowing instruction set opt-out providing users with the ability
-// to, for example, see and debug ARM64 codegen for any desired CPU configuration without
-// needing to have the hardware in question.
+        // We then add each available instruction set for the target architecture provided
+        // that the corresponding JitConfig switch hasn't explicitly asked for it to be
+        // disabled. This allows us to default to "everything" supported for altjit scenarios
+        // while also still allowing instruction set opt-out providing users with the ability
+        // to, for example, see and debug ARM64 codegen for any desired CPU configuration without
+        // needing to have the hardware in question.
 
 #if defined(TARGET_ARM64)
         if (JitConfig.EnableHWIntrinsic() != 0)
@@ -6221,7 +6217,7 @@ int Compiler::compCompile(CORINFO_MODULE_HANDLE classPtr,
             }
         }
     }
-#endif // DEBUG
+#endif                                 // DEBUG
 
     info.compProfilerCallback = false; // Assume false until we are told to hook this method.
 
@@ -7712,112 +7708,105 @@ START:
 #endif
     param.result = result;
 
-    setErrorTrap(compHnd, Param*, pParamOuter, &param)
-    {
-        setErrorTrap(nullptr, Param*, pParam, pParamOuter)
-        {
-            if (pParam->inlineInfo)
-            {
-                // Lazily create the inlinee compiler object
-                if (pParam->inlineInfo->InlinerCompiler->InlineeCompiler == nullptr)
-                {
-                    pParam->inlineInfo->InlinerCompiler->InlineeCompiler =
-                        (Compiler*)pParam->pAlloc->allocateMemory(roundUp(sizeof(*pParam->pComp)));
-                }
+    setErrorTrap(compHnd, Param*, pParamOuter, &param){setErrorTrap(nullptr, Param*, pParam, pParamOuter){
+        if (pParam->inlineInfo){// Lazily create the inlinee compiler object
+                                if (pParam->inlineInfo->InlinerCompiler->InlineeCompiler == nullptr){
+                                    pParam->inlineInfo->InlinerCompiler->InlineeCompiler =
+                                        (Compiler*)pParam->pAlloc->allocateMemory(roundUp(sizeof(*pParam->pComp)));
+}
 
-                // Use the inlinee compiler object
-                pParam->pComp = pParam->inlineInfo->InlinerCompiler->InlineeCompiler;
+// Use the inlinee compiler object
+pParam->pComp = pParam->inlineInfo->InlinerCompiler->InlineeCompiler;
 #ifdef DEBUG
 // memset(pParam->pComp, 0xEE, sizeof(Compiler));
 #endif
-            }
-            else
-            {
-                // Allocate create the inliner compiler object
-                pParam->pComp = (Compiler*)pParam->pAlloc->allocateMemory(roundUp(sizeof(*pParam->pComp)));
-            }
+}
+else
+{
+    // Allocate create the inliner compiler object
+    pParam->pComp = (Compiler*)pParam->pAlloc->allocateMemory(roundUp(sizeof(*pParam->pComp)));
+}
 
 #if MEASURE_CLRAPI_CALLS
-            pParam->wrapCLR = WrapICorJitInfo::makeOne(pParam->pAlloc, pParam->pComp, pParam->compHnd);
+pParam->wrapCLR = WrapICorJitInfo::makeOne(pParam->pAlloc, pParam->pComp, pParam->compHnd);
 #endif
 
-            // push this compiler on the stack (TLS)
-            pParam->pComp->prevCompiler = JitTls::GetCompiler();
-            JitTls::SetCompiler(pParam->pComp);
+// push this compiler on the stack (TLS)
+pParam->pComp->prevCompiler = JitTls::GetCompiler();
+JitTls::SetCompiler(pParam->pComp);
 
 // PREFIX_ASSUME gets turned into ASSERT_CHECK and we cannot have it here
 #if defined(_PREFAST_) || defined(_PREFIX_)
-            PREFIX_ASSUME(pParam->pComp != NULL);
+PREFIX_ASSUME(pParam->pComp != NULL);
 #else
-            assert(pParam->pComp != nullptr);
+assert(pParam->pComp != nullptr);
 #endif
 
-            pParam->pComp->compInit(pParam->pAlloc, pParam->methodHnd, pParam->compHnd, pParam->methodInfo,
-                                    pParam->inlineInfo);
+pParam->pComp->compInit(pParam->pAlloc, pParam->methodHnd, pParam->compHnd, pParam->methodInfo, pParam->inlineInfo);
 
 #ifdef DEBUG
-            pParam->pComp->jitFallbackCompile = pParam->jitFallbackCompile;
+pParam->pComp->jitFallbackCompile = pParam->jitFallbackCompile;
 #endif
 
-            // Now generate the code
-            pParam->result = pParam->pComp->compCompile(pParam->classPtr, pParam->methodCodePtr, pParam->methodCodeSize,
-                                                        pParam->compileFlags);
-        }
-        finallyErrorTrap()
-        {
-            Compiler* pCompiler = pParamOuter->pComp;
+// Now generate the code
+pParam->result =
+    pParam->pComp->compCompile(pParam->classPtr, pParam->methodCodePtr, pParam->methodCodeSize, pParam->compileFlags);
+}
+finallyErrorTrap()
+{
+    Compiler* pCompiler = pParamOuter->pComp;
 
-            // If OOM is thrown when allocating memory for a pComp, we will end up here.
-            // For this case, pComp and also pCompiler will be a nullptr
-            //
-            if (pCompiler != nullptr)
-            {
-                pCompiler->info.compCode = nullptr;
-
-                // pop the compiler off the TLS stack only if it was linked above
-                assert(JitTls::GetCompiler() == pCompiler);
-                JitTls::SetCompiler(pCompiler->prevCompiler);
-            }
-
-            if (pParamOuter->inlineInfo == nullptr)
-            {
-                // Free up the allocator we were using
-                pParamOuter->pAlloc->destroy();
-            }
-        }
-        endErrorTrap()
-    }
-    impJitErrorTrap()
+    // If OOM is thrown when allocating memory for a pComp, we will end up here.
+    // For this case, pComp and also pCompiler will be a nullptr
+    //
+    if (pCompiler != nullptr)
     {
-        // If we were looking at an inlinee....
-        if (inlineInfo != nullptr)
-        {
-            // Note that we failed to compile the inlinee, and that
-            // there's no point trying to inline it again anywhere else.
-            inlineInfo->inlineResult->NoteFatal(InlineObservation::CALLEE_COMPILATION_ERROR);
-        }
-        param.result = __errc;
+        pCompiler->info.compCode = nullptr;
+
+        // pop the compiler off the TLS stack only if it was linked above
+        assert(JitTls::GetCompiler() == pCompiler);
+        JitTls::SetCompiler(pCompiler->prevCompiler);
     }
-    endErrorTrap()
 
-        result = param.result;
-
-    if (!inlineInfo &&
-        (result == CORJIT_INTERNALERROR || result == CORJIT_RECOVERABLEERROR || result == CORJIT_IMPLLIMITATION) &&
-        !jitFallbackCompile)
+    if (pParamOuter->inlineInfo == nullptr)
     {
-        // If we failed the JIT, reattempt with debuggable code.
-        jitFallbackCompile = true;
-
-        // Update the flags for 'safer' code generation.
-        compileFlags->Set(JitFlags::JIT_FLAG_MIN_OPT);
-        compileFlags->Clear(JitFlags::JIT_FLAG_SIZE_OPT);
-        compileFlags->Clear(JitFlags::JIT_FLAG_SPEED_OPT);
-
-        goto START;
+        // Free up the allocator we were using
+        pParamOuter->pAlloc->destroy();
     }
+}
+endErrorTrap()
+}
+impJitErrorTrap()
+{
+    // If we were looking at an inlinee....
+    if (inlineInfo != nullptr)
+    {
+        // Note that we failed to compile the inlinee, and that
+        // there's no point trying to inline it again anywhere else.
+        inlineInfo->inlineResult->NoteFatal(InlineObservation::CALLEE_COMPILATION_ERROR);
+    }
+    param.result = __errc;
+}
+endErrorTrap()
 
-    return result;
+    result = param.result;
+
+if (!inlineInfo &&
+    (result == CORJIT_INTERNALERROR || result == CORJIT_RECOVERABLEERROR || result == CORJIT_IMPLLIMITATION) &&
+    !jitFallbackCompile)
+{
+    // If we failed the JIT, reattempt with debuggable code.
+    jitFallbackCompile = true;
+
+    // Update the flags for 'safer' code generation.
+    compileFlags->Set(JitFlags::JIT_FLAG_MIN_OPT);
+    compileFlags->Clear(JitFlags::JIT_FLAG_SIZE_OPT);
+    compileFlags->Clear(JitFlags::JIT_FLAG_SPEED_OPT);
+
+    goto START;
+}
+
+return result;
 }
 
 #if defined(UNIX_AMD64_ABI)
@@ -8095,9 +8084,7 @@ XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 */
 
 /*****************************************************************************/
-void codeGeneratorCodeSizeBeg()
-{
-}
+void codeGeneratorCodeSizeBeg() {}
 
 /*****************************************************************************
  *
@@ -8105,9 +8092,7 @@ void codeGeneratorCodeSizeBeg()
  */
 
 /*****************************************************************************/
-void codeGeneratorCodeSizeEnd()
-{
-}
+void codeGeneratorCodeSizeEnd() {}
 /*****************************************************************************
  *
  *  Gather statistics - mainly used for the standalone
@@ -8568,8 +8553,9 @@ void CompTimeSummaryInfo::Print(FILE* f)
         double pslop_pct = 100.0 * m_total.m_parentPhaseEndSlop * 1000.0 / countsPerSec / totTime_ms;
         if (pslop_pct >= 1.0)
         {
-            fprintf(f, "\n  'End phase slop' should be very small (if not, there's unattributed time): %9.3f Mcycles = "
-                       "%3.1f%% of total.\n\n",
+            fprintf(f,
+                    "\n  'End phase slop' should be very small (if not, there's unattributed time): %9.3f Mcycles = "
+                    "%3.1f%% of total.\n\n",
                     m_total.m_parentPhaseEndSlop / 1000000.0, pslop_pct);
         }
     }
@@ -8609,8 +8595,9 @@ void CompTimeSummaryInfo::Print(FILE* f)
         double fslop_ms = m_filtered.m_parentPhaseEndSlop * 1000.0 / countsPerSec;
         if (fslop_ms > 1.0)
         {
-            fprintf(f, "\n  'End phase slop' should be very small (if not, there's unattributed time): %9.3f Mcycles = "
-                       "%3.1f%% of total.\n\n",
+            fprintf(f,
+                    "\n  'End phase slop' should be very small (if not, there's unattributed time): %9.3f Mcycles = "
+                    "%3.1f%% of total.\n\n",
                     m_filtered.m_parentPhaseEndSlop / 1000000.0, fslop_ms);
         }
     }
@@ -8960,7 +8947,7 @@ void JitTimer::PrintCsvMethodStats(Compiler* comp)
     // for a DEBUG build (presumably not for the time info), just re-use it.
     const char* methName = comp->info.compFullName;
 #else
-    const char*          methName  = comp->eeGetMethodFullName(comp->info.compMethodHnd);
+    const char* methName = comp->eeGetMethodFullName(comp->info.compMethodHnd);
 #endif
 
     // Try and access the SPMI index to report in the data set.
@@ -10301,10 +10288,12 @@ JITDBGAPI GenTree* __cdecl dFindTreeInTree(GenTree* tree, unsigned id)
     }
 
     GenTree* child = nullptr;
-    tree->VisitOperands([&child, id](GenTree* operand) -> GenTree::VisitResult {
-        child = dFindTreeInTree(child, id);
-        return (child != nullptr) ? GenTree::VisitResult::Abort : GenTree::VisitResult::Continue;
-    });
+    tree->VisitOperands(
+        [&child, id](GenTree* operand) -> GenTree::VisitResult
+        {
+            child = dFindTreeInTree(child, id);
+            return (child != nullptr) ? GenTree::VisitResult::Abort : GenTree::VisitResult::Continue;
+        });
 
     return child;
 }

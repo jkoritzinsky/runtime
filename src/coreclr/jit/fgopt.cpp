@@ -566,7 +566,8 @@ PhaseStatus Compiler::fgComputeReachability()
     unsigned passNum = 1;
     bool     changed;
 
-    auto canRemoveBlock = [&](BasicBlock* block) -> bool {
+    auto canRemoveBlock = [&](BasicBlock* block) -> bool
+    {
         // If any of the entry blocks can reach this block, then we skip it.
         if (!BlockSetOps::IsEmptyIntersection(this, fgEnterBlks, block->bbReach))
         {
@@ -719,7 +720,8 @@ bool Compiler::fgRemoveDeadBlocks()
 
     // A block is unreachable if no path was found from
     // any of the fgFirstBB, handler, filter or BBJ_ALWAYS (Arm) blocks.
-    auto isBlockRemovable = [&](BasicBlock* block) -> bool {
+    auto isBlockRemovable = [&](BasicBlock* block) -> bool
+    {
         bool isVisited   = BlockSetOps::IsMember(this, visitedBlocks, block->bbNum);
         bool isRemovable = !isVisited || (block->bbRefs == 0);
 
@@ -783,7 +785,7 @@ void Compiler::fgDfsReversePostorder()
     // an incoming edge into the block).
     assert(fgEnterBlksSetValid);
 
-    fgBBReversePostorder = new (this, CMK_DominatorMemory) BasicBlock*[fgBBNumMax + 1]{};
+    fgBBReversePostorder = new (this, CMK_DominatorMemory) BasicBlock* [fgBBNumMax + 1] {};
 
     // visited   :  Once we run the DFS post order sort recursive algorithm, we mark the nodes we visited to avoid
     //              backtracking.
@@ -905,9 +907,7 @@ void Compiler::fgDfsReversePostorderHelper(BasicBlock* block,
     struct DfsBlockEntry
     {
     public:
-        DfsBlockEntry(Compiler* comp, BasicBlock* block) : m_block(block), m_nSucc(block->NumSucc(comp)), m_iter(0)
-        {
-        }
+        DfsBlockEntry(Compiler* comp, BasicBlock* block) : m_block(block), m_nSucc(block->NumSucc(comp)), m_iter(0) {}
 
         BasicBlock* getBlock()
         {
@@ -1275,9 +1275,7 @@ void Compiler::fgNumberDomTree(DomTreeNode* domTree)
         unsigned m_postNum;
 
     public:
-        NumberDomTreeVisitor(Compiler* compiler, DomTreeNode* domTree) : DomTreeVisitor(compiler, domTree)
-        {
-        }
+        NumberDomTreeVisitor(Compiler* compiler, DomTreeNode* domTree) : DomTreeVisitor(compiler, domTree) {}
 
         void Begin()
         {
@@ -1794,9 +1792,9 @@ PhaseStatus Compiler::fgPostImportationCleanup()
 
                 // Helper method to add flow
                 //
-                auto addConditionalFlow = [this, entryStateVar, &entryJumpTarget, &addedBlocks](BasicBlock* fromBlock,
-                                                                                                BasicBlock* toBlock) {
-
+                auto addConditionalFlow =
+                    [this, entryStateVar, &entryJumpTarget, &addedBlocks](BasicBlock* fromBlock, BasicBlock* toBlock)
+                {
                     // We may have previously though this try entry was unreachable, but now we're going to
                     // step through it on the way to the OSR entry. So ensure it has plausible profile weight.
                     //
@@ -2572,7 +2570,7 @@ void Compiler::fgUnreachableBlock(BasicBlock* block)
     {
         printf("\nRemoving unreachable " FMT_BB "\n", block->bbNum);
     }
-#endif // DEBUG
+#endif                               // DEBUG
 
     noway_assert(!block->IsFirst()); // Can't use this function to remove the first block
 
@@ -3040,7 +3038,7 @@ bool Compiler::fgOptimizeEmptyBlock(BasicBlock* block)
                             printf("\nKeeping empty block " FMT_BB " - it is the target of a catch return\n",
                                    block->bbNum);
                         }
-#endif // DEBUG
+#endif                         // DEBUG
 
                         break; // go to the next block
                     }
@@ -4500,7 +4498,8 @@ bool Compiler::fgExpandRarelyRunBlocks()
     // Note this is potentially expensive for large flow graphs and blocks
     // with lots of predecessors.
     //
-    auto newRunRarely = [](BasicBlock* block, BasicBlock* bPrev) {
+    auto newRunRarely = [](BasicBlock* block, BasicBlock* bPrev)
+    {
         // Figure out earliest block that might be impacted
         BasicBlock* bPrevPrev = nullptr;
         BasicBlock* tmpbb;
@@ -4786,7 +4785,7 @@ bool Compiler::fgExpandRarelyRunBlocks()
                            " is rarely run\n",
                            block->bbNum, bPrev->bbNum);
                 }
-#endif // DEBUG
+#endif           // DEBUG
             }
             else // Both blocks are hot, bPrev is known not to be using profiled weight
             {
@@ -6090,11 +6089,11 @@ bool Compiler::fgUpdateFlowGraph(bool doTailDuplication, bool isPhase)
                 continue;
             }
 
-        /*  We jump to the REPEAT label if we performed a change involving the current block
-         *  This is in case there are other optimizations that can show up
-         *  (e.g. - compact 3 blocks in a row)
-         *  If nothing happens, we then finish the iteration and move to the next block
-         */
+            /*  We jump to the REPEAT label if we performed a change involving the current block
+             *  This is in case there are other optimizations that can show up
+             *  (e.g. - compact 3 blocks in a row)
+             *  If nothing happens, we then finish the iteration and move to the next block
+             */
 
         REPEAT:;
 
@@ -6145,8 +6144,8 @@ bool Compiler::fgUpdateFlowGraph(bool doTailDuplication, bool isPhase)
             if (bDest != nullptr)
             {
                 // Do we have a JUMP to an empty unconditional JUMP block?
-                if (bDest->isEmpty() && bDest->KindIs(BBJ_ALWAYS) &&
-                    !bDest->HasJumpTo(bDest)) // special case for self jumps
+                if (bDest->isEmpty() && bDest->KindIs(BBJ_ALWAYS) && !bDest->HasJumpTo(bDest)) // special case for self
+                                                                                               // jumps
                 {
                     if (fgOptimizeBranchToEmptyUnconditional(block, bDest))
                     {
@@ -6164,12 +6163,12 @@ bool Compiler::fgUpdateFlowGraph(bool doTailDuplication, bool isPhase)
                 // (b) block jump target is elsewhere but join free, and
                 //      bNext's jump target has a join.
                 //
-                if (block->KindIs(BBJ_COND) &&   // block is a BBJ_COND block
-                    (bNext != nullptr) &&        // block is not the last block
-                    (bNext->bbRefs == 1) &&      // No other block jumps to bNext
-                    bNext->KindIs(BBJ_ALWAYS) && // The next block is a BBJ_ALWAYS block
-                    bNext->isEmpty() &&          // and it is an empty block
-                    !bNext->HasJumpTo(bNext) &&  // special case for self jumps
+                if (block->KindIs(BBJ_COND) &&           // block is a BBJ_COND block
+                    (bNext != nullptr) &&                // block is not the last block
+                    (bNext->bbRefs == 1) &&              // No other block jumps to bNext
+                    bNext->KindIs(BBJ_ALWAYS) &&         // The next block is a BBJ_ALWAYS block
+                    bNext->isEmpty() &&                  // and it is an empty block
+                    !bNext->HasJumpTo(bNext) &&          // special case for self jumps
                     !bDest->IsFirstColdBlock(this) &&
                     !fgInDifferentRegions(block, bDest)) // do not cross hot/cold sections
                 {
@@ -6606,12 +6605,14 @@ unsigned Compiler::fgMeasureIR()
         {
             for (Statement* const stmt : block->Statements())
             {
-                fgWalkTreePre(stmt->GetRootNodePointer(),
-                              [](GenTree** slot, fgWalkData* data) -> Compiler::fgWalkResult {
-                                  (*reinterpret_cast<unsigned*>(data->pCallbackData))++;
-                                  return Compiler::WALK_CONTINUE;
-                              },
-                              &nodeCount);
+                fgWalkTreePre(
+                    stmt->GetRootNodePointer(),
+                    [](GenTree** slot, fgWalkData* data) -> Compiler::fgWalkResult
+                    {
+                        (*reinterpret_cast<unsigned*>(data->pCallbackData))++;
+                        return Compiler::WALK_CONTINUE;
+                    },
+                    &nodeCount);
             }
         }
         else
@@ -6713,9 +6714,7 @@ PhaseStatus Compiler::fgHeadTailMerge(bool early)
 
     struct PredInfo
     {
-        PredInfo(BasicBlock* block, Statement* stmt) : m_block(block), m_stmt(stmt)
-        {
-        }
+        PredInfo(BasicBlock* block, Statement* stmt) : m_block(block), m_stmt(stmt) {}
         BasicBlock* m_block;
         Statement*  m_stmt;
     };
@@ -6728,8 +6727,8 @@ PhaseStatus Compiler::fgHeadTailMerge(bool early)
     // If return value is true, retry.
     // May also add to retryBlocks.
     //
-    auto tailMerge = [&](BasicBlock* block) -> bool {
-
+    auto tailMerge = [&](BasicBlock* block) -> bool
+    {
         if (block->countOfInEdges() < 2)
         {
             // Nothing to merge here
@@ -7000,8 +6999,8 @@ PhaseStatus Compiler::fgHeadTailMerge(bool early)
         return false;
     };
 
-    auto iterateTailMerge = [&](BasicBlock* block) -> void {
-
+    auto iterateTailMerge = [&](BasicBlock* block) -> void
+    {
         int numOpts = 0;
 
         while (tailMerge(block))
@@ -7070,7 +7069,8 @@ bool Compiler::fgTryOneHeadMerge(BasicBlock* block, bool early)
     }
 
     // Verify that both successors are reached along non-critical edges.
-    auto getSuccCandidate = [=](BasicBlock* succ, Statement** firstStmt) -> bool {
+    auto getSuccCandidate = [=](BasicBlock* succ, Statement** firstStmt) -> bool
+    {
         if (succ->GetUniquePred(this) != block)
         {
             return false;
@@ -7201,9 +7201,7 @@ bool Compiler::gtTreeContainsTailCall(GenTree* tree)
             DoPreOrder = true
         };
 
-        HasTailCallCandidateVisitor(Compiler* comp) : GenTreeVisitor(comp)
-        {
-        }
+        HasTailCallCandidateVisitor(Compiler* comp) : GenTreeVisitor(comp) {}
 
         fgWalkResult PreOrderVisit(GenTree** use, GenTree* user)
         {

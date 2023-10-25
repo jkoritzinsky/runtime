@@ -632,7 +632,7 @@ bool Compiler::ehHasCallableHandlers()
 
     return compHndBBtabCount > 0;
 
-#else // !FEATURE_EH_FUNCLETS
+#else  // !FEATURE_EH_FUNCLETS
 
     return ehNeedsShadowSPslots();
 
@@ -1397,11 +1397,11 @@ void Compiler::fgAllocEHTable()
     compHndBBtabAllocCount = info.compXcptnsCount * 2;
 #endif                                             // DEBUG
 
-#else // !FEATURE_EH_FUNCLETS
+#else                                              // !FEATURE_EH_FUNCLETS
 
     compHndBBtabAllocCount = info.compXcptnsCount;
 
-#endif // !FEATURE_EH_FUNCLETS
+#endif                                             // !FEATURE_EH_FUNCLETS
 
     compHndBBtab = new (this, CMK_BasicBlock) EHblkDsc[compHndBBtabAllocCount];
 
@@ -1746,7 +1746,7 @@ void Compiler::fgSortEHTable()
                 (hndBegOff >= xtab1->ebdHndBegOffset && hndEndOff <= xtab1->ebdHndEndOffset) ||
                 (xtab1->HasFilter() && (hndBegOff >= xtab1->ebdFilterBegOffset && hndEndOff <= xtab1->ebdHndBegOffset))
                 // Note that end of filter is beginning of handler
-                )
+            )
             {
 #ifdef DEBUG
                 if (verbose)
@@ -2109,7 +2109,7 @@ bool Compiler::fgNormalizeEHCase2()
 
                     if (ehOuter->ebdIsSameTry(mutualTryBeg, mutualTryLast))
                     {
-// clang-format off
+                        // clang-format off
                         // Don't touch mutually-protect regions: their 'try' regions must remain identical!
                         // We want to continue the looping outwards, in case we have something like this:
                         //
@@ -2158,7 +2158,7 @@ bool Compiler::fgNormalizeEHCase2()
                         //
                         // In this case, all the 'try' start at the same block! Note that there are two sets of mutually-protect regions,
                         // separated by some nesting.
-// clang-format on
+                        // clang-format on
 
 #ifdef DEBUG
                         if (verbose)
@@ -2392,7 +2392,7 @@ bool Compiler::fgCreateFiltersForGenericExceptions()
             {
                 GenTree* ctxTree = getRuntimeContextTree(embedInfo.lookup.lookupKind.runtimeLookupKind);
                 runtimeLookup    = impReadyToRunHelperToTree(&resolvedToken, CORINFO_HELP_READYTORUN_GENERIC_HANDLE,
-                                                          TYP_I_IMPL, &embedInfo.lookup.lookupKind, ctxTree);
+                                                             TYP_I_IMPL, &embedInfo.lookup.lookupKind, ctxTree);
             }
             else
             {
@@ -3056,8 +3056,8 @@ void Compiler::fgVerifyHandlerTab()
         assert(blockNumMap[block->bbNum] == 0); // If this fails, we have two blocks with the same block number.
         blockNumMap[block->bbNum] = newBBnum++;
     }
-// Note that there may be some blockNumMap[x] == 0, for a block number 'x' that has been deleted, if the blocks
-// haven't been renumbered since the deletion.
+    // Note that there may be some blockNumMap[x] == 0, for a block number 'x' that has been deleted, if the blocks
+    // haven't been renumbered since the deletion.
 
 #if 0 // Useful for debugging, but don't want to put this in the dump all the time
     if (verbose)
@@ -3304,9 +3304,9 @@ void Compiler::fgVerifyHandlerTab()
             assert(bbNumOuterHndLast != 0);
             assert(bbNumOuterHndBeg <= bbNumOuterHndLast);
 
-// The outer handler must completely contain all the blocks in the EH region nested within it. However, if
-// funclets have been created, it's harder to make any relationship asserts about the order of nested
-// handlers, which also have been made into funclets.
+            // The outer handler must completely contain all the blocks in the EH region nested within it. However, if
+            // funclets have been created, it's harder to make any relationship asserts about the order of nested
+            // handlers, which also have been made into funclets.
 
 #if defined(FEATURE_EH_FUNCLETS)
             if (fgFuncletsCreated)
@@ -4094,7 +4094,7 @@ bool Compiler::fgIsIntraHandlerPred(BasicBlock* predBlock, BasicBlock* block)
 #if FEATURE_EH_CALLFINALLY_THUNKS
     if (xtab->HasFinallyHandler())
     {
-        assert((xtab->ebdHndBeg == block) || // The normal case
+        assert((xtab->ebdHndBeg == block) ||                 // The normal case
                (xtab->ebdHndBeg->NextIs(block) &&
                 (xtab->ebdHndBeg->bbFlags & BBF_INTERNAL))); // After we've already inserted a header block, and we're
                                                              // trying to decide how to split up the predecessor edges.
@@ -4406,7 +4406,7 @@ void Compiler::fgExtendEHRegionBefore(BasicBlock* block)
                            ehGetIndex(HBtab), bFilterLast->bbNum, bPrev->bbNum);
                 }
 #endif // DEBUG
-                // Change the bbJumpDest for bFilterLast from the old first 'block' to the new first 'bPrev'
+       // Change the bbJumpDest for bFilterLast from the old first 'block' to the new first 'bPrev'
                 fgRemoveRefPred(bFilterLast->GetJumpDest(), bFilterLast);
                 bFilterLast->SetJumpDest(bPrev);
                 fgAddRefPred(bPrev, bFilterLast);

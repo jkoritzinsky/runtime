@@ -13,14 +13,9 @@
 class RemoveDup
 {
 public:
-
-    RemoveDup()
-        : m_stripCR(false)
-        , m_legacyCompare(false)
-        , m_cleanup(false)
-        , m_inFile(nullptr)
-        , m_inFileLegacy(nullptr)
-    {}
+    RemoveDup() : m_stripCR(false), m_legacyCompare(false), m_cleanup(false), m_inFile(nullptr), m_inFileLegacy(nullptr)
+    {
+    }
 
     bool Initialize(bool stripCR = false, bool legacyCompare = false, bool cleanup = true)
     {
@@ -38,7 +33,6 @@ public:
     bool CopyAndRemoveDups(const char* nameOfInput, HANDLE hFileOut);
 
 private:
-
     bool m_stripCR;       // 'true' if we remove CompileResults when removing duplicates.
     bool m_legacyCompare; // 'true' to use the legacy comparer.
 

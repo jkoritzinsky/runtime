@@ -1883,7 +1883,7 @@ void CodeGen::genGenerateMachineCode()
                             (compiler->compCodeOpt() != Compiler::SMALL_CODE) &&
                                 !compiler->opts.jitFlags->IsSet(JitFlags::JIT_FLAG_PREJIT)
 #endif
-                                );
+    );
 
     /* Now generate code for the function */
     genCodeForBBlist();
@@ -2573,10 +2573,10 @@ void CodeGen::genReportEH()
                 {
                     break; // we've reported all of them; no need to continue looking
                 }
-#endif // !DEBUG
+#endif                     // !DEBUG
 
-            } // for each 'true' enclosing 'try'
-        }     // for each EH table entry
+            }              // for each 'true' enclosing 'try'
+        }                  // for each EH table entry
 
         assert(duplicateClauseCount == reportedDuplicateClauseCount);
     } // if (duplicateClauseCount > 0)
@@ -2631,9 +2631,9 @@ void CodeGen::genReportEH()
                 {
                     break; // we're done; no need to keep looking
                 }
-#endif        // !DEBUG
-            } // block is BBJ_CALLFINALLY
-        }     // for each block
+#endif                     // !DEBUG
+            }              // block is BBJ_CALLFINALLY
+        }                  // for each block
 
         assert(clonedFinallyCount == reportedClonedFinallyCount);
     }  // if (clonedFinallyCount > 0)
@@ -3209,9 +3209,9 @@ void CodeGen::genFnPrologCalleeRegArgs(regNumber xtraReg, bool* pXtraRegClobbere
 #ifdef TARGET_X86
                     noway_assert(varDsc->lvType == TYP_STRUCT);
 #else  // !TARGET_X86
-                    // For LSRA, it may not be in regArgMaskLive if it has a zero
-                    // refcnt.  This is in contrast with the non-LSRA case in which all
-                    // non-tracked args are assumed live on entry.
+       // For LSRA, it may not be in regArgMaskLive if it has a zero
+       // refcnt.  This is in contrast with the non-LSRA case in which all
+       // non-tracked args are assumed live on entry.
                     noway_assert((varDsc->lvRefCnt() == 0) || (varDsc->lvType == TYP_STRUCT) ||
                                  (varDsc->IsAddressExposed() && compiler->info.compIsVarArgs) ||
                                  (varDsc->IsAddressExposed() && compiler->opts.compUseSoftFP));
@@ -4212,7 +4212,7 @@ void CodeGen::genEnregisterIncomingStackArgs()
     regNumber tmp_reg    = REG_NA;
 #endif
 
-    for (LclVarDsc *varDsc = compiler->lvaTable; varNum < compiler->lvaCount; varNum++, varDsc++)
+    for (LclVarDsc* varDsc = compiler->lvaTable; varNum < compiler->lvaCount; varNum++, varDsc++)
     {
         /* Is this variable a parameter? */
 
@@ -4286,7 +4286,7 @@ void CodeGen::genEnregisterIncomingStackArgs()
                 }
             }
         }
-#else // !TARGET_LOONGARCH64
+#else  // !TARGET_LOONGARCH64
         GetEmitter()->emitIns_R_S(ins_Load(regType), emitTypeSize(regType), regNum, varNum, 0);
 #endif // !TARGET_LOONGARCH64
 
@@ -5339,7 +5339,7 @@ void CodeGen::genFinalizeFrame()
         }
         noway_assert((regSet.rsGetModifiedRegsMask() & ~okRegs) == 0);
 #else  // !TARGET_AMD64 && !TARGET_ARM64
-        // On x86 we save all callee saved regs so the saved reg area size is consistent
+       // On x86 we save all callee saved regs so the saved reg area size is consistent
         regSet.rsSetRegsModified(RBM_INT_CALLEE_SAVED & ~RBM_FPBASE);
 #endif // !TARGET_AMD64 && !TARGET_ARM64
     }
@@ -5978,7 +5978,7 @@ void CodeGen::genFnProlog()
         }
 #ifndef TARGET_AMD64 // On AMD64, establish the frame pointer after the "sub rsp"
         genEstablishFramePointer(0, /*reportUnwindData*/ true);
-#endif // !TARGET_AMD64
+#endif               // !TARGET_AMD64
 
 #if DOUBLE_ALIGN
         if (compiler->genDoubleAlign())
@@ -6056,7 +6056,7 @@ void CodeGen::genFnProlog()
     }
 #endif // TARGET_AMD64
 
-//-------------------------------------------------------------------------
+    //-------------------------------------------------------------------------
 
 #ifdef TARGET_ARM
     if (compiler->compLocallocUsed)
@@ -6082,11 +6082,11 @@ void CodeGen::genFnProlog()
 #endif // TARGET_AMD64
     compiler->unwindEndProlog();
 
-//-------------------------------------------------------------------------
-//
-// This is the end of the OS-reported prolog for purposes of unwinding
-//
-//-------------------------------------------------------------------------
+    //-------------------------------------------------------------------------
+    //
+    // This is the end of the OS-reported prolog for purposes of unwinding
+    //
+    //-------------------------------------------------------------------------
 
 #ifdef TARGET_ARM
     if (needToEstablishFP)
@@ -6094,7 +6094,7 @@ void CodeGen::genFnProlog()
         genEstablishFramePointer(afterLclFrameSPtoFPdelta, /*reportUnwindData*/ false);
         needToEstablishFP = false; // nobody uses this later, but set it anyway, just to be explicit
     }
-#endif // TARGET_ARM
+#endif                             // TARGET_ARM
 
     if (compiler->info.compPublishStubParam)
     {
@@ -6116,7 +6116,7 @@ void CodeGen::genFnProlog()
 
     genSetPSPSym(initReg, &initRegZeroed);
 
-#else // !FEATURE_EH_FUNCLETS
+#else  // !FEATURE_EH_FUNCLETS
 
     // when compInitMem is true the genZeroInitFrame will zero out the shadow SP slots
     if (compiler->ehNeedsShadowSPslots() && !compiler->info.compInitMem)
@@ -6228,7 +6228,8 @@ void CodeGen::genFnProlog()
             genFnPrologCalleeRegArgs();
         }
 #else
-        auto assignIncomingRegisterArgs = [this, initReg, &initRegZeroed](RegState* regState) {
+        auto assignIncomingRegisterArgs = [this, initReg, &initRegZeroed](RegState* regState)
+        {
             if (regState->rsCalleeRegArgMaskLiveIn)
             {
                 // If we need an extra register to shuffle around the incoming registers
@@ -6765,7 +6766,7 @@ regMaskTP CodeGen::genPushRegs(regMaskTP regs, regMaskTP* byrefRegs, regMaskTP* 
     NYI("Don't call genPushRegs with real regs!");
     return RBM_NONE;
 
-#else // FEATURE_FIXED_OUT_ARGS
+#else  // FEATURE_FIXED_OUT_ARGS
 
     noway_assert(genTypeStSz(TYP_REF) == genTypeStSz(TYP_I_IMPL));
     noway_assert(genTypeStSz(TYP_BYREF) == genTypeStSz(TYP_I_IMPL));
@@ -6834,7 +6835,7 @@ void CodeGen::genPopRegs(regMaskTP regs, regMaskTP byrefRegs, regMaskTP noRefReg
 
     NYI("Don't call genPopRegs with real regs!");
 
-#else // FEATURE_FIXED_OUT_ARGS
+#else  // FEATURE_FIXED_OUT_ARGS
 
     noway_assert((regs & byrefRegs) == byrefRegs);
     noway_assert((regs & noRefRegs) == noRefRegs);
@@ -7249,7 +7250,8 @@ void CodeGen::genReportRichDebugInfoInlineTreeToFile(FILE* file, InlineContext* 
         fprintf(file, "\"ILOffset\":%u,", context->GetLocation().GetOffset());
         fprintf(file, "\"LocationFlags\":%u,", (uint32_t)context->GetLocation().EncodeSourceTypes());
         fprintf(file, "\"ExactILOffset\":%u,", context->GetActualCallOffset());
-        auto append = [&]() {
+        auto append = [&]()
+        {
             char        buffer[256];
             const char* methodName = compiler->eeGetMethodName(context->GetCallee(), buffer, sizeof(buffer));
             fprintf(file, "\"MethodName\":\"%s\",", methodName);
@@ -7441,7 +7443,7 @@ const char* CodeGen::siStackVarName(size_t offs, size_t size, unsigned reg, unsi
 #endif // !defined(DEBUG)
 #endif // defined(LATE_DISASM)
 
-//------------------------------------------------------------------------
+       //------------------------------------------------------------------------
 // indirForm: Make a temporary indir we can feed to pattern matching routines
 //    in cases where we don't want to instantiate all the indirs that happen.
 //

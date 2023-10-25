@@ -88,8 +88,8 @@ private:
 
     void        BuildReversePostorder();
     static bool IsDfsAncestor(BasicBlock* x, BasicBlock* y);
-    bool IsLoopBackEdge(FlowEdge* edge);
-    bool IsLoopExitEdge(FlowEdge* edge);
+    bool        IsLoopBackEdge(FlowEdge* edge);
+    bool        IsLoopExitEdge(FlowEdge* edge);
 
     void        FindLoops();
     SimpleLoop* GetLoopFromHeader(BasicBlock* block);

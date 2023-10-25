@@ -339,7 +339,7 @@ void dspRegMask(regMaskTP regMask, size_t minSiz)
                     sep        = "-";
                 }
 #elif defined(TARGET_X86)
-// No register ranges
+                // No register ranges
 
 #elif defined(TARGET_LOONGARCH64)
                 if (REG_A0 <= regNum && regNum <= REG_T8)
@@ -356,7 +356,7 @@ void dspRegMask(regMaskTP regMask, size_t minSiz)
                     inRegRange = true;
                     sep        = "-";
                 }
-#else // TARGET*
+#else  // TARGET*
 #error Unsupported or unset target architecture
 #endif // TARGET*
             }
@@ -367,8 +367,8 @@ void dspRegMask(regMaskTP regMask, size_t minSiz)
                      || (regNum == REG_R28))                         // last register before FP
 #elif defined(TARGET_LOONGARCH64)
             else if ((regNum == REG_INT_LAST) || (regNum == REG_A7) || (regNum == REG_T8))
-#else  // TARGET_LOONGARCH64
-            // We've already printed a register. Is this the end of a range?
+#else                                                                // TARGET_LOONGARCH64
+      // We've already printed a register. Is this the end of a range?
             else if (regNum == REG_INT_LAST)
 #endif // TARGET_LOONGARCH64
             {
@@ -1015,19 +1015,21 @@ void NodeCounts::dump(FILE* output)
         sorted[i].count = static_cast<unsigned>(m_counts[i]);
     }
 
-    jitstd::sort(sorted, sorted + ArrLen(sorted), [](const Entry& lhs, const Entry& rhs) {
-        if (lhs.count > rhs.count)
-        {
-            return true;
-        }
+    jitstd::sort(sorted, sorted + ArrLen(sorted),
+                 [](const Entry& lhs, const Entry& rhs)
+                 {
+                     if (lhs.count > rhs.count)
+                     {
+                         return true;
+                     }
 
-        if (lhs.count < rhs.count)
-        {
-            return false;
-        }
+                     if (lhs.count < rhs.count)
+                     {
+                         return false;
+                     }
 
-        return static_cast<unsigned>(lhs.oper) < static_cast<unsigned>(rhs.oper);
-    });
+                     return static_cast<unsigned>(lhs.oper) < static_cast<unsigned>(rhs.oper);
+                 });
 
     for (const Entry& entry : sorted)
     {
@@ -1988,9 +1990,7 @@ double CachedCyclesPerSecond()
 }
 
 #ifdef FEATURE_JIT_METHOD_PERF
-CycleCount::CycleCount() : cps(CachedCyclesPerSecond())
-{
-}
+CycleCount::CycleCount() : cps(CachedCyclesPerSecond()) {}
 
 bool CycleCount::GetCycles(unsigned __int64* time)
 {
@@ -2132,7 +2132,7 @@ unsigned __int64 FloatingPointUtils::convertDoubleToUInt64(double d)
 
     u64 = UINT64(INT64(d));
 #else
-    u64   = UINT64(d);
+    u64 = UINT64(d);
 #endif // TARGET_XARCH
 
     return u64;
@@ -3800,16 +3800,16 @@ template <>
 const SignedMagic<int32_t>* TryGetSignedMagic(int32_t divisor)
 {
     static const SignedMagic<int32_t> table[]{
-        {0x55555556, 0}, // 3
+        {0x55555556, 0},          // 3
         {},
         {0x66666667, 1},          // 5
         {0x2aaaaaab, 0},          // 6
         {(int32_t)0x92492493, 2}, // 7
         {},
-        {0x38e38e39, 1}, // 9
-        {0x66666667, 2}, // 10
-        {0x2e8ba2e9, 1}, // 11
-        {0x2aaaaaab, 1}, // 12
+        {0x38e38e39, 1},          // 9
+        {0x66666667, 2},          // 10
+        {0x2e8ba2e9, 1},          // 11
+        {0x2aaaaaab, 1},          // 12
     };
 
     return TryGetMagic<3>(table, divisor);
@@ -3934,7 +3934,7 @@ int64_t GetSigned64Magic(int64_t d, int* shift /*out*/)
     return GetSignedMagic<int64_t>(d, shift);
 }
 #endif
-}
+} // namespace MagicDivide
 
 namespace CheckedOps
 {
@@ -4128,4 +4128,4 @@ bool CastFromDoubleOverflows(double fromValue, var_types toType)
             unreached();
     }
 }
-}
+} // namespace CheckedOps

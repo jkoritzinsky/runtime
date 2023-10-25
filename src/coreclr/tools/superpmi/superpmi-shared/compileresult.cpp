@@ -37,8 +37,7 @@ CompileResult::CompileResult()
 
 CompileResult::~CompileResult()
 {
-#define LWM(map, key, value)                                                                                           \
-    delete map;
+#define LWM(map, key, value) delete map;
 #include "crlwmlist.h"
 
     delete CallTargetTypes;
@@ -325,7 +324,8 @@ void CompileResult::recSetPatchpointInfo(PatchpointInfo* patchpointInfo)
         SetPatchpointInfo = new LightWeightMap<DWORD, Agnostic_SetPatchpointInfo>();
 
     Agnostic_SetPatchpointInfo value;
-    value.index = (DWORD)SetPatchpointInfo->AddBuffer((const unsigned char*) patchpointInfo, patchpointInfo->PatchpointInfoSize());
+    value.index =
+        (DWORD)SetPatchpointInfo->AddBuffer((const unsigned char*)patchpointInfo, patchpointInfo->PatchpointInfoSize());
     SetPatchpointInfo->Add(0, value);
 }
 void CompileResult::dmpSetPatchpointInfo(DWORD key, const Agnostic_SetPatchpointInfo& value)
@@ -345,7 +345,7 @@ bool CompileResult::repSetPatchpointInfo(PatchpointInfo** patchpointInfo)
     }
 
     Agnostic_SetPatchpointInfo value;
-    value = SetPatchpointInfo->Get(0);
+    value           = SetPatchpointInfo->Get(0);
     *patchpointInfo = (PatchpointInfo*)SetPatchpointInfo->GetBuffer(value.index);
     return true;
 }
@@ -642,8 +642,8 @@ void CompileResult::recReportTailCallDecision(CORINFO_METHOD_HANDLE callerHnd,
 void CompileResult::dmpReportTailCallDecision(DWORD key, const Agnostic_ReportTailCallDecision& value)
 {
     const char* reason = (const char*)ReportTailCallDecision->GetBuffer(value.reason_index);
-    printf("ReportTailCallDecision key-%u, value cr-%016" PRIX64 " ce-%016" PRIX64 " tail-%u call-%u -%s", key, value.callerHnd,
-           value.calleeHnd, value.tailCallResult, value.tailCallResult, reason);
+    printf("ReportTailCallDecision key-%u, value cr-%016" PRIX64 " ce-%016" PRIX64 " tail-%u call-%u -%s", key,
+           value.callerHnd, value.calleeHnd, value.tailCallResult, value.tailCallResult, reason);
     ReportTailCallDecision->Unlock();
 }
 
@@ -757,8 +757,8 @@ void CompileResult::applyRelocs(RelocContext* rc, unsigned char* block1, ULONG b
 
         const SPMI_TARGET_ARCHITECTURE targetArch = GetSpmiTargetArchitecture();
 
-        const DWORD relocType = tmp.fRelocType;
-        bool wasRelocHandled  = false;
+        const DWORD relocType       = tmp.fRelocType;
+        bool        wasRelocHandled = false;
 
         // Do platform specific relocations first.
 
@@ -771,8 +771,8 @@ void CompileResult::applyRelocs(RelocContext* rc, unsigned char* block1, ULONG b
                 size_t address = section_begin + (size_t)fixupLocation - (size_t)originalAddr;
                 if ((section_begin <= address) && (address < section_end)) // A reloc for our section?
                 {
-                    LogDebug("    fixupLoc-%016" PRIX64 " (@%p) : %08X => %08X", fixupLocation, address, *(DWORD*)address,
-                        (DWORD)tmp.target);
+                    LogDebug("    fixupLoc-%016" PRIX64 " (@%p) : %08X => %08X", fixupLocation, address,
+                             *(DWORD*)address, (DWORD)tmp.target);
                     *(DWORD*)address = (DWORD)tmp.target;
                 }
                 wasRelocHandled = true;
@@ -789,7 +789,7 @@ void CompileResult::applyRelocs(RelocContext* rc, unsigned char* block1, ULONG b
                 case IMAGE_REL_BASED_THUMB_MOV32:
                 case IMAGE_REL_BASED_REL_THUMB_MOV32_PCREL:
                 {
-                    INT32 delta  = (INT32)(tmp.target - fixupLocation);
+                    INT32 delta = (INT32)(tmp.target - fixupLocation);
                     if ((section_begin <= address) && (address < section_end)) // A reloc for our section?
                     {
                         PutThumb2Mov32((UINT16*)address, (UINT32)delta);
@@ -836,7 +836,7 @@ void CompileResult::applyRelocs(RelocContext* rc, unsigned char* block1, ULONG b
                             // Assume here that we would need a jump stub for this relocation and pretend
                             // that the jump stub is located right at the end of the method.
                             DWORDLONG target = (DWORDLONG)originalAddr + (DWORDLONG)blocksize1;
-                            delta = (INT64)(target - fixupLocation);
+                            delta            = (INT64)(target - fixupLocation);
                         }
                         PutArm64Rel28((UINT32*)address, (INT32)delta);
                     }
@@ -844,7 +844,7 @@ void CompileResult::applyRelocs(RelocContext* rc, unsigned char* block1, ULONG b
                 }
                 break;
 
-                case IMAGE_REL_ARM64_PAGEBASE_REL21: // ADRP 21 bit PC-relative page address
+                case IMAGE_REL_ARM64_PAGEBASE_REL21:                           // ADRP 21 bit PC-relative page address
                 {
                     if ((section_begin <= address) && (address < section_end)) // A reloc for our section?
                     {
@@ -858,7 +858,7 @@ void CompileResult::applyRelocs(RelocContext* rc, unsigned char* block1, ULONG b
                 }
                 break;
 
-                case IMAGE_REL_ARM64_PAGEOFFSET_12A: // ADD 12 bit page offset
+                case IMAGE_REL_ARM64_PAGEOFFSET_12A:                           // ADD 12 bit page offset
                 {
                     if ((section_begin <= address) && (address < section_end)) // A reloc for our section?
                     {
@@ -890,7 +890,7 @@ void CompileResult::applyRelocs(RelocContext* rc, unsigned char* block1, ULONG b
                 if ((section_begin <= address) && (address < section_end)) // A reloc for our section?
                 {
                     LogDebug("    fixupLoc-%016" PRIX64 " (@%p) %016" PRIX64 " => %016" PRIX64, fixupLocation, address,
-                        *(DWORDLONG*)address, tmp.target);
+                             *(DWORDLONG*)address, tmp.target);
                     *(DWORDLONG*)address = tmp.target;
                 }
 
@@ -909,10 +909,10 @@ void CompileResult::applyRelocs(RelocContext* rc, unsigned char* block1, ULONG b
             size_t address = section_begin + (size_t)fixupLocation - (size_t)originalAddr;
             if ((section_begin <= address) && (address < section_end)) // A reloc for our section?
             {
-                DWORDLONG target        = tmp.target + (int32_t)tmp.addlDelta;
-                DWORDLONG baseAddr      = fixupLocation + sizeof(INT32);
-                INT64     delta         = (INT64)(target - baseAddr);
-                bool      deltaIsFinal  = false;
+                DWORDLONG target       = tmp.target + (int32_t)tmp.addlDelta;
+                DWORDLONG baseAddr     = fixupLocation + sizeof(INT32);
+                INT64     delta        = (INT64)(target - baseAddr);
+                bool      deltaIsFinal = false;
 
                 if (IsSpmiTarget64Bit())
                 {
@@ -946,8 +946,9 @@ void CompileResult::applyRelocs(RelocContext* rc, unsigned char* block1, ULONG b
                                     index = rc->mc->GetRelocTypeHint->GetIndex(key);
                                     if (index != -1)
                                     {
-                                        LogDebug("    Using address map: target %016" PRIX64 ", original target %016" PRIX64,
-                                            tmp.target, key);
+                                        LogDebug("    Using address map: target %016" PRIX64
+                                                 ", original target %016" PRIX64,
+                                                 tmp.target, key);
                                     }
                                 }
                             }
@@ -957,7 +958,8 @@ void CompileResult::applyRelocs(RelocContext* rc, unsigned char* block1, ULONG b
                                 WORD retVal = (WORD)rc->mc->GetRelocTypeHint->Get(key);
                                 if (retVal == IMAGE_REL_BASED_REL32)
                                 {
-                                    LogDebug("    REL32 target used as argument to getRelocTypeHint: setting delta=%d (0x%X)",
+                                    LogDebug("    REL32 target used as argument to getRelocTypeHint: setting delta=%d "
+                                             "(0x%X)",
                                              (int)key, (int)key);
                                     delta        = (INT64)(int)key;
                                     deltaIsFinal = true;
@@ -1002,7 +1004,8 @@ void CompileResult::applyRelocs(RelocContext* rc, unsigned char* block1, ULONG b
                                 DLD value = rc->mc->GetFunctionEntryPoint->GetItem(idx);
                                 if (value.A == tmp.target)
                                 {
-                                    LogDebug("    REL32 target is result of getFunctionEntryPoint(): setting delta=%d (0x%X)",
+                                    LogDebug("    REL32 target is result of getFunctionEntryPoint(): setting delta=%d "
+                                             "(0x%X)",
                                              (int)tmp.target, (int)tmp.target);
                                     delta        = (INT64)(int)tmp.target;
                                     deltaIsFinal = true;
@@ -1056,7 +1059,8 @@ void CompileResult::applyRelocs(RelocContext* rc, unsigned char* block1, ULONG b
                         target         = (DWORDLONG)originalAddr + (DWORDLONG)blocksize1;
                         INT64 newdelta = (INT64)(target - baseAddr);
 
-                        LogDebug("    REL32 overflow. Mapping target to %016" PRIX64 ". Mapping delta: %016" PRIX64 " => %016" PRIX64,
+                        LogDebug("    REL32 overflow. Mapping target to %016" PRIX64 ". Mapping delta: %016" PRIX64
+                                 " => %016" PRIX64,
                                  target, delta, newdelta);
 
                         delta = newdelta;
@@ -1090,7 +1094,8 @@ void CompileResult::applyRelocs(RelocContext* rc, unsigned char* block1, ULONG b
                 }
 
                 // Write 32-bits into location
-                LogDebug("    fixupLoc-%016" PRIX64 " (@%p) : %08X => %08X", fixupLocation, address, *(DWORD*)address, delta);
+                LogDebug("    fixupLoc-%016" PRIX64 " (@%p) : %08X => %08X", fixupLocation, address, *(DWORD*)address,
+                         delta);
                 *(DWORD*)address = (DWORD)delta;
             }
 
@@ -1222,7 +1227,8 @@ void CompileResult::recAllocUnwindInfo(BYTE*          pHotCode,
 }
 void CompileResult::dmpAllocUnwindInfo(DWORD key, const Agnostic_AllocUnwindInfo& value)
 {
-    printf("AllocUnwindInfo key %u, value pHot-%016" PRIX64 " pCold-%016" PRIX64 " startOff-%u endOff-%u unwindSz-%u blki-%u "
+    printf("AllocUnwindInfo key %u, value pHot-%016" PRIX64 " pCold-%016" PRIX64
+           " startOff-%u endOff-%u unwindSz-%u blki-%u "
            "funcKind-%u",
            key, value.pHotCode, value.pColdCode, value.startOffset, value.endOffset, value.unwindSize,
            value.pUnwindBlock_index, value.funcKind);
@@ -1235,9 +1241,9 @@ void CompileResult::recRecordCallSite(ULONG instrOffset, CORINFO_SIG_INFO* callS
 
 void CompileResult::dmpRecordCallSiteWithSignature(DWORD key, const Agnostic_RecordCallSite& value) const
 {
-    printf("RecordCallSite key %u, callSig-%s ftn-%016" PRIX64,
-           key,
-           SpmiDumpHelper::DumpAgnostic_CORINFO_SIG_INFO(value.callSig, RecordCallSiteWithSignature, CrSigInstHandleMap).c_str(),
+    printf("RecordCallSite key %u, callSig-%s ftn-%016" PRIX64, key,
+           SpmiDumpHelper::DumpAgnostic_CORINFO_SIG_INFO(value.callSig, RecordCallSiteWithSignature, CrSigInstHandleMap)
+               .c_str(),
            value.methodHandle);
 }
 
@@ -1264,7 +1270,8 @@ void CompileResult::repRecordCallSite(ULONG instrOffset, CORINFO_SIG_INFO* callS
     {
         Agnostic_RecordCallSite value;
         ZeroMemory(&value, sizeof(Agnostic_RecordCallSite));
-        value.callSig      = SpmiRecordsHelper::StoreAgnostic_CORINFO_SIG_INFO(*callSig, RecordCallSiteWithSignature, CrSigInstHandleMap);
+        value.callSig      = SpmiRecordsHelper::StoreAgnostic_CORINFO_SIG_INFO(*callSig, RecordCallSiteWithSignature,
+                                                                               CrSigInstHandleMap);
         value.methodHandle = CastHandle(methodHandle);
         RecordCallSiteWithSignature->Add(instrOffset, value);
     }
@@ -1287,7 +1294,8 @@ bool CompileResult::fndRecordCallSiteSigInfo(ULONG instrOffset, CORINFO_SIG_INFO
     if (value.callSig.callConv == (DWORD)-1)
         return false;
 
-    *pCallSig = SpmiRecordsHelper::Restore_CORINFO_SIG_INFO(value.callSig, RecordCallSiteWithSignature, CrSigInstHandleMap);
+    *pCallSig =
+        SpmiRecordsHelper::Restore_CORINFO_SIG_INFO(value.callSig, RecordCallSiteWithSignature, CrSigInstHandleMap);
 
     return true;
 }
@@ -1298,12 +1306,12 @@ bool CompileResult::fndRecordCallSiteMethodHandle(ULONG instrOffset, CORINFO_MET
     if (RecordCallSiteWithSignature != nullptr && RecordCallSiteWithSignature->GetIndex(instrOffset) != -1)
     {
         Agnostic_RecordCallSite value = RecordCallSiteWithSignature->Get(instrOffset);
-        *pMethodHandle = (CORINFO_METHOD_HANDLE)value.methodHandle;
+        *pMethodHandle                = (CORINFO_METHOD_HANDLE)value.methodHandle;
     }
     else if (RecordCallSiteWithoutSignature != nullptr && RecordCallSiteWithoutSignature->GetIndex(instrOffset) != -1)
     {
         CORINFO_METHOD_HANDLE value = (CORINFO_METHOD_HANDLE)RecordCallSiteWithoutSignature->Get(instrOffset);
-        *pMethodHandle = value;
+        *pMethodHandle              = value;
     }
     return false;
 }

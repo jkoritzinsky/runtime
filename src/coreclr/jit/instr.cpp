@@ -654,7 +654,7 @@ void CodeGen::inst_RV_IV(
     GetEmitter()->emitIns_R_R_I(ins, size, reg, reg, val);
 #elif defined(TARGET_LOONGARCH64) || defined(TARGET_RISCV64)
     GetEmitter()->emitIns_R_R_I(ins, size, reg, reg, val);
-#else // !TARGET_ARM
+#else  // !TARGET_ARM
 #ifdef TARGET_AMD64
     // Instead of an 8-byte immediate load, a 4-byte immediate will do fine
     // as the high 4 bytes will be zero anyway.
@@ -863,7 +863,7 @@ CodeGen::OperandDesc CodeGen::genOperandDesc(GenTree* op)
                         // broadcast -> LCL_VAR(TYP_(U)INT)
                         ssize_t        scalarValue = hwintrinsicChild->AsIntCon()->IconValue();
                         UNATIVE_OFFSET cnum        = emit->emitDataConst(&scalarValue, genTypeSize(simdBaseType),
-                                                                  genTypeSize(simdBaseType), simdBaseType);
+                                                                         genTypeSize(simdBaseType), simdBaseType);
                         return OperandDesc(compiler->eeFindJitDataOffs(cnum));
                     }
                     else
@@ -1111,9 +1111,9 @@ void CodeGen::inst_RV_TT(instruction ins, emitAttr size, regNumber op1Reg, GenTr
 }
 
 /*****************************************************************************
-*
-*  Generate an instruction of the form "op reg1, reg2, icon".
-*/
+ *
+ *  Generate an instruction of the form "op reg1, reg2, icon".
+ */
 
 void CodeGen::inst_RV_RV_IV(instruction ins, emitAttr size, regNumber reg1, regNumber reg2, unsigned ival)
 {

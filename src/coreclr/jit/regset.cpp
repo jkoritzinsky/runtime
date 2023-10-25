@@ -425,9 +425,9 @@ void RegSet::rsSpillTree(regNumber reg, GenTree* tree, unsigned regIdx /* =0 */)
 
 #if defined(TARGET_X86)
 /*****************************************************************************
-*
-*  Spill the top of the FP x87 stack.
-*/
+ *
+ *  Spill the top of the FP x87 stack.
+ */
 void RegSet::rsSpillFPStack(GenTreeCall* call)
 {
     SpillDsc* spill;
@@ -913,14 +913,14 @@ regNumber genRegArgNext(regNumber argReg)
         case REG_ARG_3:       // REG_RCX
             return REG_ARG_4; // REG_R8
 
-#else // !UNIX_AMD64_ABI
+#else                         // !UNIX_AMD64_ABI
 
         // Windows x64 ABI: REG_RCX, REG_RDX, REG_R8, REG_R9
         case REG_ARG_1:       // REG_RDX
             return REG_ARG_2; // REG_R8
 
-#endif // !UNIX_AMD64_ABI
-#endif // TARGET_AMD64
+#endif                        // !UNIX_AMD64_ABI
+#endif                        // TARGET_AMD64
 
         default:
             return REG_NEXT(argReg);
@@ -1064,8 +1064,6 @@ void RegSet::rsSpillChk()
 #else
 
 // inline
-void RegSet::rsSpillChk()
-{
-}
+void RegSet::rsSpillChk() {}
 
 #endif

@@ -18,22 +18,24 @@ class MemoryTracker
 {
 public:
     MemoryTracker() : m_pHead(nullptr) {}
-    ~MemoryTracker() { freeAll(); }
+    ~MemoryTracker()
+    {
+        freeAll();
+    }
 
     void* allocate(size_t sizeInBytes)
     {
         BYTE* pNew = new BYTE[sizeInBytes];
-        m_pHead = new MemoryNode(pNew, m_pHead);    // Prepend this new one to the tracked memory list.
+        m_pHead    = new MemoryNode(pNew, m_pHead); // Prepend this new one to the tracked memory list.
         return pNew;
     }
 
 private:
-
     MemoryTracker(const MemoryTracker&) = delete; // no copy ctor
 
     void freeAll()
     {
-        for (MemoryNode* p = m_pHead; p != nullptr; )
+        for (MemoryNode* p = m_pHead; p != nullptr;)
         {
             MemoryNode* pNext = p->m_pNext;
             delete p;
@@ -45,7 +47,10 @@ private:
     struct MemoryNode
     {
         MemoryNode(BYTE* pMem, MemoryNode* pNext) : m_pMem(pMem), m_pNext(pNext) {}
-        ~MemoryNode() { delete[] m_pMem; }
+        ~MemoryNode()
+        {
+            delete[] m_pMem;
+        }
 
         BYTE*       m_pMem;
         MemoryNode* m_pNext;
@@ -58,37 +63,36 @@ private:
 struct RelocContext
 {
     MethodContext* mc;
-    size_t hotCodeAddress;
-    size_t hotCodeSize;
-    size_t coldCodeAddress;
-    size_t coldCodeSize;
-    size_t roDataAddress;
-    size_t roDataSize;
-    size_t originalHotCodeAddress;
-    size_t originalColdCodeAddress;
-    size_t originalRoDataAddress;
+    size_t         hotCodeAddress;
+    size_t         hotCodeSize;
+    size_t         coldCodeAddress;
+    size_t         coldCodeSize;
+    size_t         roDataAddress;
+    size_t         roDataSize;
+    size_t         originalHotCodeAddress;
+    size_t         originalColdCodeAddress;
+    size_t         originalRoDataAddress;
 };
 
 class CompileResult
 {
 public:
-
     CompileResult();
     ~CompileResult();
 
     bool IsEmpty();
 
-    void AddCall(const char* name);
+    void         AddCall(const char* name);
     unsigned int CallLog_GetCount();
-    bool CallLog_Contains(const char* str);
-    void dmpCallLog(DWORD key, DWORD value);
+    bool         CallLog_Contains(const char* str);
+    void         dmpCallLog(DWORD key, DWORD value);
 
     void dumpToConsole();
 
     void* allocateMemory(size_t sizeInBytes);
 
-    void recAssert(const char* buff);
-    void dmpAssertLog(DWORD key, DWORD value);
+    void        recAssert(const char* buff);
+    void        dmpAssertLog(DWORD key, DWORD value);
     const char* repAssert();
 
     void recAllocMem(ULONG              hotCodeSize,
@@ -140,15 +144,15 @@ public:
     void recClassMustBeLoadedBeforeCodeIsRun(CORINFO_CLASS_HANDLE cls);
     void dmpClassMustBeLoadedBeforeCodeIsRun(DWORD key, DWORDLONG value);
 
-    void recReportInliningDecision(CORINFO_METHOD_HANDLE inlinerHnd,
-                                   CORINFO_METHOD_HANDLE inlineeHnd,
-                                   CorInfoInline         inlineResult,
-                                   const char*           reason);
-    void dmpReportInliningDecision(DWORD key, const Agnostic_ReportInliningDecision& value);
+    void          recReportInliningDecision(CORINFO_METHOD_HANDLE inlinerHnd,
+                                            CORINFO_METHOD_HANDLE inlineeHnd,
+                                            CorInfoInline         inlineResult,
+                                            const char*           reason);
+    void          dmpReportInliningDecision(DWORD key, const Agnostic_ReportInliningDecision& value);
     CorInfoInline repReportInliningDecision(CORINFO_METHOD_HANDLE inlinerHnd, CORINFO_METHOD_HANDLE inlineeHnd);
 
-    void recSetEHcount(unsigned cEH);
-    void dmpSetEHcount(DWORD key, DWORD value);
+    void  recSetEHcount(unsigned cEH);
+    void  dmpSetEHcount(DWORD key, DWORD value);
     ULONG repSetEHcount();
 
     void recSetEHinfo(unsigned EHnumber, const CORINFO_EH_CLAUSE* clause);
@@ -161,8 +165,8 @@ public:
                       ULONG*   handlerLength,
                       ULONG*   classToken);
 
-    void recSetMethodAttribs(CORINFO_METHOD_HANDLE ftn, CorInfoMethodRuntimeFlags attribs);
-    void dmpSetMethodAttribs(DWORDLONG key, DWORD value);
+    void                      recSetMethodAttribs(CORINFO_METHOD_HANDLE ftn, CorInfoMethodRuntimeFlags attribs);
+    void                      dmpSetMethodAttribs(DWORDLONG key, DWORD value);
     CorInfoMethodRuntimeFlags repSetMethodAttribs(CORINFO_METHOD_HANDLE ftn);
 
     void recMethodMustBeLoadedBeforeCodeIsRun(CORINFO_METHOD_HANDLE method);
@@ -183,12 +187,12 @@ public:
     void repRecordRelocation(void* location, void* target, uint16_t fRelocType, int32_t addlDelta);
     void applyRelocs(RelocContext* rc, unsigned char* block1, ULONG blocksize1, void* originalAddr);
 
-    void recProcessName(const char* name);
-    void dmpProcessName(DWORD key, DWORD value);
+    void        recProcessName(const char* name);
+    void        dmpProcessName(DWORD key, DWORD value);
     const char* repProcessName();
 
-    void recAddressMap(void* original_address, void* replay_address, unsigned int size);
-    void dmpAddressMap(DWORDLONG key, const Agnostic_AddressMap& value);
+    void  recAddressMap(void* original_address, void* replay_address, unsigned int size);
+    void  dmpAddressMap(DWORDLONG key, const Agnostic_AddressMap& value);
     void* repAddressMap(void* replay_address);
     void* searchAddressMap(void* replay_address);
 
@@ -229,6 +233,7 @@ private:
     Capture_AllocMemDetails allocMemDets;
     allocGCInfoDetails      allocGCInfoDets;
 
-    const bool recordCallSitesWithoutSig = false; // Set it to true if you want to use CallUtils::GetRecordedCallSiteInfo.
+    const bool recordCallSitesWithoutSig =
+        false; // Set it to true if you want to use CallUtils::GetRecordedCallSiteInfo.
 };
 #endif

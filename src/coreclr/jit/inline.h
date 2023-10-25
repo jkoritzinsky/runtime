@@ -205,9 +205,7 @@ public:
     static InlinePolicy* GetPolicy(Compiler* compiler, bool isPrejitRoot);
 
     // Obligatory virtual dtor
-    virtual ~InlinePolicy()
-    {
-    }
+    virtual ~InlinePolicy() {}
 
     // Get the current decision
     InlineDecision GetDecision() const
@@ -222,9 +220,9 @@ public:
     }
 
     // Policy observations
-    virtual void NoteSuccess() = 0;
-    virtual void NoteBool(InlineObservation obs, bool value) = 0;
-    virtual void NoteFatal(InlineObservation obs) = 0;
+    virtual void NoteSuccess()                                   = 0;
+    virtual void NoteBool(InlineObservation obs, bool value)     = 0;
+    virtual void NoteFatal(InlineObservation obs)                = 0;
     virtual void NoteInt(InlineObservation obs, int value)       = 0;
     virtual void NoteDouble(InlineObservation obs, double value) = 0;
 
@@ -262,13 +260,9 @@ public:
     // Name of the policy
     virtual const char* GetName() const = 0;
     // Detailed data value dump
-    virtual void DumpData(FILE* file) const
-    {
-    }
+    virtual void DumpData(FILE* file) const {}
     // Detailed data name dump
-    virtual void DumpSchema(FILE* file) const
-    {
-    }
+    virtual void DumpSchema(FILE* file) const {}
 
 #define XATTR_I4(x)                                                                                                    \
     if ((INT32)x != 0)                                                                                                 \
@@ -294,9 +288,7 @@ public:
         fprintf(file, " />\n");
     }
 
-    virtual void OnDumpXml(FILE* file, unsigned indent = 0) const
-    {
-    }
+    virtual void OnDumpXml(FILE* file, unsigned indent = 0) const {}
 
     // True if this is the inline targeted by data collection
     bool IsDataCollectionTarget()
@@ -321,7 +313,7 @@ protected:
 
 private:
     // No copying or assignment supported
-    InlinePolicy(const InlinePolicy&) = delete;
+    InlinePolicy(const InlinePolicy&)            = delete;
     InlinePolicy& operator=(const InlinePolicy&) = delete;
 
 protected:
@@ -558,7 +550,7 @@ public:
 
 private:
     // No copying or assignment allowed.
-    InlineResult(const InlineResult&) = delete;
+    InlineResult(const InlineResult&)            = delete;
     InlineResult& operator=(const InlineResult&) = delete;
 
     // Report/log/dump decision as appropriate
@@ -568,7 +560,7 @@ private:
     InlinePolicy*         m_Policy;
     GenTreeCall*          m_Call;
     InlineContext*        m_InlineContext;
-    CORINFO_METHOD_HANDLE m_Caller; // immediate caller's handle
+    CORINFO_METHOD_HANDLE m_Caller;         // immediate caller's handle
     CORINFO_METHOD_HANDLE m_Callee;
     unsigned              m_ImportedILSize; // estimated size of imported IL
     const char*           m_Description;
@@ -689,7 +681,7 @@ struct InlineInfo
     int           lclTmpNum[MAX_INL_LCLS];                     // map local# -> temp# (-1 if unused)
     InlLclVarInfo lclVarInfo[MAX_INL_LCLS + MAX_INL_ARGS + 1]; // type information from local sig
 
-    unsigned numberOfGcRefLocals; // Number of TYP_REF and TYP_BYREF locals
+    unsigned numberOfGcRefLocals;                              // Number of TYP_REF and TYP_BYREF locals
 
     bool HasGcRefLocals() const
     {
@@ -700,7 +692,7 @@ struct InlineInfo
 
 #ifdef FEATURE_SIMD
     bool hasSIMDTypeArgLocalOrReturn;
-#endif // FEATURE_SIMD
+#endif                     // FEATURE_SIMD
 
     GenTreeCall* iciCall;  // The GT_CALL node to be inlined.
     Statement*   iciStmt;  // The statement iciCall is in.
@@ -887,7 +879,7 @@ private:
     InlinePolicy* m_Policy; // policy that evaluated this inline
     unsigned      m_TreeID; // ID of the GenTreeCall in the parent
 
-#endif // defined(DEBUG) || defined(INLINE_DATA)
+#endif                      // defined(DEBUG) || defined(INLINE_DATA)
 
 #ifdef DEBUG
     FixedBitVect* m_ILInstsSet; // Set of offsets where instructions begin
@@ -1023,7 +1015,7 @@ public:
     void DumpDataContents(FILE* file);
 
     // Dump xml-formatted description of inlines
-    void DumpXml(FILE* file = stderr, unsigned indent = 0);
+    void        DumpXml(FILE* file = stderr, unsigned indent = 0);
     static void FinalizeXml(FILE* file = stderr);
 
     // Cache for file position of this method in the inline xml

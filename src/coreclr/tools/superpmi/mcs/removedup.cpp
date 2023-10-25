@@ -61,7 +61,7 @@ bool RemoveDup::unique(MethodContext* mc)
 
     CORINFO_METHOD_INFO newInfo;
     unsigned            newFlags = 0;
-    CORINFO_OS          newOs = CORINFO_WINNT;
+    CORINFO_OS          newOs    = CORINFO_WINNT;
     mc->repCompileMethod(&newInfo, &newFlags, &newOs);
 
     // Assume that there are lots of duplicates, so don't allocate a new buffer for the MD5 hash data
@@ -96,7 +96,7 @@ bool RemoveDup::uniqueLegacy(MethodContext* mc)
 
     CORINFO_METHOD_INFO newInfo;
     unsigned            newFlags = 0;
-    CORINFO_OS          newOs = CORINFO_WINNT;
+    CORINFO_OS          newOs    = CORINFO_WINNT;
     mc->repCompileMethod(&newInfo, &newFlags, &newOs);
 
     if (m_inFileLegacy->GetIndex(newInfo.ILCodeSize) == -1)

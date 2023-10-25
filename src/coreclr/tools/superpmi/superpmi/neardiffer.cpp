@@ -28,16 +28,15 @@ static void LogFromCoreDisToolsHelper(LogLevel level, const char* msg, va_list a
 }
 
 #define LOGGER(L)                                                                                                      \
-    \
-static void __cdecl CorDisToolsLog##L(const char* msg, ...)                                                            \
-    \
-{                                                                                                               \
+                                                                                                                       \
+    static void __cdecl CorDisToolsLog##L(const char* msg, ...)                                                        \
+                                                                                                                       \
+    {                                                                                                                  \
         va_list argList;                                                                                               \
         va_start(argList, msg);                                                                                        \
         LogFromCoreDisToolsHelper(LOGLEVEL_##L, msg, argList);                                                         \
         va_end(argList);                                                                                               \
-    \
-}
+    }
 
 LOGGER(VERBOSE)
 LOGGER(ERROR)
@@ -71,9 +70,9 @@ bool NearDiffer::InitAsmDiff()
         // Unix will require the full path to coredistools. Assume that the
         // location is next to the full path to the superpmi.so.
 
-        WCHAR coreCLRLoadedPath[MAX_LONGPATH];
-        HMODULE result = 0;
-        int returnVal = ::GetModuleFileNameW(result, coreCLRLoadedPath, MAX_LONGPATH);
+        WCHAR   coreCLRLoadedPath[MAX_LONGPATH];
+        HMODULE result    = 0;
+        int     returnVal = ::GetModuleFileNameW(result, coreCLRLoadedPath, MAX_LONGPATH);
 
         if (returnVal == 0)
         {
@@ -148,7 +147,8 @@ bool NearDiffer::InitAsmDiff()
                 LogError("Illegal target architecture '%s'", TargetArchitecture);
             }
         }
-        corAsmDiff = (*g_PtrNewDiffer)(coreDisTargetArchitecture, &CorPrinter, NearDiffer::CoreDisCompareOffsetsCallback);
+        corAsmDiff =
+            (*g_PtrNewDiffer)(coreDisTargetArchitecture, &CorPrinter, NearDiffer::CoreDisCompareOffsetsCallback);
     }
 #endif // USE_COREDISTOOLS
 
@@ -332,25 +332,25 @@ bool NearDiffer::compareOffsets(
         return true;
     }
 
-    const SPMI_TARGET_ARCHITECTURE targetArch = GetSpmiTargetArchitecture();
-    const DiffData* data         = (const DiffData*)payload;
-    size_t          ip1          = data->originalBlock1 + blockOffset;
-    size_t          ip2          = data->originalBlock2 + blockOffset;
-    size_t          ipRelOffset1 = ip1 + instrLen + (size_t)offset1;
-    size_t          ipRelOffset2 = ip2 + instrLen + (size_t)offset2;
+    const SPMI_TARGET_ARCHITECTURE targetArch   = GetSpmiTargetArchitecture();
+    const DiffData*                data         = (const DiffData*)payload;
+    size_t                         ip1          = data->originalBlock1 + blockOffset;
+    size_t                         ip2          = data->originalBlock2 + blockOffset;
+    size_t                         ipRelOffset1 = ip1 + instrLen + (size_t)offset1;
+    size_t                         ipRelOffset2 = ip2 + instrLen + (size_t)offset2;
 
     // Case where we have a call into flat address -- the most common case.
     size_t gOffset1 = ipRelOffset1;
     size_t gOffset2 = ipRelOffset2;
-    if ((DWORD)gOffset1 ==
-        (DWORD)gOffset2) // make sure the lower 32bits match (best we can do in the current replay form)
+    if ((DWORD)gOffset1 == (DWORD)gOffset2) // make sure the lower 32bits match (best we can do in the current replay
+                                            // form)
         return true;
 
     // Case where we have an offset into the read only section (e.g. loading a float value)
     size_t roOffset1a = (size_t)offset1 - data->originalDataBlock1;
     size_t roOffset2a = (size_t)offset2 - data->originalDataBlock2;
-    if ((roOffset1a == roOffset2a) &&
-        (roOffset1a < data->datablockSize1)) // Confirm its an offset that fits inside our RoRegion
+    if ((roOffset1a == roOffset2a) && (roOffset1a < data->datablockSize1)) // Confirm its an offset that fits inside our
+                                                                           // RoRegion
         return true;
 
     // This case is written to catch IP-relative offsets to the RO data-section
@@ -358,8 +358,8 @@ bool NearDiffer::compareOffsets(
     //
     size_t roOffset1b = ipRelOffset1 - data->originalDataBlock1;
     size_t roOffset2b = ipRelOffset2 - data->originalDataBlock2;
-    if ((roOffset1b == roOffset2b) &&
-        (roOffset1b < data->datablockSize1)) // Confirm its an offset that fits inside our RoRegion
+    if ((roOffset1b == roOffset2b) && (roOffset1b < data->datablockSize1)) // Confirm its an offset that fits inside our
+                                                                           // RoRegion
         return true;
 
     // Case where we push an address to our own code section.
@@ -477,25 +477,21 @@ bool NearDiffer::compareOffsets(
 
         // Look for a mov/movk address pattern in code stream 1.
 
-        if ((iaddr1 < iaddr1end) &&
-            GetArm64MovConstant(iaddr1, &reg1_1, &con1_1))
+        if ((iaddr1 < iaddr1end) && GetArm64MovConstant(iaddr1, &reg1_1, &con1_1))
         {
             // We assume the address requires at least 1 'movk' instruction.
-            if ((iaddr1 + 1 < iaddr1end) &&
-                GetArm64MovkConstant(iaddr1 + 1, &reg2_1, &con2_1, &shift2_1) &&
+            if ((iaddr1 + 1 < iaddr1end) && GetArm64MovkConstant(iaddr1 + 1, &reg2_1, &con2_1, &shift2_1) &&
                 (reg1_1 == reg2_1))
             {
                 addr1 = (DWORDLONG)con1_1 + ((DWORDLONG)con2_1 << shift2_1);
 
-                if ((iaddr1 + 2 < iaddr1end) &&
-                    GetArm64MovkConstant(iaddr1 + 2, &reg3_1, &con3_1, &shift3_1) &&
+                if ((iaddr1 + 2 < iaddr1end) && GetArm64MovkConstant(iaddr1 + 2, &reg3_1, &con3_1, &shift3_1) &&
                     (reg1_1 == reg3_1))
                 {
                     movk2_1 = true;
                     addr1 += (DWORDLONG)con3_1 << shift3_1;
 
-                    if ((iaddr1 + 3 < iaddr1end) &&
-                        GetArm64MovkConstant(iaddr1 + 3, &reg4_1, &con4_1, &shift4_1) &&
+                    if ((iaddr1 + 3 < iaddr1end) && GetArm64MovkConstant(iaddr1 + 3, &reg4_1, &con4_1, &shift4_1) &&
                         (reg1_1 == reg4_1))
                     {
                         movk3_1 = true;
@@ -507,25 +503,21 @@ bool NearDiffer::compareOffsets(
 
         // Look for a mov/movk address pattern in code stream 2.
 
-        if ((iaddr2 < iaddr2end) &&
-            GetArm64MovConstant(iaddr2, &reg1_2, &con1_2))
+        if ((iaddr2 < iaddr2end) && GetArm64MovConstant(iaddr2, &reg1_2, &con1_2))
         {
             // We assume the address requires at least 1 'movk' instruction.
-            if ((iaddr2 + 1 < iaddr2end) &&
-                GetArm64MovkConstant(iaddr2 + 1, &reg2_2, &con2_2, &shift2_2) &&
+            if ((iaddr2 + 1 < iaddr2end) && GetArm64MovkConstant(iaddr2 + 1, &reg2_2, &con2_2, &shift2_2) &&
                 (reg1_2 == reg2_2))
             {
                 addr2 = (DWORDLONG)con1_2 + ((DWORDLONG)con2_2 << shift2_2);
 
-                if ((iaddr2 + 2 < iaddr2end) &&
-                    GetArm64MovkConstant(iaddr2 + 2, &reg3_2, &con3_2, &shift3_2) &&
+                if ((iaddr2 + 2 < iaddr2end) && GetArm64MovkConstant(iaddr2 + 2, &reg3_2, &con3_2, &shift3_2) &&
                     (reg1_2 == reg3_2))
                 {
                     movk2_2 = true;
                     addr2 += (DWORDLONG)con3_2 << shift3_2;
 
-                    if ((iaddr2 + 3 < iaddr2end) &&
-                        GetArm64MovkConstant(iaddr2 + 3, &reg4_2, &con4_2, &shift4_2) &&
+                    if ((iaddr2 + 3 < iaddr2end) && GetArm64MovkConstant(iaddr2 + 3, &reg4_2, &con4_2, &shift4_2) &&
                         (reg1_2 == reg4_2))
                     {
                         movk3_2 = true;
@@ -646,8 +638,7 @@ bool NearDiffer::compareCodeSection(MethodContext* mc,
                                     void*          otherCodeBlock2,
                                     ULONG          otherCodeBlockSize2)
 {
-    DiffData data = {cr1,
-                     cr2,
+    DiffData data = {cr1, cr2,
 
                      // Details of the first block
                      block1, (size_t)blocksize1, datablock1, (size_t)datablockSize1, (size_t)originalBlock1,
@@ -1249,29 +1240,30 @@ bool NearDiffer::compare(MethodContext* mc, CompileResult* cr1, CompileResult* c
     {
         if (hotCodeSize_1 > 0)
         {
-            BYTE* nativeEntry_1;
+            BYTE*        nativeEntry_1;
             ULONG        nativeSizeOfCode_1;
             CorJitResult jitResult_1;
             cr1->repCompileMethod(&nativeEntry_1, &nativeSizeOfCode_1, &jitResult_1);
-            roDataSize_1 = hotCodeSize_1 - nativeSizeOfCode_1;
-            roDataBlock_1 = hotCodeBlock_1 + nativeSizeOfCode_1;
+            roDataSize_1       = hotCodeSize_1 - nativeSizeOfCode_1;
+            roDataBlock_1      = hotCodeBlock_1 + nativeSizeOfCode_1;
             orig_roDataBlock_1 = (void*)((size_t)orig_hotCodeBlock_1 + nativeSizeOfCode_1);
-            hotCodeSize_1 = nativeSizeOfCode_1;
+            hotCodeSize_1      = nativeSizeOfCode_1;
         }
 
         if (hotCodeSize_2 > 0)
         {
-            BYTE* nativeEntry_2;
+            BYTE*        nativeEntry_2;
             ULONG        nativeSizeOfCode_2;
             CorJitResult jitResult_2;
             cr2->repCompileMethod(&nativeEntry_2, &nativeSizeOfCode_2, &jitResult_2);
-            roDataSize_2 = hotCodeSize_2 - nativeSizeOfCode_2;
-            roDataBlock_2 = hotCodeBlock_2 + nativeSizeOfCode_2;
+            roDataSize_2       = hotCodeSize_2 - nativeSizeOfCode_2;
+            roDataBlock_2      = hotCodeBlock_2 + nativeSizeOfCode_2;
             orig_roDataBlock_2 = (void*)((size_t)orig_hotCodeBlock_2 + nativeSizeOfCode_2);
-            hotCodeSize_2 = nativeSizeOfCode_2;
+            hotCodeSize_2      = nativeSizeOfCode_2;
         }
 
-        auto rewriteUnsupportedInstrs = [](unsigned char* bytes, size_t numBytes) {
+        auto rewriteUnsupportedInstrs = [](unsigned char* bytes, size_t numBytes)
+        {
             for (size_t i = 0; i < numBytes; i += 4)
             {
                 uint32_t inst;
@@ -1281,9 +1273,9 @@ bool NearDiffer::compare(MethodContext* mc, CompileResult* cr1, CompileResult* c
                 const uint32_t ldapurBits = 0b00011001010000000000000000000000;
                 const uint32_t ldurBits   = 0b00111000010000000000000000000000;
 
-                const uint32_t stlurMask  = 0b00111111111000000000110000000000;
-                const uint32_t stlurBits  = 0b00011001000000000000000000000000;
-                const uint32_t sturBits   = 0b00111000000000000000000000000000;
+                const uint32_t stlurMask = 0b00111111111000000000110000000000;
+                const uint32_t stlurBits = 0b00011001000000000000000000000000;
+                const uint32_t sturBits  = 0b00111000000000000000000000000000;
                 if ((inst & ldapurMask) == ldapurBits)
                 {
                     inst ^= (ldapurBits ^ ldurBits);
@@ -1295,7 +1287,7 @@ bool NearDiffer::compare(MethodContext* mc, CompileResult* cr1, CompileResult* c
                     memcpy(&bytes[i], &inst, 4);
                 }
             }
-            };
+        };
 
         // As of 2023-09-13, our coredistools does not support stlur/ldapur
         // instructions, so we rewrite them into supported stur/ldur
@@ -1319,7 +1311,7 @@ bool NearDiffer::compare(MethodContext* mc, CompileResult* cr1, CompileResult* c
              orig_hotCodeBlock_2, orig_coldCodeBlock_2, orig_roDataBlock_2);
 
     RelocContext rc;
-    rc.mc                      = mc;
+    rc.mc = mc;
 
     rc.hotCodeAddress          = (size_t)hotCodeBlock_1;
     rc.hotCodeSize             = hotCodeSize_1;

@@ -28,8 +28,8 @@ public:
         CORINFO_RESOLVED_TOKEN* pResolvedToken, LightWeightMap<key, value>* buffers);
 
     template <typename key, typename value>
-    static Agnostic_CORINFO_RESOLVED_TOKEN StoreAgnostic_CORINFO_RESOLVED_TOKEN(
-        CORINFO_RESOLVED_TOKEN* pResolvedToken, LightWeightMap<key, value>* buffers);
+    static Agnostic_CORINFO_RESOLVED_TOKEN StoreAgnostic_CORINFO_RESOLVED_TOKEN(CORINFO_RESOLVED_TOKEN* pResolvedToken,
+                                                                                LightWeightMap<key, value>* buffers);
 
     template <typename key, typename value>
     static Agnostic_CORINFO_RESOLVED_TOKEN RestoreAgnostic_CORINFO_RESOLVED_TOKEN(
@@ -42,67 +42,60 @@ public:
     // Restore the out values in the first argument from the second.
     // Can't just return whole CORINFO_RESOLVED_TOKEN because [in] values in it are important too.
     template <typename key, typename value>
-    static void Restore_CORINFO_RESOLVED_TOKENout(CORINFO_RESOLVED_TOKEN*                            pResolvedToken,
+    static void Restore_CORINFO_RESOLVED_TOKENout(CORINFO_RESOLVED_TOKEN*             pResolvedToken,
                                                   Agnostic_CORINFO_RESOLVED_TOKENout& token,
-                                                  LightWeightMap<key, value>* buffers);
+                                                  LightWeightMap<key, value>*         buffers);
 
-    static Agnostic_CORINFO_SIG_INFO CreateAgnostic_CORINFO_SIG_INFO_without_buffers(
-        const CORINFO_SIG_INFO& sigInfo);
+    static Agnostic_CORINFO_SIG_INFO CreateAgnostic_CORINFO_SIG_INFO_without_buffers(const CORINFO_SIG_INFO& sigInfo);
 
-    static void StoreAgnostic_CORINFO_SIG_INST_HandleArray(
-        unsigned handleInstCount,
-        CORINFO_CLASS_HANDLE* handleInstArray,
-        DenseLightWeightMap<DWORDLONG>*& handleMap, // If we initialize it, the pointer gets updated.
-        /* OUT */ DWORD* handleInstCountOut,
-        /* OUT */ DWORD* handleInstIndexOut);
-
-    template <typename key, typename value>
-    static Agnostic_CORINFO_SIG_INFO StoreAgnostic_CORINFO_SIG_INFO(
-        const CORINFO_SIG_INFO& sigInfo,
-        LightWeightMap<key, value>* buffers,
-        DenseLightWeightMap<DWORDLONG>*& handleMap);
-
-    static DWORD ContainsHandleMap(
-        unsigned handleCount,
-        const CORINFO_CLASS_HANDLE* handleArray,
-        const DenseLightWeightMap<DWORDLONG>* handleMap);
+    static void StoreAgnostic_CORINFO_SIG_INST_HandleArray(unsigned                         handleInstCount,
+                                                           CORINFO_CLASS_HANDLE*            handleInstArray,
+                                                           DenseLightWeightMap<DWORDLONG>*& handleMap, // If we
+                                                                                                       // initialize it,
+                                                                                                       // the pointer
+                                                                                                       // gets updated.
+                                                           /* OUT */ DWORD* handleInstCountOut,
+                                                           /* OUT */ DWORD* handleInstIndexOut);
 
     template <typename key, typename value>
-    static Agnostic_CORINFO_SIG_INFO RestoreAgnostic_CORINFO_SIG_INFO(
-        const CORINFO_SIG_INFO& sigInfo,
-        LightWeightMap<key, value>* buffers,
-        const DenseLightWeightMap<DWORDLONG>* handleMap);
+    static Agnostic_CORINFO_SIG_INFO StoreAgnostic_CORINFO_SIG_INFO(const CORINFO_SIG_INFO&          sigInfo,
+                                                                    LightWeightMap<key, value>*      buffers,
+                                                                    DenseLightWeightMap<DWORDLONG>*& handleMap);
 
-    static void DeserializeCORINFO_SIG_INST_HandleArray(
-        DWORD handleInstCount,
-        DWORD handleInstIndex,
-        const DenseLightWeightMap<DWORDLONG>* handleMap,
-        /* OUT */ unsigned* handleInstCountOut,
-        /* OUT */ CORINFO_CLASS_HANDLE** handleInstArrayOut);
-
-    static void DeserializeCORINFO_SIG_INST(
-        CORINFO_SIG_INFO& sigInfoOut,
-        const Agnostic_CORINFO_SIG_INFO& sigInfo,
-        const DenseLightWeightMap<DWORDLONG>* handleMap);
+    static DWORD ContainsHandleMap(unsigned                              handleCount,
+                                   const CORINFO_CLASS_HANDLE*           handleArray,
+                                   const DenseLightWeightMap<DWORDLONG>* handleMap);
 
     template <typename key, typename value>
-    static CORINFO_SIG_INFO Restore_CORINFO_SIG_INFO(
-        const Agnostic_CORINFO_SIG_INFO& sigInfo,
-        LightWeightMap<key, value>* buffers,
-        const DenseLightWeightMap<DWORDLONG>* handleMap);
+    static Agnostic_CORINFO_SIG_INFO RestoreAgnostic_CORINFO_SIG_INFO(const CORINFO_SIG_INFO&               sigInfo,
+                                                                      LightWeightMap<key, value>*           buffers,
+                                                                      const DenseLightWeightMap<DWORDLONG>* handleMap);
+
+    static void DeserializeCORINFO_SIG_INST_HandleArray(DWORD                                 handleInstCount,
+                                                        DWORD                                 handleInstIndex,
+                                                        const DenseLightWeightMap<DWORDLONG>* handleMap,
+                                                        /* OUT */ unsigned*                   handleInstCountOut,
+                                                        /* OUT */ CORINFO_CLASS_HANDLE**      handleInstArrayOut);
+
+    static void DeserializeCORINFO_SIG_INST(CORINFO_SIG_INFO&                     sigInfoOut,
+                                            const Agnostic_CORINFO_SIG_INFO&      sigInfo,
+                                            const DenseLightWeightMap<DWORDLONG>* handleMap);
+
+    template <typename key, typename value>
+    static CORINFO_SIG_INFO Restore_CORINFO_SIG_INFO(const Agnostic_CORINFO_SIG_INFO&      sigInfo,
+                                                     LightWeightMap<key, value>*           buffers,
+                                                     const DenseLightWeightMap<DWORDLONG>* handleMap);
 
     static Agnostic_CORINFO_LOOKUP_KIND CreateAgnostic_CORINFO_LOOKUP_KIND(
         const CORINFO_LOOKUP_KIND* pGenericLookupKind);
 
     static CORINFO_LOOKUP_KIND RestoreCORINFO_LOOKUP_KIND(Agnostic_CORINFO_LOOKUP_KIND& lookupKind);
 
-    static Agnostic_CORINFO_CONST_LOOKUP StoreAgnostic_CORINFO_CONST_LOOKUP(
-        const CORINFO_CONST_LOOKUP* pLookup);
+    static Agnostic_CORINFO_CONST_LOOKUP StoreAgnostic_CORINFO_CONST_LOOKUP(const CORINFO_CONST_LOOKUP* pLookup);
 
     static CORINFO_CONST_LOOKUP RestoreCORINFO_CONST_LOOKUP(const Agnostic_CORINFO_CONST_LOOKUP& lookup);
 
-    static Agnostic_CORINFO_RUNTIME_LOOKUP StoreAgnostic_CORINFO_RUNTIME_LOOKUP(
-        CORINFO_RUNTIME_LOOKUP* pLookup);
+    static Agnostic_CORINFO_RUNTIME_LOOKUP StoreAgnostic_CORINFO_RUNTIME_LOOKUP(CORINFO_RUNTIME_LOOKUP* pLookup);
 
     static CORINFO_RUNTIME_LOOKUP RestoreCORINFO_RUNTIME_LOOKUP(Agnostic_CORINFO_RUNTIME_LOOKUP& Lookup);
 
@@ -110,7 +103,8 @@ public:
 
     static CORINFO_LOOKUP RestoreCORINFO_LOOKUP(Agnostic_CORINFO_LOOKUP& agnosticLookup);
 
-    static Agnostic_CORINFO_TYPE_LAYOUT_NODE StoreAgnostic_CORINFO_TYPE_LAYOUT_NODE(const CORINFO_TYPE_LAYOUT_NODE& node);
+    static Agnostic_CORINFO_TYPE_LAYOUT_NODE StoreAgnostic_CORINFO_TYPE_LAYOUT_NODE(
+        const CORINFO_TYPE_LAYOUT_NODE& node);
     static CORINFO_TYPE_LAYOUT_NODE RestoreCORINFO_TYPE_LAYOUT_NODE(const Agnostic_CORINFO_TYPE_LAYOUT_NODE& node);
 };
 
@@ -130,8 +124,8 @@ inline Agnostic_CORINFO_RESOLVED_TOKENin SpmiRecordsHelper::CreateAgnostic_CORIN
     return tokenIn;
 }
 
-inline Agnostic_CORINFO_RESOLVED_TOKENout SpmiRecordsHelper::
-    CreateAgnostic_CORINFO_RESOLVED_TOKENout_without_buffers(CORINFO_RESOLVED_TOKEN* pResolvedToken)
+inline Agnostic_CORINFO_RESOLVED_TOKENout SpmiRecordsHelper::CreateAgnostic_CORINFO_RESOLVED_TOKENout_without_buffers(
+    CORINFO_RESOLVED_TOKEN* pResolvedToken)
 {
     Agnostic_CORINFO_RESOLVED_TOKENout tokenOut;
     ZeroMemory(&tokenOut, sizeof(tokenOut));
@@ -224,10 +218,9 @@ inline CORINFO_RESOLVED_TOKEN SpmiRecordsHelper::Restore_CORINFO_RESOLVED_TOKEN(
 }
 
 template <typename key, typename value>
-inline void SpmiRecordsHelper::Restore_CORINFO_RESOLVED_TOKENout(
-    CORINFO_RESOLVED_TOKEN*                            pResolvedToken,
-    Agnostic_CORINFO_RESOLVED_TOKENout& tokenOut,
-    LightWeightMap<key, value>* buffers)
+inline void SpmiRecordsHelper::Restore_CORINFO_RESOLVED_TOKENout(CORINFO_RESOLVED_TOKEN*             pResolvedToken,
+                                                                 Agnostic_CORINFO_RESOLVED_TOKENout& tokenOut,
+                                                                 LightWeightMap<key, value>*         buffers)
 {
     if (pResolvedToken != nullptr)
     {
@@ -263,11 +256,11 @@ inline Agnostic_CORINFO_SIG_INFO SpmiRecordsHelper::CreateAgnostic_CORINFO_SIG_I
 }
 
 inline void SpmiRecordsHelper::StoreAgnostic_CORINFO_SIG_INST_HandleArray(
-    unsigned handleInstCount,
-    CORINFO_CLASS_HANDLE* handleInstArray,
+    unsigned                         handleInstCount,
+    CORINFO_CLASS_HANDLE*            handleInstArray,
     DenseLightWeightMap<DWORDLONG>*& handleMap, // If we initialize it, the pointer gets updated.
-    /* OUT */ DWORD* handleInstCountOut,
-    /* OUT */ DWORD* handleInstIndexOut)
+    /* OUT */ DWORD*                 handleInstCountOut,
+    /* OUT */ DWORD*                 handleInstIndexOut)
 {
     unsigned handleInstIndex;
 
@@ -290,7 +283,7 @@ inline void SpmiRecordsHelper::StoreAgnostic_CORINFO_SIG_INST_HandleArray(
                 handleMap->Append(CastHandle(handleInstArray[i]));
             }
             AssertCodeMsg(handleInstIndex + handleInstCount == handleMap->GetCount(), EXCEPTIONCODE_MC,
-                "Unexpected size of handleMap");
+                          "Unexpected size of handleMap");
         }
     }
     else
@@ -311,23 +304,22 @@ inline void SpmiRecordsHelper::StoreAgnostic_CORINFO_SIG_INST_HandleArray(
 
 template <typename key, typename value>
 inline Agnostic_CORINFO_SIG_INFO SpmiRecordsHelper::StoreAgnostic_CORINFO_SIG_INFO(
-    const CORINFO_SIG_INFO& sigInfo,
-    LightWeightMap<key, value>* buffers,
-    DenseLightWeightMap<DWORDLONG>*& handleMap)
+    const CORINFO_SIG_INFO& sigInfo, LightWeightMap<key, value>* buffers, DenseLightWeightMap<DWORDLONG>*& handleMap)
 {
     Agnostic_CORINFO_SIG_INFO sig(CreateAgnostic_CORINFO_SIG_INFO_without_buffers(sigInfo));
 
-    StoreAgnostic_CORINFO_SIG_INST_HandleArray(sigInfo.sigInst.classInstCount, sigInfo.sigInst.classInst, handleMap, &sig.sigInst_classInstCount, &sig.sigInst_classInst_Index);
-    StoreAgnostic_CORINFO_SIG_INST_HandleArray(sigInfo.sigInst.methInstCount, sigInfo.sigInst.methInst, handleMap, &sig.sigInst_methInstCount, &sig.sigInst_methInst_Index);
+    StoreAgnostic_CORINFO_SIG_INST_HandleArray(sigInfo.sigInst.classInstCount, sigInfo.sigInst.classInst, handleMap,
+                                               &sig.sigInst_classInstCount, &sig.sigInst_classInst_Index);
+    StoreAgnostic_CORINFO_SIG_INST_HandleArray(sigInfo.sigInst.methInstCount, sigInfo.sigInst.methInst, handleMap,
+                                               &sig.sigInst_methInstCount, &sig.sigInst_methInst_Index);
     sig.pSig_Index = (DWORD)buffers->AddBuffer((unsigned char*)sigInfo.pSig, sigInfo.cbSig);
 
     return sig;
 }
 
-inline DWORD SpmiRecordsHelper::ContainsHandleMap(
-    unsigned handleCount,
-    const CORINFO_CLASS_HANDLE* handleArray,
-    const DenseLightWeightMap<DWORDLONG>* handleMap)
+inline DWORD SpmiRecordsHelper::ContainsHandleMap(unsigned                              handleCount,
+                                                  const CORINFO_CLASS_HANDLE*           handleArray,
+                                                  const DenseLightWeightMap<DWORDLONG>* handleMap)
 {
     // Special case: no handles isn't found.
     if (handleCount == 0)
@@ -361,28 +353,30 @@ inline DWORD SpmiRecordsHelper::ContainsHandleMap(
     return (DWORD)-1; // not found
 }
 
-// RestoreAgnostic_CORINFO_SIG_INFO: from a CORINFO_SIG_INFO, fill out an Agnostic_CORINFO_SIG_INFO from the data already stored.
-// Don't create and store a new Agnostic_CORINFO_SIG_INFO. The buffers and indices need to be found in the existing stored data.
-// This is used when we need to create an Agnostic_CORINFO_SIG_INFO to be used as a key to look up in an existing map.
+// RestoreAgnostic_CORINFO_SIG_INFO: from a CORINFO_SIG_INFO, fill out an Agnostic_CORINFO_SIG_INFO from the data
+// already stored. Don't create and store a new Agnostic_CORINFO_SIG_INFO. The buffers and indices need to be found in
+// the existing stored data. This is used when we need to create an Agnostic_CORINFO_SIG_INFO to be used as a key to
+// look up in an existing map.
 template <typename key, typename value>
 inline Agnostic_CORINFO_SIG_INFO SpmiRecordsHelper::RestoreAgnostic_CORINFO_SIG_INFO(
-    const CORINFO_SIG_INFO& sigInfo,
-    LightWeightMap<key, value>* buffers,
+    const CORINFO_SIG_INFO&               sigInfo,
+    LightWeightMap<key, value>*           buffers,
     const DenseLightWeightMap<DWORDLONG>* handleMap)
 {
     Agnostic_CORINFO_SIG_INFO sig(CreateAgnostic_CORINFO_SIG_INFO_without_buffers(sigInfo));
-    sig.sigInst_classInst_Index = ContainsHandleMap(sigInfo.sigInst.classInstCount, sigInfo.sigInst.classInst, handleMap);
-    sig.sigInst_methInst_Index  = ContainsHandleMap(sigInfo.sigInst.methInstCount, sigInfo.sigInst.methInst, handleMap);
-    sig.pSig_Index = (DWORD)buffers->Contains((unsigned char*)sigInfo.pSig, sigInfo.cbSig);
+    sig.sigInst_classInst_Index =
+        ContainsHandleMap(sigInfo.sigInst.classInstCount, sigInfo.sigInst.classInst, handleMap);
+    sig.sigInst_methInst_Index = ContainsHandleMap(sigInfo.sigInst.methInstCount, sigInfo.sigInst.methInst, handleMap);
+    sig.pSig_Index             = (DWORD)buffers->Contains((unsigned char*)sigInfo.pSig, sigInfo.cbSig);
     return sig;
 }
 
 inline void SpmiRecordsHelper::DeserializeCORINFO_SIG_INST_HandleArray(
-    DWORD handleInstCount,
-    DWORD handleInstIndex,
+    DWORD                                 handleInstCount,
+    DWORD                                 handleInstIndex,
     const DenseLightWeightMap<DWORDLONG>* handleMap,
-    /* OUT */ unsigned* handleInstCountOut,
-    /* OUT */ CORINFO_CLASS_HANDLE** handleInstArrayOut)
+    /* OUT */ unsigned*                   handleInstCountOut,
+    /* OUT */ CORINFO_CLASS_HANDLE**      handleInstArrayOut)
 {
     CORINFO_CLASS_HANDLE* handleInstArray;
 
@@ -391,7 +385,7 @@ inline void SpmiRecordsHelper::DeserializeCORINFO_SIG_INST_HandleArray(
         handleInstArray = new CORINFO_CLASS_HANDLE[handleInstCount]; // memory leak?
         for (unsigned int i = 0; i < handleInstCount; i++)
         {
-            DWORD key = handleInstIndex + i;
+            DWORD key          = handleInstIndex + i;
             handleInstArray[i] = (CORINFO_CLASS_HANDLE)handleMap->Get(key);
         }
     }
@@ -404,16 +398,19 @@ inline void SpmiRecordsHelper::DeserializeCORINFO_SIG_INST_HandleArray(
     *handleInstArrayOut = handleInstArray;
 }
 
-inline void SpmiRecordsHelper::DeserializeCORINFO_SIG_INST(
-    CORINFO_SIG_INFO& sigInfoOut, const Agnostic_CORINFO_SIG_INFO& sigInfo, const DenseLightWeightMap<DWORDLONG>* handleMap)
+inline void SpmiRecordsHelper::DeserializeCORINFO_SIG_INST(CORINFO_SIG_INFO&                     sigInfoOut,
+                                                           const Agnostic_CORINFO_SIG_INFO&      sigInfo,
+                                                           const DenseLightWeightMap<DWORDLONG>* handleMap)
 {
-    DeserializeCORINFO_SIG_INST_HandleArray(sigInfo.sigInst_classInstCount, sigInfo.sigInst_classInst_Index, handleMap, &sigInfoOut.sigInst.classInstCount, &sigInfoOut.sigInst.classInst);
-    DeserializeCORINFO_SIG_INST_HandleArray(sigInfo.sigInst_methInstCount, sigInfo.sigInst_methInst_Index, handleMap, &sigInfoOut.sigInst.methInstCount, &sigInfoOut.sigInst.methInst);
+    DeserializeCORINFO_SIG_INST_HandleArray(sigInfo.sigInst_classInstCount, sigInfo.sigInst_classInst_Index, handleMap,
+                                            &sigInfoOut.sigInst.classInstCount, &sigInfoOut.sigInst.classInst);
+    DeserializeCORINFO_SIG_INST_HandleArray(sigInfo.sigInst_methInstCount, sigInfo.sigInst_methInst_Index, handleMap,
+                                            &sigInfoOut.sigInst.methInstCount, &sigInfoOut.sigInst.methInst);
 }
 
 template <typename key, typename value>
-inline CORINFO_SIG_INFO SpmiRecordsHelper::Restore_CORINFO_SIG_INFO(const Agnostic_CORINFO_SIG_INFO& sigInfo,
-                                                                    LightWeightMap<key, value>* buffers,
+inline CORINFO_SIG_INFO SpmiRecordsHelper::Restore_CORINFO_SIG_INFO(const Agnostic_CORINFO_SIG_INFO&      sigInfo,
+                                                                    LightWeightMap<key, value>*           buffers,
                                                                     const DenseLightWeightMap<DWORDLONG>* handleMap)
 {
     CORINFO_SIG_INFO sig;
@@ -450,8 +447,7 @@ inline Agnostic_CORINFO_LOOKUP_KIND SpmiRecordsHelper::CreateAgnostic_CORINFO_LO
     return genericLookupKind;
 }
 
-inline CORINFO_LOOKUP_KIND SpmiRecordsHelper::RestoreCORINFO_LOOKUP_KIND(
-    Agnostic_CORINFO_LOOKUP_KIND& lookupKind)
+inline CORINFO_LOOKUP_KIND SpmiRecordsHelper::RestoreCORINFO_LOOKUP_KIND(Agnostic_CORINFO_LOOKUP_KIND& lookupKind)
 {
     CORINFO_LOOKUP_KIND genericLookupKind;
     genericLookupKind.needsRuntimeLookup = lookupKind.needsRuntimeLookup != 0;
@@ -471,8 +467,7 @@ inline Agnostic_CORINFO_CONST_LOOKUP SpmiRecordsHelper::StoreAgnostic_CORINFO_CO
     return constLookup;
 }
 
-inline CORINFO_CONST_LOOKUP SpmiRecordsHelper::RestoreCORINFO_CONST_LOOKUP(
-    const Agnostic_CORINFO_CONST_LOOKUP& lookup)
+inline CORINFO_CONST_LOOKUP SpmiRecordsHelper::RestoreCORINFO_CONST_LOOKUP(const Agnostic_CORINFO_CONST_LOOKUP& lookup)
 {
     CORINFO_CONST_LOOKUP constLookup;
     constLookup.accessType = (InfoAccessType)lookup.accessType;
@@ -497,8 +492,7 @@ inline Agnostic_CORINFO_RUNTIME_LOOKUP SpmiRecordsHelper::StoreAgnostic_CORINFO_
     return runtimeLookup;
 }
 
-inline CORINFO_RUNTIME_LOOKUP SpmiRecordsHelper::RestoreCORINFO_RUNTIME_LOOKUP(
-    Agnostic_CORINFO_RUNTIME_LOOKUP& lookup)
+inline CORINFO_RUNTIME_LOOKUP SpmiRecordsHelper::RestoreCORINFO_RUNTIME_LOOKUP(Agnostic_CORINFO_RUNTIME_LOOKUP& lookup)
 {
     CORINFO_RUNTIME_LOOKUP runtimeLookup;
     runtimeLookup.signature            = (LPVOID)lookup.signature;
@@ -508,7 +502,7 @@ inline CORINFO_RUNTIME_LOOKUP SpmiRecordsHelper::RestoreCORINFO_RUNTIME_LOOKUP(
     runtimeLookup.sizeOffset           = lookup.sizeOffset;
     runtimeLookup.indirectFirstOffset  = lookup.indirectFirstOffset != 0;
     runtimeLookup.indirectSecondOffset = lookup.indirectSecondOffset != 0;
-    for (int i                   = 0; i < CORINFO_MAXINDIRECTIONS; i++)
+    for (int i = 0; i < CORINFO_MAXINDIRECTIONS; i++)
         runtimeLookup.offsets[i] = (size_t)lookup.offsets[i];
     return runtimeLookup;
 }
@@ -545,30 +539,32 @@ inline CORINFO_LOOKUP SpmiRecordsHelper::RestoreCORINFO_LOOKUP(Agnostic_CORINFO_
     return lookup;
 }
 
-inline Agnostic_CORINFO_TYPE_LAYOUT_NODE SpmiRecordsHelper::StoreAgnostic_CORINFO_TYPE_LAYOUT_NODE(const CORINFO_TYPE_LAYOUT_NODE& node)
+inline Agnostic_CORINFO_TYPE_LAYOUT_NODE SpmiRecordsHelper::StoreAgnostic_CORINFO_TYPE_LAYOUT_NODE(
+    const CORINFO_TYPE_LAYOUT_NODE& node)
 {
     Agnostic_CORINFO_TYPE_LAYOUT_NODE result;
-    result.simdTypeHnd = CastHandle(node.simdTypeHnd);
-    result.diagFieldHnd = CastHandle(node.diagFieldHnd);
-    result.parent = node.parent;
-    result.offset = node.offset;
-    result.size = node.size;
-    result.numFields = node.numFields;
-    result.type = (BYTE)node.type;
+    result.simdTypeHnd           = CastHandle(node.simdTypeHnd);
+    result.diagFieldHnd          = CastHandle(node.diagFieldHnd);
+    result.parent                = node.parent;
+    result.offset                = node.offset;
+    result.size                  = node.size;
+    result.numFields             = node.numFields;
+    result.type                  = (BYTE)node.type;
     result.hasSignificantPadding = node.hasSignificantPadding;
     return result;
 }
 
-inline CORINFO_TYPE_LAYOUT_NODE SpmiRecordsHelper::RestoreCORINFO_TYPE_LAYOUT_NODE(const Agnostic_CORINFO_TYPE_LAYOUT_NODE& node)
+inline CORINFO_TYPE_LAYOUT_NODE SpmiRecordsHelper::RestoreCORINFO_TYPE_LAYOUT_NODE(
+    const Agnostic_CORINFO_TYPE_LAYOUT_NODE& node)
 {
     CORINFO_TYPE_LAYOUT_NODE result;
-    result.simdTypeHnd = (CORINFO_CLASS_HANDLE)node.simdTypeHnd;
-    result.diagFieldHnd = (CORINFO_FIELD_HANDLE)node.diagFieldHnd;
-    result.parent = node.parent;
-    result.offset = node.offset;
-    result.size = node.size;
-    result.numFields = node.numFields;
-    result.type = (CorInfoType)node.type;
+    result.simdTypeHnd           = (CORINFO_CLASS_HANDLE)node.simdTypeHnd;
+    result.diagFieldHnd          = (CORINFO_FIELD_HANDLE)node.diagFieldHnd;
+    result.parent                = node.parent;
+    result.offset                = node.offset;
+    result.size                  = node.size;
+    result.numFields             = node.numFields;
+    result.type                  = (CorInfoType)node.type;
     result.hasSignificantPadding = node.hasSignificantPadding;
     return result;
 }

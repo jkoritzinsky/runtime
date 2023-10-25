@@ -9,9 +9,7 @@
 
 JitHost* g_ourJitHost;
 
-JitHost::JitHost(ICorJitHost* wrappedHost) : wrappedHost(wrappedHost), mcs(nullptr)
-{
-}
+JitHost::JitHost(ICorJitHost* wrappedHost) : wrappedHost(wrappedHost), mcs(nullptr) {}
 
 void JitHost::setMethodCallSummarizer(MethodCallSummarizer* methodCallSummarizer)
 {

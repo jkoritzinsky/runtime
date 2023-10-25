@@ -67,8 +67,8 @@ void DumpPrimToConsoleBare(MethodContext* mc, CorInfoType prim, DWORDLONG classH
         case CORINFO_TYPE_VALUECLASS:
         case CORINFO_TYPE_CLASS:
         {
-            CORINFO_CLASS_HANDLE cls = (CORINFO_CLASS_HANDLE)classHandle;
-            unsigned arrayRank = mc->repGetArrayRank(cls);
+            CORINFO_CLASS_HANDLE cls       = (CORINFO_CLASS_HANDLE)classHandle;
+            unsigned             arrayRank = mc->repGetArrayRank(cls);
             if (arrayRank > 0)
             {
                 CORINFO_CLASS_HANDLE childCls;
@@ -87,10 +87,7 @@ void DumpPrimToConsoleBare(MethodContext* mc, CorInfoType prim, DWORDLONG classH
                 char className[256];
                 mc->repPrintClassName((CORINFO_CLASS_HANDLE)classHandle, className, sizeof(className));
 
-                printf(
-                    "%s %s",
-                    prim == CORINFO_TYPE_VALUECLASS ? "valueclass" : "class",
-                    className);
+                printf("%s %s", prim == CORINFO_TYPE_VALUECLASS ? "valueclass" : "class", className);
             }
 
             return;
@@ -939,10 +936,8 @@ char* DumpAttributeToConsoleBare(DWORD attribute)
 
     if (0)
         ;
-    ifPrint(CORINFO_FLG_STATIC, s_static)
-    ifPrint(CORINFO_FLG_DONT_INLINE, s_dontInline)
-    ifPrint(CORINFO_FLG_CONSTRUCTOR, s_constructor)
-    return nullptr;
+    ifPrint(CORINFO_FLG_STATIC, s_static) ifPrint(CORINFO_FLG_DONT_INLINE, s_dontInline)
+        ifPrint(CORINFO_FLG_CONSTRUCTOR, s_constructor) return nullptr;
 
 #undef ifPrint
 }

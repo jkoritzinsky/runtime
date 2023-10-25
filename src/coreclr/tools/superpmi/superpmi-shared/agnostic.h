@@ -194,7 +194,7 @@ struct Agnostic_CORINFO_EE_INFO
 
 struct Agnostic_GetOSRInfo
 {
-    DWORD index;
+    DWORD    index;
     unsigned ilOffset;
 };
 
@@ -208,12 +208,12 @@ struct Agnostic_CORINFO_TYPE_LAYOUT_NODE
 {
     DWORDLONG simdTypeHnd;
     DWORDLONG diagFieldHnd;
-    DWORD parent;
-    DWORD offset;
-    DWORD size;
-    DWORD numFields;
-    BYTE type;
-    bool hasSignificantPadding;
+    DWORD     parent;
+    DWORD     offset;
+    DWORD     size;
+    DWORD     numFields;
+    BYTE      type;
+    bool      hasSignificantPadding;
 };
 
 struct Agnostic_GetTypeLayoutResult
@@ -225,7 +225,7 @@ struct Agnostic_GetTypeLayoutResult
 
 struct Agnostic_CORINFO_RESOLVED_TOKEN
 {
-    Agnostic_CORINFO_RESOLVED_TOKENin inValue;
+    Agnostic_CORINFO_RESOLVED_TOKENin  inValue;
     Agnostic_CORINFO_RESOLVED_TOKENout outValue;
 };
 
@@ -489,19 +489,19 @@ struct Agnostic_GetStaticBaseAddress
 
 struct Agnostic_PgoInstrumentationSchema
 {
-    DWORDLONG Offset;          // size_t
-    DWORD InstrumentationKind; // ICorJitInfo::PgoInstrumentationKind
-    DWORD ILOffset;            // int32_t
-    DWORD Count;               // int32_t
-    DWORD Other;               // int32_t
+    DWORDLONG Offset;              // size_t
+    DWORD     InstrumentationKind; // ICorJitInfo::PgoInstrumentationKind
+    DWORD     ILOffset;            // int32_t
+    DWORD     Count;               // int32_t
+    DWORD     Other;               // int32_t
 };
 
 struct Agnostic_AllocPgoInstrumentationBySchema
 {
     DWORDLONG instrumentationDataAddress;
-    DWORD schema_index;
-    DWORD countSchemaItems;
-    DWORD result;
+    DWORD     schema_index;
+    DWORD     countSchemaItems;
+    DWORD     result;
 };
 
 struct Agnostic_GetPgoInstrumentationResults
@@ -541,14 +541,14 @@ struct Agnostic_GetThreadLocalFieldInfo
 struct Agnostic_GetTailCallHelpers
 {
     Agnostic_CORINFO_RESOLVED_TOKEN callToken;
-    Agnostic_CORINFO_SIG_INFO sig;
-    DWORD flags;
+    Agnostic_CORINFO_SIG_INFO       sig;
+    DWORD                           flags;
 };
 
 struct Agnostic_CORINFO_TAILCALL_HELPERS
 {
-    bool result;
-    DWORD flags;
+    bool      result;
+    DWORD     flags;
     DWORDLONG hStoreArgs;
     DWORDLONG hCallTarget;
     DWORDLONG hDispatcher;
@@ -569,7 +569,7 @@ struct Agnostic_GetArgType_Value
 
 struct Agnostic_GetExactClassesResult
 {
-    int numClasses;
+    int   numClasses;
     DWORD classes;
 };
 
@@ -589,10 +589,10 @@ struct Agnostic_GetSystemVAmd64PassStructInRegisterDescriptor
     DWORD eightByteCount;    // Number of eightbytes for this struct.
     DWORD eightByteClassifications[CLR_SYSTEMV_MAX_EIGHTBYTES_COUNT_TO_PASS_IN_REGISTERS]; // The eightbytes type
                                                                                            // classification.
-    DWORD eightByteSizes[CLR_SYSTEMV_MAX_EIGHTBYTES_COUNT_TO_PASS_IN_REGISTERS]; // The size of the eightbytes (an
-                                                                                 // eightbyte could include padding.
-                                                                                 // This represents the no padding
-                                                                                 // size of the eightbyte).
+    DWORD eightByteSizes[CLR_SYSTEMV_MAX_EIGHTBYTES_COUNT_TO_PASS_IN_REGISTERS];   // The size of the eightbytes (an
+                                                                                   // eightbyte could include padding.
+                                                                                   // This represents the no padding
+                                                                                   // size of the eightbyte).
     DWORD eightByteOffsets[CLR_SYSTEMV_MAX_EIGHTBYTES_COUNT_TO_PASS_IN_REGISTERS]; // The start offset of the
                                                                                    // eightbytes (in bytes).
     DWORD result;
@@ -789,7 +789,7 @@ struct Agnostic_SetVars
 
 struct Agnostic_SetPatchpointInfo
 {
-    DWORD     index;
+    DWORD index;
 };
 
 struct Agnostic_RecordCallSite

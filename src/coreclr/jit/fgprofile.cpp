@@ -309,9 +309,7 @@ protected:
     bool      m_modifiedFlow;
 
 protected:
-    Instrumentor(Compiler* comp) : m_comp(comp), m_schemaCount(0), m_instrCount(0), m_modifiedFlow(false)
-    {
-    }
+    Instrumentor(Compiler* comp) : m_comp(comp), m_schemaCount(0), m_instrCount(0), m_modifiedFlow(false) {}
 
 public:
     virtual bool ShouldProcess(BasicBlock* block)
@@ -322,19 +320,11 @@ public:
     {
         return ShouldProcess(block);
     }
-    virtual void Prepare(bool preImport)
-    {
-    }
-    virtual void BuildSchemaElements(BasicBlock* block, Schema& schema)
-    {
-    }
-    virtual void Instrument(BasicBlock* block, Schema& schema, uint8_t* profileMemory)
-    {
-    }
-    virtual void InstrumentMethodEntry(Schema& schema, uint8_t* profileMemory)
-    {
-    }
-    unsigned SchemaCount() const
+    virtual void Prepare(bool preImport) {}
+    virtual void BuildSchemaElements(BasicBlock* block, Schema& schema) {}
+    virtual void Instrument(BasicBlock* block, Schema& schema, uint8_t* profileMemory) {}
+    virtual void InstrumentMethodEntry(Schema& schema, uint8_t* profileMemory) {}
+    unsigned     SchemaCount() const
     {
         return m_schemaCount;
     }
@@ -360,9 +350,7 @@ public:
 class NonInstrumentor : public Instrumentor
 {
 public:
-    NonInstrumentor(Compiler* comp) : Instrumentor(comp)
-    {
-    }
+    NonInstrumentor(Compiler* comp) : Instrumentor(comp) {}
 };
 
 //------------------------------------------------------------------------
@@ -376,9 +364,7 @@ private:
     BasicBlock* m_entryBlock;
 
 public:
-    BlockCountInstrumentor(Compiler* comp) : Instrumentor(comp), m_entryBlock(nullptr)
-    {
-    }
+    BlockCountInstrumentor(Compiler* comp) : Instrumentor(comp), m_entryBlock(nullptr) {}
     bool ShouldProcess(BasicBlock* block) override
     {
         return ((block->bbFlags & (BBF_INTERNAL | BBF_IMPORTED)) == BBF_IMPORTED);
@@ -583,8 +569,8 @@ void BlockCountInstrumentor::BuildSchemaElements(BasicBlock* block, Schema& sche
     schemaElem.InstrumentationKind = m_comp->opts.compCollect64BitCounts
                                          ? ICorJitInfo::PgoInstrumentationKind::BasicBlockLongCount
                                          : ICorJitInfo::PgoInstrumentationKind::BasicBlockIntCount;
-    schemaElem.ILOffset = offset;
-    schemaElem.Offset   = 0;
+    schemaElem.ILOffset            = offset;
+    schemaElem.Offset              = 0;
 
     schema.push_back(schemaElem);
 
@@ -858,9 +844,9 @@ public:
         Duplicate
     };
 
-    virtual void Badcode()                     = 0;
-    virtual void VisitBlock(BasicBlock* block) = 0;
-    virtual void VisitTreeEdge(BasicBlock* source, BasicBlock* target) = 0;
+    virtual void Badcode()                                                               = 0;
+    virtual void VisitBlock(BasicBlock* block)                                           = 0;
+    virtual void VisitTreeEdge(BasicBlock* source, BasicBlock* target)                   = 0;
     virtual void VisitNonTreeEdge(BasicBlock* source, BasicBlock* target, EdgeKind kind) = 0;
 };
 
@@ -1395,9 +1381,7 @@ public:
         block->bbSparseProbeList = nullptr;
     }
 
-    void VisitTreeEdge(BasicBlock* source, BasicBlock* target) override
-    {
-    }
+    void VisitTreeEdge(BasicBlock* source, BasicBlock* target) override {}
 
     void VisitNonTreeEdge(BasicBlock* source, BasicBlock* target, SpanningTreeVisitor::EdgeKind kind) override
     {
@@ -1780,8 +1764,8 @@ void EfficientEdgeCountInstrumentor::BuildSchemaElements(BasicBlock* block, Sche
         schemaElem.InstrumentationKind = m_comp->opts.compCollect64BitCounts
                                              ? ICorJitInfo::PgoInstrumentationKind::EdgeLongCount
                                              : ICorJitInfo::PgoInstrumentationKind::EdgeIntCount;
-        schemaElem.ILOffset = sourceKey;
-        schemaElem.Offset   = 0;
+        schemaElem.ILOffset            = sourceKey;
+        schemaElem.Offset              = 0;
 
         schema.push_back(schemaElem);
 
@@ -1995,8 +1979,8 @@ public:
         schemaElem.InstrumentationKind = compiler->opts.compCollect64BitCounts
                                              ? ICorJitInfo::PgoInstrumentationKind::HandleHistogramLongCount
                                              : ICorJitInfo::PgoInstrumentationKind::HandleHistogramIntCount;
-        schemaElem.ILOffset = (int32_t)call->gtHandleHistogramProfileCandidateInfo->ilOffset;
-        schemaElem.Offset   = 0;
+        schemaElem.ILOffset            = (int32_t)call->gtHandleHistogramProfileCandidateInfo->ilOffset;
+        schemaElem.Offset              = 0;
 
         m_schema.push_back(schemaElem);
 
@@ -2005,7 +1989,7 @@ public:
         // Re-using ILOffset and Other fields from schema item for TypeHandleHistogramCount
         schemaElem.InstrumentationKind = isTypeHistogram ? ICorJitInfo::PgoInstrumentationKind::HandleHistogramTypes
                                                          : ICorJitInfo::PgoInstrumentationKind::HandleHistogramMethods;
-        schemaElem.Count = ICorJitInfo::HandleHistogram32::SIZE;
+        schemaElem.Count               = ICorJitInfo::HandleHistogram32::SIZE;
         m_schema.push_back(schemaElem);
 
         m_schemaCount++;
@@ -2216,9 +2200,7 @@ private:
 class HandleHistogramProbeInstrumentor : public Instrumentor
 {
 public:
-    HandleHistogramProbeInstrumentor(Compiler* comp) : Instrumentor(comp)
-    {
-    }
+    HandleHistogramProbeInstrumentor(Compiler* comp) : Instrumentor(comp) {}
     bool ShouldProcess(BasicBlock* block) override
     {
         return ((block->bbFlags & (BBF_INTERNAL | BBF_IMPORTED)) == BBF_IMPORTED);
@@ -2517,7 +2499,7 @@ PhaseStatus Compiler::fgInstrumentMethod()
     //
     uint8_t* profileMemory;
     HRESULT  res = info.compCompHnd->allocPgoInstrumentationBySchema(info.compMethodHnd, schema.data(),
-                                                                    (UINT32)schema.size(), &profileMemory);
+                                                                     (UINT32)schema.size(), &profileMemory);
 
     // Deal with allocation failures.
     //
@@ -2885,7 +2867,7 @@ private:
     // Map correlating block keys to blocks.
     //
     typedef JitHashTable<int32_t, JitSmallPrimitiveKeyFuncs<int32_t>, BasicBlock*> KeyToBlockMap;
-    KeyToBlockMap m_keyToBlockMap;
+    KeyToBlockMap                                                                  m_keyToBlockMap;
 
     // Key for finding an edge based on schema info.
     //
@@ -2894,9 +2876,7 @@ private:
         int32_t const m_sourceKey;
         int32_t const m_targetKey;
 
-        EdgeKey(int32_t sourceKey, int32_t targetKey) : m_sourceKey(sourceKey), m_targetKey(targetKey)
-        {
-        }
+        EdgeKey(int32_t sourceKey, int32_t targetKey) : m_sourceKey(sourceKey), m_targetKey(targetKey) {}
 
         EdgeKey(BasicBlock* sourceBlock, BasicBlock* targetBlock)
             : m_sourceKey(EfficientEdgeCountBlockToKey(sourceBlock))
@@ -2942,7 +2922,7 @@ private:
     // Map for correlating EdgeIntCount schema entries with edges
     //
     typedef JitHashTable<EdgeKey, EdgeKey, Edge*> EdgeKeyToEdgeMap;
-    EdgeKeyToEdgeMap m_edgeKeyToEdgeMap;
+    EdgeKeyToEdgeMap                              m_edgeKeyToEdgeMap;
 
     // Per block data
     //
@@ -3060,9 +3040,7 @@ public:
         return !m_entryWeightZero;
     }
 
-    void VisitBlock(BasicBlock*) override
-    {
-    }
+    void VisitBlock(BasicBlock*) override {}
 
     void VisitTreeEdge(BasicBlock* source, BasicBlock* target) override
     {
@@ -3308,8 +3286,9 @@ void EfficientEdgeCountReconstructor::Solve()
     //
     if (m_badcode || m_mismatch || m_allWeightsZero)
     {
-        JITDUMP("... not solving because of the %s\n",
-                m_badcode ? "badcode" : m_allWeightsZero ? "zero counts" : "mismatch");
+        JITDUMP("... not solving because of the %s\n", m_badcode          ? "badcode"
+                                                       : m_allWeightsZero ? "zero counts"
+                                                                          : "mismatch");
         return;
     }
 
@@ -4197,7 +4176,7 @@ bool FlowEdge::setEdgeWeightMinChecked(weight_t newWeight, BasicBlock* bDst, wei
                 getSourceBlock()->bbNum, bDst->bbNum, newWeight, m_edgeWeightMin, m_edgeWeightMax, slop);
         result = false; // break here
     }
-#endif // DEBUG
+#endif                  // DEBUG
 
     return result;
 }
@@ -4307,7 +4286,7 @@ bool FlowEdge::setEdgeWeightMaxChecked(weight_t newWeight, BasicBlock* bDst, wei
                 getSourceBlock()->bbNum, bDst->bbNum, newWeight, m_edgeWeightMin, m_edgeWeightMax, slop);
         result = false; // break here
     }
-#endif // DEBUG
+#endif                  // DEBUG
 
     return result;
 }

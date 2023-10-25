@@ -16,13 +16,9 @@ public:
     int     Number;
     char    Hash[MM3_HASH_BUFFER_SIZE];
 
-    TOCElement()
-    {
-    }
+    TOCElement() {}
 
-    TOCElement(int number, __int64 offset) : Offset(offset), Number(number)
-    {
-    }
+    TOCElement(int number, __int64 offset) : Offset(offset), Number(number) {}
 };
 
 class TOCFile
@@ -32,9 +28,7 @@ private:
     size_t      m_tocCount;
 
 public:
-    TOCFile() : m_tocArray(nullptr), m_tocCount(0)
-    {
-    }
+    TOCFile() : m_tocArray(nullptr), m_tocCount(0) {}
 
     ~TOCFile()
     {

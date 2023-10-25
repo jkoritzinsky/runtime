@@ -55,7 +55,8 @@ void CommandLine::DumpHelp(const char* program)
     printf("\n");
     printf(" -dump {optional range} inputfile [-simple]\n");
     printf("     Dump details for each methodContext.\n");
-    printf("     With -simple, don't display the function name/arguments in the header (useful for debugging mcs itself).\n");
+    printf("     With -simple, don't display the function name/arguments in the header (useful for debugging mcs "
+           "itself).\n");
     printf("     e.g. -dump a.mc\n");
     printf("\n");
     printf(" -dumpMap inputfile\n");
@@ -81,7 +82,8 @@ void CommandLine::DumpHelp(const char* program)
     printf("\n");
     printf(" -merge outputfile pattern [-dedup [-thin]]\n");
     printf("     Merge all the input files matching the pattern.\n");
-    printf("     With -dedup, skip duplicates when copying (like using -removeDup). With -thin, also strip CompileResults.\n");
+    printf("     With -dedup, skip duplicates when copying (like using -removeDup). With -thin, also strip "
+           "CompileResults.\n");
     printf("     e.g. -merge a.mch *.mc\n");
     printf("     e.g. -merge a.mch c:\\foo\\bar\\*.mc\n");
     printf("     e.g. -merge a.mch relpath\\*.mc\n");
@@ -91,12 +93,14 @@ void CommandLine::DumpHelp(const char* program)
     printf("\n");
     printf(" -merge outputfile pattern -recursive [-dedup [-thin]]\n");
     printf("     Merge all the input files matching the pattern, in the specified and all child directories.\n");
-    printf("     With -dedup, skip duplicates when copying (like using -removeDup). With -thin, also strip CompileResults.\n");
+    printf("     With -dedup, skip duplicates when copying (like using -removeDup). With -thin, also strip "
+           "CompileResults.\n");
     printf("     e.g. -merge a.mch *.mc -recursive\n");
     printf("     e.g. -merge a.mch *.mc -recursive -dedup -thin\n");
     printf("\n");
     printf(" -printJITEEVersion\n");
-    printf("     Print the JITEEVersion GUID with which this was built, in the form: a5eec3a4-4176-43a7-8c2b-a05b551d4f49\n");
+    printf("     Print the JITEEVersion GUID with which this was built, in the form: "
+           "a5eec3a4-4176-43a7-8c2b-a05b551d4f49\n");
     printf("\n");
     printf(" -removeDup inputfile outputfile\n");
     printf("     Copy methodContexts from inputfile to outputfile, skipping duplicates.\n");
@@ -261,8 +265,8 @@ bool CommandLine::Parse(int argc, char* argv[], /* OUT */ Options* o)
             }
             else if ((_strnicmp(&argv[i][1], "printjiteeversion", argLen) == 0))
             {
-                tempLen        = strlen(argv[i]);
-                foundVerb      = true;
+                tempLen                    = strlen(argv[i]);
+                foundVerb                  = true;
                 o->actionPrintJITEEVersion = true;
             }
             else if ((_strnicmp(&argv[i][1], "recursive", argLen) == 0))

@@ -15,11 +15,11 @@ template <>
 class allocator<void>
 {
 public:
-    typedef size_t size_type;
-    typedef ptrdiff_t difference_type;
-    typedef void* pointer;
+    typedef size_t      size_type;
+    typedef ptrdiff_t   difference_type;
+    typedef void*       pointer;
     typedef const void* const_pointer;
-    typedef void value_type;
+    typedef void        value_type;
 
     template <typename U>
     struct rebind
@@ -47,19 +47,12 @@ private:
     friend class allocator;
 };
 
-allocator<void>::allocator(CompAllocator alloc)
-    : m_alloc(alloc)
-{
-}
+allocator<void>::allocator(CompAllocator alloc) : m_alloc(alloc) {}
 
-allocator<void>::allocator(const allocator& alloc)
-    : m_alloc(alloc.m_alloc)
-{
-}
+allocator<void>::allocator(const allocator& alloc) : m_alloc(alloc.m_alloc) {}
 
 template <typename U>
-allocator<void>::allocator(const allocator<U>& alloc)
-    : m_alloc(alloc.m_alloc)
+allocator<void>::allocator(const allocator<U>& alloc) : m_alloc(alloc.m_alloc)
 {
 }
 
@@ -74,16 +67,17 @@ template <typename T>
 class allocator
 {
 public:
-    typedef size_t size_type;
+    typedef size_t    size_type;
     typedef ptrdiff_t difference_type;
-    typedef T* pointer;
-    typedef T& reference;
-    typedef const T* const_pointer;
-    typedef const T& const_reference;
-    typedef T value_type;
+    typedef T*        pointer;
+    typedef T&        reference;
+    typedef const T*  const_pointer;
+    typedef const T&  const_reference;
+    typedef T         value_type;
 
 private:
     allocator();
+
 public:
     allocator(CompAllocator alloc);
 
@@ -95,13 +89,13 @@ public:
     template <typename U>
     allocator& operator=(const allocator<U>& alloc);
 
-    pointer address(reference val);
+    pointer       address(reference val);
     const_pointer address(const_reference val) const;
-    pointer allocate(size_type count, allocator<void>::const_pointer hint = nullptr);
-    void construct(pointer ptr, const_reference val);
-    void deallocate(pointer ptr, size_type size);
-    void destroy(pointer ptr);
-    size_type max_size() const;
+    pointer       allocate(size_type count, allocator<void>::const_pointer hint = nullptr);
+    void          construct(pointer ptr, const_reference val);
+    void          deallocate(pointer ptr, size_type size);
+    void          destroy(pointer ptr);
+    size_type     max_size() const;
     template <typename U>
     struct rebind
     {
@@ -116,26 +110,22 @@ private:
 
 } // end of namespace jitstd
 
-
 namespace jitstd
 {
 
 template <typename T>
-allocator<T>::allocator(CompAllocator alloc)
-    : m_alloc(alloc)
+allocator<T>::allocator(CompAllocator alloc) : m_alloc(alloc)
 {
 }
 
 template <typename T>
 template <typename U>
-allocator<T>::allocator(const allocator<U>& alloc)
-    : m_alloc(alloc.m_alloc)
+allocator<T>::allocator(const allocator<U>& alloc) : m_alloc(alloc.m_alloc)
 {
 }
 
 template <typename T>
-allocator<T>::allocator(const allocator<T>& alloc)
-    : m_alloc(alloc.m_alloc)
+allocator<T>::allocator(const allocator<T>& alloc) : m_alloc(alloc.m_alloc)
 {
 }
 
@@ -186,7 +176,7 @@ void allocator<T>::destroy(pointer ptr)
 template <typename T>
 typename allocator<T>::size_type allocator<T>::max_size() const
 {
-    return (size_type) -1;
+    return (size_type)-1;
 }
 
 } // end of namespace jitstd

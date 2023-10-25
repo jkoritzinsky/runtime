@@ -21,16 +21,17 @@ XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 #if defined(TARGET_ARM)
 const unsigned MAX_PROLOG_SIZE_BYTES = 44;
 const unsigned MAX_EPILOG_SIZE_BYTES = 44;
-#define UWC_END 0xFF // "end" unwind code
+#define UWC_END 0xFF               // "end" unwind code
 #define UW_MAX_FRAGMENT_SIZE_BYTES (1U << 19)
-#define UW_MAX_CODE_WORDS_COUNT 15      // Max number that can be encoded in the "Code Words" field of the .pdata record
-#define UW_MAX_EPILOG_START_INDEX 0xFFU // Max number that can be encoded in the "Epilog Start Index" field
-                                        // of the .pdata record
+#define UW_MAX_CODE_WORDS_COUNT 15 // Max number that can be encoded in the "Code Words" field of the .pdata record
+#define UW_MAX_EPILOG_START_INDEX                                                                                      \
+    0xFFU                          // Max number that can be encoded in the "Epilog Start Index" field
+                                   // of the .pdata record
 #elif defined(TARGET_ARM64)
 const unsigned MAX_PROLOG_SIZE_BYTES = 100;
 const unsigned MAX_EPILOG_SIZE_BYTES = 100;
-#define UWC_END 0xE4   // "end" unwind code
-#define UWC_END_C 0xE5 // "end_c" unwind code
+#define UWC_END 0xE4               // "end" unwind code
+#define UWC_END_C 0xE5             // "end_c" unwind code
 #define UW_MAX_FRAGMENT_SIZE_BYTES (1U << 20)
 #define UW_MAX_CODE_WORDS_COUNT 31
 #define UW_MAX_EPILOG_START_INDEX 0x3FFU
@@ -53,14 +54,18 @@ const unsigned MAX_EPILOG_SIZE_BYTES = 200;
 
 #endif // TARGET_RISCV64
 
-#define UW_MAX_EPILOG_COUNT 31                 // Max number that can be encoded in the "Epilog count" field
-                                               // of the .pdata record
-#define UW_MAX_EXTENDED_CODE_WORDS_COUNT 0xFFU // Max number that can be encoded in the "Extended Code Words"
-                                               // field of the .pdata record
-#define UW_MAX_EXTENDED_EPILOG_COUNT 0xFFFFU   // Max number that can be encoded in the "Extended Epilog Count"
-                                               // field of the .pdata record
-#define UW_MAX_EPILOG_START_OFFSET 0x3FFFFU    // Max number that can be encoded in the "Epilog Start Offset"
-                                               // field of the .pdata record
+#define UW_MAX_EPILOG_COUNT                                                                                            \
+    31       // Max number that can be encoded in the "Epilog count" field
+             // of the .pdata record
+#define UW_MAX_EXTENDED_CODE_WORDS_COUNT                                                                               \
+    0xFFU    // Max number that can be encoded in the "Extended Code Words"
+             // field of the .pdata record
+#define UW_MAX_EXTENDED_EPILOG_COUNT                                                                                   \
+    0xFFFFU  // Max number that can be encoded in the "Extended Epilog Count"
+             // field of the .pdata record
+#define UW_MAX_EPILOG_START_OFFSET                                                                                     \
+    0x3FFFFU // Max number that can be encoded in the "Epilog Start Offset"
+             // field of the .pdata record
 
 //
 // Forward declaration of class defined in emit.h
@@ -85,16 +90,10 @@ class UnwindInfo;
 class UnwindBase
 {
 protected:
-    UnwindBase(Compiler* comp) : uwiComp(comp)
-    {
-    }
+    UnwindBase(Compiler* comp) : uwiComp(comp) {}
 
-    UnwindBase()
-    {
-    }
-    ~UnwindBase()
-    {
-    }
+    UnwindBase() {}
+    ~UnwindBase() {}
 
     Compiler* uwiComp;
 };
@@ -107,9 +106,9 @@ class UnwindCodesBase
 public:
     // Add a single unwind code.
 
-    virtual void AddCode(BYTE b1) = 0;
-    virtual void AddCode(BYTE b1, BYTE b2) = 0;
-    virtual void AddCode(BYTE b1, BYTE b2, BYTE b3) = 0;
+    virtual void AddCode(BYTE b1)                            = 0;
+    virtual void AddCode(BYTE b1, BYTE b2)                   = 0;
+    virtual void AddCode(BYTE b1, BYTE b2, BYTE b3)          = 0;
     virtual void AddCode(BYTE b1, BYTE b2, BYTE b3, BYTE b4) = 0;
 
     // Get access to the unwind codes
@@ -252,12 +251,8 @@ public:
     // Copy the prolog codes from another prolog
     void CopyFrom(UnwindPrologCodes* pCopyFrom);
 
-    UnwindPrologCodes()
-    {
-    }
-    ~UnwindPrologCodes()
-    {
-    }
+    UnwindPrologCodes() {}
+    ~UnwindPrologCodes() {}
 
 #ifdef DEBUG
     void Dump(int indent = 0);
@@ -412,13 +407,13 @@ public:
 
         if (!IsEndCode(firstByteOfLastCode)) // If the last code is an end code, we don't need to append one.
         {
-            AppendByte(UWC_END);           // Add a default "end" code to the end of the array of unwind codes
-            firstByteOfLastCode = UWC_END; // Update firstByteOfLastCode in case we use it later
+            AppendByte(UWC_END);             // Add a default "end" code to the end of the array of unwind codes
+            firstByteOfLastCode = UWC_END;   // Update firstByteOfLastCode in case we use it later
         }
 
         uecFinalized = true; // With the "end" code in place, now we're done
 
-#ifndef TARGET_RISCV64 // TODO COMMENTED OUT BECAUSE s_UnwindSize is not set
+#ifndef TARGET_RISCV64       // TODO COMMENTED OUT BECAUSE s_UnwindSize is not set
 #ifdef DEBUG
         unsigned codeSize = GetCodeSizeFromUnwindCodes(false);
         assert(codeSize <= MAX_EPILOG_SIZE_BYTES);
@@ -426,12 +421,8 @@ public:
 #endif // !TARGET_RISCV64
     }
 
-    UnwindEpilogCodes()
-    {
-    }
-    ~UnwindEpilogCodes()
-    {
-    }
+    UnwindEpilogCodes() {}
+    ~UnwindEpilogCodes() {}
 
 #ifdef DEBUG
     void Dump(int indent = 0);
@@ -539,12 +530,8 @@ public:
     // Match the codes to a set of epilog codes
     int Match(UnwindEpilogInfo* pEpi);
 
-    UnwindEpilogInfo()
-    {
-    }
-    ~UnwindEpilogInfo()
-    {
-    }
+    UnwindEpilogInfo() {}
+    ~UnwindEpilogInfo() {}
 
 #ifdef DEBUG
     void Dump(int indent = 0);
@@ -562,8 +549,8 @@ private:
     UnwindEpilogInfo* epiNext;
     emitLocation*     epiEmitLocation; // The emitter location of the beginning of the epilog
     UnwindEpilogCodes epiCodes;
-    UNATIVE_OFFSET    epiStartOffset; // Actual offset of the epilog, in bytes, from the start of the function. Set in
-                                      // FinalizeOffset().
+    UNATIVE_OFFSET    epiStartOffset;  // Actual offset of the epilog, in bytes, from the start of the function. Set in
+                                       // FinalizeOffset().
     bool epiMatches;   // Do the epilog unwind codes match some other set of codes? If so, we don't copy these to the
                        // final set; we just point to another set.
     int epiStartIndex; // The final "Epilog Start Index" of this epilog's unwind codes
@@ -659,12 +646,8 @@ public:
     void Allocate(
         CorJitFuncKind funKind, void* pHotCode, void* pColdCode, UNATIVE_OFFSET funcEndOffset, bool isHotCode);
 
-    UnwindFragmentInfo()
-    {
-    }
-    ~UnwindFragmentInfo()
-    {
-    }
+    UnwindFragmentInfo() {}
+    ~UnwindFragmentInfo() {}
 
 #ifdef DEBUG
     void Dump(int indent = 0);
@@ -793,12 +776,8 @@ public:
 
     void CaptureLocation();
 
-    UnwindInfo()
-    {
-    }
-    ~UnwindInfo()
-    {
-    }
+    UnwindInfo() {}
+    ~UnwindInfo() {}
 
 #ifdef DEBUG
 
@@ -807,9 +786,7 @@ public:
     // the last instruction added in the emitter.
     void CheckOpsize(BYTE b1);
 #elif defined(TARGET_ARM64) || defined(TARGET_LOONGARCH64) || defined(TARGET_RISCV64)
-    void CheckOpsize(BYTE b1)
-    {
-    } // nothing to do; all instructions are 4 bytes
+    void CheckOpsize(BYTE b1) {} // nothing to do; all instructions are 4 bytes
 #endif // defined(TARGET_ARM64)
 
     void Dump(bool isHotCode, int indent = 0);

@@ -51,9 +51,9 @@ const emitJumpKind emitReverseJumpKinds[] = {
 }
 
 /*****************************************************************************
-* Look up the jump kind for an instruction. It better be a conditional
-* branch instruction with a jump kind!
-*/
+ * Look up the jump kind for an instruction. It better be a conditional
+ * branch instruction with a jump kind!
+ */
 
 /*static*/ emitJumpKind emitter::emitInsToJumpKind(instruction ins)
 {
@@ -912,7 +912,7 @@ void emitter::emitIns_R_C(
     assert(reg != REG_R0); // for special. reg Must not be R0.
     id->idReg1(reg);       // destination register that will get the constant value.
 
-    id->idSmallCns(offs); // usually is 0.
+    id->idSmallCns(offs);  // usually is 0.
     id->idInsOpt(INS_OPTS_RC);
     if (emitComp->opts.compReloc)
     {
@@ -936,8 +936,8 @@ void emitter::emitIns_R_C(
     }
 
     // TODO-RISCV64: this maybe deleted.
-    id->idSetIsBound(); // We won't patch address since we will know the exact distance
-                        // once JIT code and data are allocated together.
+    id->idSetIsBound();        // We won't patch address since we will know the exact distance
+                               // once JIT code and data are allocated together.
 
     assert(addrReg == REG_NA); // NOTE: for RISV64, not support addrReg != REG_NA.
 
@@ -952,9 +952,9 @@ void emitter::emitIns_R_AR(instruction ins, emitAttr attr, regNumber ireg, regNu
 }
 
 // This computes address from the immediate which is relocatable.
-void emitter::emitIns_R_AI(instruction ins,
-                           emitAttr    attr,
-                           regNumber   reg,
+void emitter::emitIns_R_AI(instruction  ins,
+                           emitAttr     attr,
+                           regNumber    reg,
                            ssize_t addr DEBUGARG(size_t targetHandle) DEBUGARG(GenTreeFlags gtFlags))
 {
     assert(EA_IS_RELOC(attr)); // EA_PTR_DSP_RELOC
@@ -1103,7 +1103,7 @@ void emitter::emitIns_J(instruction ins, BasicBlock* dst, int instrCount)
 #ifdef DEBUG
     if (emitComp->opts.compLongAddress) // Force long branches
         id->idjKeepLong = 1;
-#endif // DEBUG
+#endif                                  // DEBUG
 
     /* Record the jump's IG and offset within it */
     id->idjIG   = emitCurIG;
@@ -1156,7 +1156,7 @@ void emitter::emitIns_J_cond_la(instruction ins, BasicBlock* dst, regNumber reg1
 #ifdef DEBUG
     if (emitComp->opts.compLongAddress) // Force long branches
         id->idjKeepLong = 1;
-#endif // DEBUG
+#endif                                  // DEBUG
 
     /* Record the jump's IG and offset within it */
     id->idjIG   = emitCurIG;
@@ -1254,8 +1254,8 @@ void emitter::emitLoadImmediate(emitAttr size, regNumber reg, ssize_t imm)
 void emitter::emitIns_Call(EmitCallType          callType,
                            CORINFO_METHOD_HANDLE methHnd,
                            INDEBUG_LDISASM_COMMA(CORINFO_SIG_INFO* sigInfo) // used to report call sites to the EE
-                           void*    addr,
-                           ssize_t  argSize,
+                           void*            addr,
+                           ssize_t          argSize,
                            emitAttr retSize MULTIREG_HAS_SECOND_GC_RET_ONLY_ARG(emitAttr secondRetSize),
                            VARSET_VALARG_TP ptrVars,
                            regMaskTP        gcrefRegs,
@@ -1415,7 +1415,7 @@ void emitter::emitIns_Call(EmitCallType          callType,
 
     id->idDebugOnlyInfo()->idMemCookie = (size_t)methHnd; // method token
     id->idDebugOnlyInfo()->idCallSig   = sigInfo;
-#endif // DEBUG
+#endif                                                    // DEBUG
 
 #ifdef LATE_DISASM
     if (addr != nullptr)
@@ -1472,7 +1472,7 @@ unsigned emitter::emitOutputCall(insGroup* ig, BYTE* dst, instrDesc* id, code_t 
     {
         emitDispGCVarDelta(); // define in emit.cpp
     }
-#endif // DEBUG
+#endif                        // DEBUG
 
     assert(id->idIns() == INS_jalr);
     if (id->idIsCallRegPtr())
@@ -1694,9 +1694,9 @@ void emitter::emitJumpDistBind()
         emitCounts_INS_OPTS_J * (6 << 2); // the max placeholder sizeof(INS_OPTS_JALR) - sizeof(INS_OPTS_J)
     NATIVE_OFFSET psd = B_DIST_SMALL_MAX_POS - maxPlaceholderSize;
 
-/*****************************************************************************/
-/* If the default small encoding is not enough, we start again here.     */
-/*****************************************************************************/
+    /*****************************************************************************/
+    /* If the default small encoding is not enough, we start again here.     */
+    /*****************************************************************************/
 
 AGAIN:
 
@@ -1718,16 +1718,16 @@ AGAIN:
         insGroup* jmpIG;
         insGroup* tgtIG;
 
-        UNATIVE_OFFSET jsz; // size of the jump instruction in bytes
+        UNATIVE_OFFSET jsz;             // size of the jump instruction in bytes
 
         NATIVE_OFFSET  extra;           // How far beyond the short jump range is this jump offset?
         UNATIVE_OFFSET srcInstrOffs;    // offset of the source instruction of the jump
         UNATIVE_OFFSET srcEncodingOffs; // offset of the source used by the instruction set to calculate the relative
                                         // offset of the jump
         UNATIVE_OFFSET dstOffs;
-        NATIVE_OFFSET  jmpDist; // the relative jump distance, as it will be encoded
+        NATIVE_OFFSET  jmpDist;         // the relative jump distance, as it will be encoded
 
-/* Make sure the jumps are properly ordered */
+        /* Make sure the jumps are properly ordered */
 
 #ifdef DEBUG
         assert(lastSJ == nullptr || lastIG != jmp->idjIG || lastSJ->idjOffs < (jmp->idjOffs + adjSJ));
@@ -1736,7 +1736,7 @@ AGAIN:
         assert(lastIG == nullptr || lastIG->igNum <= jmp->idjIG->igNum || jmp->idjIG == prologIG ||
                emitNxtIGnum > unsigned(0xFFFF)); // igNum might overflow
         lastIG = jmp->idjIG;
-#endif // DEBUG
+#endif                                           // DEBUG
 
         /* Get hold of the current jump size */
 
@@ -1891,7 +1891,7 @@ AGAIN:
                 printf("Estimate of fwd jump [%08X/%03u]: %04X -> %04X = %04X\n", dspPtr(jmp),
                        jmp->idDebugOnlyInfo()->idNum, srcInstrOffs, dstOffs, jmpDist);
             }
-#endif // DEBUG_EMIT
+#endif                            // DEBUG_EMIT
 
             assert(jmpDist >= 0); // Forward jump
             assert(!(jmpDist & 0x3));
@@ -1905,8 +1905,8 @@ AGAIN:
                 instruction ins = jmp->idIns();
                 assert((INS_jal <= ins) && (ins <= INS_bgeu));
 
-                if (ins > INS_jalr ||
-                    (ins < INS_jalr && ins > INS_j)) // jal < beqz < bnez < jalr < beq/bne/blt/bltu/bge/bgeu
+                if (ins > INS_jalr || (ins < INS_jalr && ins > INS_j)) // jal < beqz < bnez < jalr <
+                                                                       // beq/bne/blt/bltu/bge/bgeu
                 {
                     if (isValidSimm13(jmpDist + maxPlaceholderSize))
                     {
@@ -1988,7 +1988,7 @@ AGAIN:
                 printf("Estimate of bwd jump [%08X/%03u]: %04X -> %04X = %04X\n", dspPtr(jmp),
                        jmp->idDebugOnlyInfo()->idNum, srcInstrOffs, dstOffs, jmpDist);
             }
-#endif // DEBUG_EMIT
+#endif                            // DEBUG_EMIT
 
             assert(jmpDist >= 0); // Backward jump
             assert(!(jmpDist & 0x3));
@@ -2002,8 +2002,8 @@ AGAIN:
                 instruction ins = jmp->idIns();
                 assert((INS_jal <= ins) && (ins <= INS_bgeu));
 
-                if (ins > INS_jalr ||
-                    (ins < INS_jalr && ins > INS_j)) // jal < beqz < bnez < jalr < beq/bne/blt/bltu/bge/bgeu
+                if (ins > INS_jalr || (ins < INS_jalr && ins > INS_j)) // jal < beqz < bnez < jalr <
+                                                                       // beq/bne/blt/bltu/bge/bgeu
                 {
                     if (isValidSimm13(jmpDist + maxPlaceholderSize))
                     {
@@ -2107,7 +2107,7 @@ AGAIN:
 }
 
 /*****************************************************************************
-*
+ *
  *  Append the machine code corresponding to the given instruction descriptor
  *  to the code block at '*dp'; the base of the code block is 'bp', and 'ig'
  *  is the instruction group that contains the instruction. Updates '*dp' to
@@ -2525,7 +2525,7 @@ size_t emitter::emitOutputInstr(insGroup* ig, instrDesc* id, BYTE** dp)
                         regNumber reg2 = REG_R0;
                         if (INS_beqz != ins && INS_bnez != ins)
                             reg2 = id->idReg2();
-                        code     = emitInsCode(ins) ^ 0x1000;
+                        code = emitInsCode(ins) ^ 0x1000;
                         code |= (code_t)reg1 << 15; /* rj */
                         code |= (code_t)reg2 << 20; /* rd */
                         code |= 0x8 << 7;
@@ -2605,7 +2605,7 @@ size_t emitter::emitOutputInstr(insGroup* ig, instrDesc* id, BYTE** dp)
                         regNumber reg2 = REG_R0;
                         if (INS_beqz != ins && INS_bnez != ins)
                             reg2 = id->idReg2();
-                        code     = emitInsCode(ins) ^ 0x1000;
+                        code = emitInsCode(ins) ^ 0x1000;
                         code |= (code_t)reg1 << 15; /* rj */
                         code |= (code_t)reg2 << 20; /* rd */
                         code |= 28 << 7;
@@ -2977,7 +2977,7 @@ void emitter::emitDisInsName(code_t code, const BYTE* addr, instrDesc* id)
                 case 0x1:                                                         // SLLI
                     printf("slli           %s, %s, %d\n", rd, rs1, imm12 & 0x3f); // 6 BITS for SHAMT in RISCV64
                     return;
-                case 0x2: // SLTI
+                case 0x2:                                                         // SLTI
                     printf("slti           %s, %s, %d\n", rd, rs1, imm12);
                     return;
                 case 0x3: // SLTIU
@@ -3025,7 +3025,7 @@ void emitter::emitDisInsName(code_t code, const BYTE* addr, instrDesc* id)
                 case 0x1:                                                         // SLLIW
                     printf("slliw          %s, %s, %d\n", rd, rs1, imm12 & 0x3f); // 6 BITS for SHAMT in RISCV64
                     return;
-                case 0x5: // SRLIW & SRAIW
+                case 0x5:                                                         // SRLIW & SRAIW
                     if (((code >> 30) & 0x1) == 0)
                     {
                         printf("srliw          %s, %s, %d\n", rd, rs1, imm12 & 0x1f); // 5BITS for SHAMT in RISCV64
@@ -3597,7 +3597,7 @@ void emitter::emitDisInsName(code_t code, const BYTE* addr, instrDesc* id)
                         NYI_RISCV64("illegal ins within emitDisInsName!");
                     }
                     return;
-                case 0x61: // FCVT.W.D & FCVT.WU.D & FCVT.L.D & FCVT.LU.D
+                case 0x61:            // FCVT.W.D & FCVT.WU.D & FCVT.L.D & FCVT.LU.D
 
                     if (opcode3 == 0) // FCVT.W.D
                     {
