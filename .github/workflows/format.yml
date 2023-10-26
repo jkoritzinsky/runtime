@@ -9,15 +9,15 @@ jobs:
     if: ${{ github.event_name == 'pull_request' }}
     runs-on: ubuntu-latest
     container:
-      image: mcr.microsoft.com/dotnet/build-tools/prereqs:cbl-mariner-2.0-crossdeps-llvm
+      image: mcr.microsoft.com/dotnet-buildtools/prereqs:cbl-mariner-2.0-crossdeps-llvm
     steps:
       - uses: actions/checkout@v3
-      - run: git clang-format ${{ github.event.pull_request.base.sha }} --diff
+      - run: git clang-format ${{ github.event.pull_request.base.sha }} --diff --extensions h,hpp,cpp,c,inl
         id: clang-format
         name: Run Clang-Format
       - run: |
           echo "Run the following command to fix your code formatting"
-          echo "Windows: docker run --rm -v $(pwd):/workdir -w /workdir mcr.microsoft.com/dotnet/build-tools/prereqs:cbl-mariner-2.0-crossdeps-llvm git-clang-format"
-          echo "Non-Windows: run docker run --rm -v $(pwd):/workdir -w /workdir --user $(id -u):$(id -g) mcr.microsoft.com/dotnet/build-tools/prereqs:cbl-mariner-2.0-crossdeps-llvm git-clang-format"
+          echo "Windows: docker run --rm -v $(pwd):/workdir -w /workdir mcr.microsoft.com/dotnet-buildtools/prereqs:cbl-mariner-2.0-crossdeps-llvm git clang-format ${{ github.event.pull_request.base.sha }} --diff --extensions h,hpp,cpp,c,inl"
+          echo "Non-Windows: docker run --rm -v $(pwd):/workdir -w /workdir --user $(id -u):$(id -g) mcr.microsoft.com/dotnet-buildtools/prereqs:cbl-mariner-2.0-crossdeps-llvm git clang-format ${{ github.event.pull_request.base.sha }} --diff --extensions h,hpp,cpp,c,inl"
         name: Print Instructions
         if: steps.clang-format.outputs.exit-code == 1
