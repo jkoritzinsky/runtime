@@ -366,7 +366,7 @@ public:
             if (res < 0)
                 first = mid + 1; // repeat search in top half.
             else if (res > 0)
-                last = mid - 1;  // repeat search in bottom half.
+                last = mid - 1; // repeat search in bottom half.
             else
             {
                 int resItem = memcmp(&pItems[mid], &item, sizeof(_Item));
@@ -419,11 +419,11 @@ public:
             if (res < 0)
                 first = mid + 1; // repeat search in top half.
             else if (res > 0)
-                last = mid - 1;  // repeat search in bottom half.
+                last = mid - 1; // repeat search in bottom half.
             else
-                return mid;      // found it. return position /////
+                return mid; // found it. return position /////
         }
-        return -1;               // Didn't find key
+        return -1; // Didn't find key
     }
 
     _Item GetItem(int index) const

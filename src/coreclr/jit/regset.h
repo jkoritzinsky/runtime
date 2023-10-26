@@ -105,7 +105,7 @@ public:
 
     void SetMaskVars(regMaskTP newMaskVars); // 'put' property function for rsMaskVars property
 
-    void AddMaskVars(regMaskTP addMaskVars)  // union 'addMaskVars' with the rsMaskVars set
+    void AddMaskVars(regMaskTP addMaskVars) // union 'addMaskVars' with the rsMaskVars set
     {
         SetMaskVars(_rsMaskVars | addMaskVars);
     }
@@ -124,13 +124,13 @@ private:
     regMaskTP _rsMaskVars; // backing store for rsMaskVars property
 
 #if defined(TARGET_ARMARCH) || defined(TARGET_LOONGARCH64) || defined(TARGET_RISCV64)
-    regMaskTP rsMaskCalleeSaved;    // mask of the registers pushed/popped in the prolog/epilog
-#endif                              // TARGET_ARMARCH || TARGET_LOONGARCH64
+    regMaskTP rsMaskCalleeSaved; // mask of the registers pushed/popped in the prolog/epilog
+#endif                           // TARGET_ARMARCH || TARGET_LOONGARCH64
 
-public:                             // TODO-Cleanup: Should be private, but Compiler uses it
-    regMaskTP rsMaskResvd;          // mask of the registers that are reserved for special purposes (typically empty)
+public:                    // TODO-Cleanup: Should be private, but Compiler uses it
+    regMaskTP rsMaskResvd; // mask of the registers that are reserved for special purposes (typically empty)
 
-public:                             // The PreSpill masks are used in LclVars.cpp
+public: // The PreSpill masks are used in LclVars.cpp
 #ifdef TARGET_ARM
     regMaskTP rsMaskPreSpillAlign;  // Mask of alignment padding added to prespill to keep double aligned args
                                     // at aligned stack addresses.
@@ -214,7 +214,7 @@ private:
     unsigned tmpSize;  // Size of all the temps
 #ifdef DEBUG
     // Used by RegSet::rsSpillChk()
-    unsigned tmpGetCount;                   // Temps which haven't been released yet
+    unsigned tmpGetCount; // Temps which haven't been released yet
 #endif
     static unsigned tmpSlot(unsigned size); // which slot in tmpFree[] or tmpUsed[] to use
 

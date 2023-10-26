@@ -3162,7 +3162,7 @@ inline unsigned emitter::insEncodeReg012(const instrDesc* id, regNumber reg, emi
         // not the corresponding AH, CH, DH, or BH
         *code = AddRexPrefix(ins, *code); // REX
     }
-#endif                                    // TARGET_AMD64
+#endif // TARGET_AMD64
 
     unsigned regBits = RegEncoding(reg);
 
@@ -3205,7 +3205,7 @@ inline unsigned emitter::insEncodeReg345(const instrDesc* id, regNumber reg, emi
         // not the corresponding AH, CH, DH, or BH
         *code = AddRexPrefix(ins, *code); // REX
     }
-#endif                                    // TARGET_AMD64
+#endif // TARGET_AMD64
 
     unsigned regBits = RegEncoding(reg);
 
@@ -4475,7 +4475,7 @@ void emitter::emitIns(instruction ins)
 
         assert(assertCond);
     }
-#endif                           // DEBUG
+#endif // DEBUG
 
     assert(!hasRexPrefix(code)); // Can't have a REX bit with no operands, right?
 
@@ -5588,14 +5588,14 @@ void emitter::emitIns_R(instruction ins, emitAttr attr, regNumber reg)
 
             sz = 2; // x64 has no 1-byte opcode (it is the same encoding as the REX prefix)
 
-#else               // !TARGET_AMD64
+#else // !TARGET_AMD64
 
             if (size == EA_1BYTE)
                 sz = 2; // Use the long form as the small one has no 'w' bit
             else
                 sz = 1; // Use short form
 
-#endif              // !TARGET_AMD64
+#endif // !TARGET_AMD64
 
             break;
 
@@ -12794,7 +12794,7 @@ GOT_DSP:
         // In future if ever there is a need to enable this special case, also enable the logic
         // that sets isMoffset to true on amd64.
         unreached();
-#else  // TARGET_X86
+#else // TARGET_X86
 
         dst += emitOutputByte(dst, code);
         dst += emitOutputSizeT(dst, dsp);
@@ -14205,7 +14205,7 @@ BYTE* emitter::emitOutputCV(BYTE* dst, instrDesc* id, code_t code, CnsVal* addc)
         // In future if ever there is a need to enable this special case, also enable the logic
         // that sets isMoffset to true on amd64.
         unreached();
-#else  // TARGET_X86
+#else // TARGET_X86
 
         dst += emitOutputSizeT(dst, (ssize_t)target);
 
@@ -15813,7 +15813,7 @@ BYTE* emitter::emitOutputLJ(insGroup* ig, BYTE* dst, instrDesc* i)
             idAmd->idInsFmt(emitInsModeFormat(ins, IF_RRD_ARD));
             idAmd->idAddr()->iiaAddrMode.amBaseReg = REG_NA;
             idAmd->idAddr()->iiaAddrMode.amIndxReg = REG_NA;
-            emitSetAmdDisp(idAmd, distVal);             // set the displacement
+            emitSetAmdDisp(idAmd, distVal); // set the displacement
             idAmd->idSetIsDspReloc(id->idIsDspReloc());
             assert(emitGetInsAmdAny(idAmd) == distVal); // make sure "disp" is stored properly
 

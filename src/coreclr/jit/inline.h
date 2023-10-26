@@ -560,7 +560,7 @@ private:
     InlinePolicy*         m_Policy;
     GenTreeCall*          m_Call;
     InlineContext*        m_InlineContext;
-    CORINFO_METHOD_HANDLE m_Caller;         // immediate caller's handle
+    CORINFO_METHOD_HANDLE m_Caller; // immediate caller's handle
     CORINFO_METHOD_HANDLE m_Callee;
     unsigned              m_ImportedILSize; // estimated size of imported IL
     const char*           m_Description;
@@ -681,7 +681,7 @@ struct InlineInfo
     int           lclTmpNum[MAX_INL_LCLS];                     // map local# -> temp# (-1 if unused)
     InlLclVarInfo lclVarInfo[MAX_INL_LCLS + MAX_INL_ARGS + 1]; // type information from local sig
 
-    unsigned numberOfGcRefLocals;                              // Number of TYP_REF and TYP_BYREF locals
+    unsigned numberOfGcRefLocals; // Number of TYP_REF and TYP_BYREF locals
 
     bool HasGcRefLocals() const
     {
@@ -692,7 +692,7 @@ struct InlineInfo
 
 #ifdef FEATURE_SIMD
     bool hasSIMDTypeArgLocalOrReturn;
-#endif                     // FEATURE_SIMD
+#endif // FEATURE_SIMD
 
     GenTreeCall* iciCall;  // The GT_CALL node to be inlined.
     Statement*   iciStmt;  // The statement iciCall is in.
@@ -879,7 +879,7 @@ private:
     InlinePolicy* m_Policy; // policy that evaluated this inline
     unsigned      m_TreeID; // ID of the GenTreeCall in the parent
 
-#endif                      // defined(DEBUG) || defined(INLINE_DATA)
+#endif // defined(DEBUG) || defined(INLINE_DATA)
 
 #ifdef DEBUG
     FixedBitVect* m_ILInstsSet; // Set of offsets where instructions begin

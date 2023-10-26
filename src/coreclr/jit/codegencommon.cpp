@@ -2573,10 +2573,10 @@ void CodeGen::genReportEH()
                 {
                     break; // we've reported all of them; no need to continue looking
                 }
-#endif                     // !DEBUG
+#endif // !DEBUG
 
-            }              // for each 'true' enclosing 'try'
-        }                  // for each EH table entry
+            } // for each 'true' enclosing 'try'
+        }     // for each EH table entry
 
         assert(duplicateClauseCount == reportedDuplicateClauseCount);
     } // if (duplicateClauseCount > 0)
@@ -2631,9 +2631,9 @@ void CodeGen::genReportEH()
                 {
                     break; // we're done; no need to keep looking
                 }
-#endif                     // !DEBUG
-            }              // block is BBJ_CALLFINALLY
-        }                  // for each block
+#endif        // !DEBUG
+            } // block is BBJ_CALLFINALLY
+        }     // for each block
 
         assert(clonedFinallyCount == reportedClonedFinallyCount);
     }  // if (clonedFinallyCount > 0)
@@ -5978,7 +5978,7 @@ void CodeGen::genFnProlog()
         }
 #ifndef TARGET_AMD64 // On AMD64, establish the frame pointer after the "sub rsp"
         genEstablishFramePointer(0, /*reportUnwindData*/ true);
-#endif               // !TARGET_AMD64
+#endif // !TARGET_AMD64
 
 #if DOUBLE_ALIGN
         if (compiler->genDoubleAlign())
@@ -6094,7 +6094,7 @@ void CodeGen::genFnProlog()
         genEstablishFramePointer(afterLclFrameSPtoFPdelta, /*reportUnwindData*/ false);
         needToEstablishFP = false; // nobody uses this later, but set it anyway, just to be explicit
     }
-#endif                             // TARGET_ARM
+#endif // TARGET_ARM
 
     if (compiler->info.compPublishStubParam)
     {
@@ -6116,7 +6116,7 @@ void CodeGen::genFnProlog()
 
     genSetPSPSym(initReg, &initRegZeroed);
 
-#else  // !FEATURE_EH_FUNCLETS
+#else // !FEATURE_EH_FUNCLETS
 
     // when compInitMem is true the genZeroInitFrame will zero out the shadow SP slots
     if (compiler->ehNeedsShadowSPslots() && !compiler->info.compInitMem)
@@ -6766,7 +6766,7 @@ regMaskTP CodeGen::genPushRegs(regMaskTP regs, regMaskTP* byrefRegs, regMaskTP* 
     NYI("Don't call genPushRegs with real regs!");
     return RBM_NONE;
 
-#else  // FEATURE_FIXED_OUT_ARGS
+#else // FEATURE_FIXED_OUT_ARGS
 
     noway_assert(genTypeStSz(TYP_REF) == genTypeStSz(TYP_I_IMPL));
     noway_assert(genTypeStSz(TYP_BYREF) == genTypeStSz(TYP_I_IMPL));
@@ -6835,7 +6835,7 @@ void CodeGen::genPopRegs(regMaskTP regs, regMaskTP byrefRegs, regMaskTP noRefReg
 
     NYI("Don't call genPopRegs with real regs!");
 
-#else  // FEATURE_FIXED_OUT_ARGS
+#else // FEATURE_FIXED_OUT_ARGS
 
     noway_assert((regs & byrefRegs) == byrefRegs);
     noway_assert((regs & noRefRegs) == noRefRegs);
@@ -7443,7 +7443,7 @@ const char* CodeGen::siStackVarName(size_t offs, size_t size, unsigned reg, unsi
 #endif // !defined(DEBUG)
 #endif // defined(LATE_DISASM)
 
-       //------------------------------------------------------------------------
+//------------------------------------------------------------------------
 // indirForm: Make a temporary indir we can feed to pattern matching routines
 //    in cases where we don't want to instantiate all the indirs that happen.
 //

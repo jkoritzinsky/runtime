@@ -33,8 +33,8 @@ struct SMState
     BYTE        length;           // the length of currently matched opcodes
     SM_STATE_ID longestTermState; // the ID of the longest matched terminate state
 
-    SM_STATE_ID prevState;        // previous state
-    SM_OPCODE   opc;              // opcode that leads from the previous state to current state
+    SM_STATE_ID prevState; // previous state
+    SM_OPCODE   opc;       // opcode that leads from the previous state to current state
 
     unsigned short jumpTableByteOffset;
 };

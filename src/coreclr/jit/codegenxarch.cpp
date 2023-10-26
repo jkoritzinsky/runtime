@@ -271,7 +271,7 @@ BasicBlock* CodeGen::genCallFinally(BasicBlock* block)
 #endif // JIT32_GCENCODER
     }
 
-#else  // !FEATURE_EH_FUNCLETS
+#else // !FEATURE_EH_FUNCLETS
 
     // If we are about to invoke a finally locally from a try block, we have to set the ShadowSP slot
     // corresponding to the finally's nesting level. When invoked in response to an exception, the
@@ -348,7 +348,7 @@ void CodeGen::genEHCatchRet(BasicBlock* block)
     GetEmitter()->emitIns_R_L(INS_lea, EA_PTR_DSP_RELOC, block->GetJumpDest(), REG_INTRET);
 }
 
-#else  // !FEATURE_EH_FUNCLETS
+#else // !FEATURE_EH_FUNCLETS
 
 void CodeGen::genEHFinallyOrFilterRet(BasicBlock* block)
 {
@@ -7597,7 +7597,7 @@ void CodeGen::genCkfinite(GenTree* treeNode)
     // if it is a finite value copy it to targetReg
     inst_Mov(targetType, targetReg, op1->GetRegNum(), /* canSkip */ true);
 
-#else  // !TARGET_64BIT
+#else // !TARGET_64BIT
 
     // If the target type is TYP_DOUBLE, we want to extract the high 32 bits into the register.
     // There is no easy way to do this. To not require an extra register, we'll use shuffles
@@ -7683,7 +7683,7 @@ int CodeGenInterface::genSPtoFPdelta() const
     // If Unix ever supports EnC, the RSP == RBP assumption will have to be reevaluated.
     delta = genTotalFrameSize();
 
-#else  // !UNIX_AMD64_ABI
+#else // !UNIX_AMD64_ABI
 
     // As per Amd64 ABI, RBP offset from initial RSP can be between 0 and 240 if
     // RBP needs to be reported in unwind codes.  This case would arise for methods
@@ -9445,7 +9445,7 @@ void CodeGen::genProfilingEnterCallback(regNumber initReg, bool* pInitRegZeroed)
         *pInitRegZeroed = false;
     }
 
-#else  // !defined(UNIX_AMD64_ABI)
+#else // !defined(UNIX_AMD64_ABI)
 
     // Emit profiler EnterCallback(ProfilerMethHnd, caller's SP)
     // R14 = ProfilerMethHnd
@@ -9569,7 +9569,7 @@ void CodeGen::genProfilingLeaveCallback(unsigned helper)
     // "mov r8, helper addr; call r8"
     genEmitHelperCall(helper, 0, EA_UNKNOWN, REG_ARG_2);
 
-#else  // !defined(UNIX_AMD64_ABI)
+#else // !defined(UNIX_AMD64_ABI)
 
     // RDI = ProfilerMethHnd
     if (compiler->compProfilerMethHndIndirected)
@@ -10642,7 +10642,7 @@ void CodeGen::genCaptureFuncletPrologEpilogInfo()
                compiler->lvaGetInitialSPRelativeOffset(compiler->lvaPSPSym)); // same offset used in main function and
                                                                               // funclet!
     }
-#endif                                                                        // DEBUG
+#endif // DEBUG
 }
 
 #elif defined(TARGET_X86)
@@ -10751,7 +10751,7 @@ void CodeGen::genSetPSPSym(regNumber initReg, bool* pInitRegZeroed)
 
     GetEmitter()->emitIns_S_R(ins_Store(TYP_I_IMPL), EA_PTRSIZE, REG_SPBASE, compiler->lvaPSPSym, 0);
 
-#else  // TARGET*
+#else // TARGET*
 
     NYI("Set function PSP sym");
 

@@ -724,7 +724,7 @@ void CodeGen::genCodeForBBlist()
                 genReserveFuncletEpilog(block);
                 break;
 
-#else  // !FEATURE_EH_FUNCLETS
+#else // !FEATURE_EH_FUNCLETS
 
             case BBJ_EHCATCHRET:
                 noway_assert(!"Unexpected BBJ_EHCATCHRET"); // not used on x86
@@ -2556,7 +2556,7 @@ CodeGen::GenIntCastDesc::GenIntCastDesc(GenTreeCast* cast)
                 m_extendKind    = varTypeIsSmall(srcLoadType) ? LOAD_SIGN_EXTEND_SMALL_INT : LOAD_SIGN_EXTEND_INT;
                 m_extendSrcSize = genTypeSize(srcLoadType);
                 break;
-#endif                 // TARGET_64BIT
+#endif // TARGET_64BIT
 
             case COPY: // long -> long, small type/int/long -> int.
                 m_extendKind    = LOAD_SOURCE;

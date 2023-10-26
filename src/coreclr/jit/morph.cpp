@@ -2371,7 +2371,7 @@ void CallArgs::AddFinalArgsAndDetermineABIInfo(Compiler* comp, GenTreeCall* call
             byteSize = structSize;
             comp->eeGetSystemVAmd64PassStructInRegisterDescriptor(argSigClass, &structDesc);
         }
-#else  // !UNIX_AMD64_ABI
+#else // !UNIX_AMD64_ABI
         size = 1; // On AMD64 Windows, all args fit in a single (64-bit) 'slot'
         if (!isStructArg)
         {
@@ -2769,7 +2769,7 @@ void CallArgs::AddFinalArgsAndDetermineABIInfo(Compiler* comp, GenTreeCall* call
             (intArgRegNum + size > MAX_REG_ARG) && // We're going to split a struct type onto registers and stack
             anyFloatStackArgs)                     // We've already used the stack for a floating-point argument
         {
-            isRegArg = false;                      // Change our mind; don't pass this struct partially in registers
+            isRegArg = false; // Change our mind; don't pass this struct partially in registers
 
             // Skip the rest of the integer argument registers
             for (; intArgRegNum < MAX_REG_ARG; ++intArgRegNum)
@@ -3214,7 +3214,7 @@ GenTreeCall* Compiler::fgMorphArgs(GenTreeCall* call)
                 makeOutArgCopy = true;
 #ifdef UNIX_AMD64_ABI
                 assert(!"Structs are not passed by reference on x64/ux");
-#endif           // UNIX_AMD64_ABI
+#endif // UNIX_AMD64_ABI
             }
             else // This is passed by value.
             {
@@ -3887,7 +3887,7 @@ GenTree* Compiler::fgMorphMultiregStructArg(CallArg* arg)
 
     argNode = newArg; // consider calling fgMorphTree(newArg);
 
-#endif                // FEATURE_MULTIREG_ARGS
+#endif // FEATURE_MULTIREG_ARGS
 
     return argNode;
 }
@@ -4062,7 +4062,7 @@ void Compiler::fgMakeOutgoingStructArgCopy(GenTreeCall* call, CallArg* arg)
     // When on Unix create LCL_FLD for structs passed in more than one registers. See fgMakeTmpArgNode
     GenTree* argNode = copyBlk;
 
-#else  // !FEATURE_FIXED_OUT_ARGS
+#else // !FEATURE_FIXED_OUT_ARGS
 
     // Structs are always on the stack, and thus never need temps
     // so we have to put the copy and temp all into one expression.
@@ -4195,7 +4195,7 @@ void Compiler::fgMoveOpsLeft(GenTree* tree)
             noway_assert((varTypeIsGC(tree->TypeGet()) && op2->TypeGet() == TYP_I_IMPL &&
                           oper == GT_ADD) || // byref(ref + (int+int))
                          (varTypeIsI(tree->TypeGet()) && op2->TypeGet() == TYP_I_IMPL &&
-                          oper == GT_OR));   // int(gcref | int(gcref|intval))
+                          oper == GT_OR)); // int(gcref | int(gcref|intval))
 
             new_op1->gtType = tree->gtType;
         }
@@ -7999,7 +7999,7 @@ GenTree* Compiler::fgExpandVirtualVtableCallTarget(GenTreeCall* call)
             // This last indirection is not invariant, but is non-faulting
             result = gtNewIndir(TYP_I_IMPL, gtNewLclvNode(varNum2, TYP_I_IMPL), GTF_IND_NONFAULTING); // [var2]
 
-            result = gtNewOperNode(GT_ADD, TYP_I_IMPL, result, gtNewLclvNode(varNum2, TYP_I_IMPL));   // [var2] + var2
+            result = gtNewOperNode(GT_ADD, TYP_I_IMPL, result, gtNewLclvNode(varNum2, TYP_I_IMPL)); // [var2] + var2
 
             // Now stitch together the two assignment and the calculation of result into a single tree
             GenTree* commaTree = gtNewOperNode(GT_COMMA, TYP_I_IMPL, storeVar2, result);
@@ -14166,7 +14166,7 @@ void Compiler::fgSetOptions()
         codeGen->setFramePointerRequiredEH(true);
     }
 
-#else  // !TARGET_X86
+#else // !TARGET_X86
 
     if (compHndBBtabCount > 0)
     {

@@ -554,7 +554,7 @@ void Compiler::fgReplaceSwitchJumpTarget(BasicBlock* blockSwitch, BasicBlock* ne
 
             return; // We have replaced the jumps to oldTarget with newTarget
         }
-        i++;        // Check the next entry in jumpTab[] for a match
+        i++; // Check the next entry in jumpTab[] for a match
     }
     noway_assert(!"Did not find oldTarget in jumpTab[]");
 }
@@ -6119,7 +6119,7 @@ BasicBlock* Compiler::fgRelocateEHRange(unsigned regionIndex, FG_RELOCATE_TYPE r
 // Because this relies on ebdEnclosingTryIndex and ebdEnclosingHndIndex
 #endif // DEBUG
 
-#else  // !FEATURE_EH_FUNCLETS
+#else // !FEATURE_EH_FUNCLETS
 
     for (XTnum = 0, HBtab = compHndBBtab; XTnum < compHndBBtabCount; XTnum++, HBtab++)
     {
@@ -6560,7 +6560,7 @@ BasicBlock* Compiler::fgFindInsertPoint(unsigned    regionIndex,
     {
         assert(b != nullptr); // We reached the end of the block list, but never found endBlk.
     }
-#endif                        // DEBUG
+#endif // DEBUG
 
     JITDUMP("fgFindInsertPoint(regionIndex=%u, putInTryRegion=%s, startBlk=" FMT_BB ", endBlk=" FMT_BB
             ", nearBlk=" FMT_BB ", jumpBlk=" FMT_BB ", runRarely=%s)\n",

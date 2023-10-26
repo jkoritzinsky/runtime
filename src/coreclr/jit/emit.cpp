@@ -650,7 +650,7 @@ void emitLclVarAddr::initLclVarAddr(int varNum, unsigned offset)
                 _lvaExtra  = offset;           // offset known to be in [0..32767]
                 _lvaVarNum = (unsigned)varNum; // varNum known to be in [0..32767]
             }
-            else                               // offset >= 32768
+            else // offset >= 32768
             {
                 // We could support larger local offsets here at the cost of less varNums
                 if (offset >= 65536)
@@ -1614,7 +1614,7 @@ void* emitter::emitAllocAnyInstr(size_t sz, emitAttr opsz)
     if (!emitComp->opts.jitFlags->IsSet(JitFlags::JIT_FLAG_PREJIT) && !emitInInstrumentation &&
         !emitIGisInProlog(emitCurIG) && // don't do this in prolog or epilog
         !emitIGisInEpilog(emitCurIG) &&
-        emitRandomNops                  // sometimes we turn off where exact codegen is needed (pinvoke inline)
+        emitRandomNops // sometimes we turn off where exact codegen is needed (pinvoke inline)
     )
     {
         if (emitNextNop == 0)
@@ -3625,12 +3625,12 @@ emitter::instrDesc* emitter::emitNewInstrCallInd(int              argCnt,
         (gcRefRegsInScratch) ||                  // any register gc refs live in scratch regs
         (byrefRegs != 0) ||                      // any register byrefs live
 #ifdef TARGET_XARCH
-        (disp < AM_DISP_MIN) ||                  // displacement too negative
-        (disp > AM_DISP_MAX) ||                  // displacement too positive
-#endif                                           // TARGET_XARCH
-        (argCnt > ID_MAX_SMALL_CNS) ||           // too many args
-        (argCnt < 0)                             // caller pops arguments
-                                                 // There is a second ref/byref return register.
+        (disp < AM_DISP_MIN) ||        // displacement too negative
+        (disp > AM_DISP_MAX) ||        // displacement too positive
+#endif                                 // TARGET_XARCH
+        (argCnt > ID_MAX_SMALL_CNS) || // too many args
+        (argCnt < 0)                   // caller pops arguments
+                                       // There is a second ref/byref return register.
         MULTIREG_HAS_SECOND_GC_RET_ONLY(|| EA_IS_GCREF_OR_BYREF(secondRetSize)))
     {
         instrDescCGCA* id;
@@ -4862,25 +4862,25 @@ AGAIN:
         insGroup* jmpIG;
         insGroup* tgtIG;
 
-        UNATIVE_OFFSET jsz;     // size of the jump instruction in bytes
+        UNATIVE_OFFSET jsz; // size of the jump instruction in bytes
 
         UNATIVE_OFFSET ssz = 0; // small  jump size
         NATIVE_OFFSET  nsd = 0; // small  jump max. neg distance
         NATIVE_OFFSET  psd = 0; // small  jump max. pos distance
 
 #if defined(TARGET_ARM)
-        UNATIVE_OFFSET msz = 0;         // medium jump size
-        NATIVE_OFFSET  nmd = 0;         // medium jump max. neg distance
-        NATIVE_OFFSET  pmd = 0;         // medium jump max. pos distance
-        NATIVE_OFFSET  mextra;          // How far beyond the medium jump range is this jump offset?
-#endif                                  // TARGET_ARM
+        UNATIVE_OFFSET msz = 0; // medium jump size
+        NATIVE_OFFSET  nmd = 0; // medium jump max. neg distance
+        NATIVE_OFFSET  pmd = 0; // medium jump max. pos distance
+        NATIVE_OFFSET  mextra;  // How far beyond the medium jump range is this jump offset?
+#endif                          // TARGET_ARM
 
         NATIVE_OFFSET  extra;           // How far beyond the short jump range is this jump offset?
         UNATIVE_OFFSET srcInstrOffs;    // offset of the source instruction of the jump
         UNATIVE_OFFSET srcEncodingOffs; // offset of the source used by the instruction set to calculate the relative
                                         // offset of the jump
         UNATIVE_OFFSET dstOffs;
-        NATIVE_OFFSET  jmpDist;         // the relative jump distance, as it will be encoded
+        NATIVE_OFFSET  jmpDist; // the relative jump distance, as it will be encoded
         UNATIVE_OFFSET oldSize;
         UNATIVE_OFFSET sizeDif;
 
@@ -4990,7 +4990,7 @@ AGAIN:
         assert(lastIG == nullptr || lastIG->igNum <= jmp->idjIG->igNum || jmp->idjIG == prologIG ||
                emitNxtIGnum > unsigned(0xFFFF)); // igNum might overflow
         lastIG = jmp->idjIG;
-#endif                                           // DEBUG
+#endif // DEBUG
 
         /* Get hold of the current jump size */
 
@@ -10157,14 +10157,14 @@ void emitter::emitRecordRelocationHelp(void*       location,        /* IN */
                                        const char* relocTypeName,   /* IN */
                                        int32_t     addlDelta /* = 0 */) /* IN */
 
-#else                                                               // !DEBUG
+#else // !DEBUG
 
 void emitter::emitRecordRelocation(void*    location,           /* IN */
                                    void*    target,             /* IN */
                                    uint16_t fRelocType,         /* IN */
                                    int32_t  addlDelta /* = 0 */) /* IN */
 
-#endif                                                              // !DEBUG
+#endif // !DEBUG
 {
     void* locationRW = (BYTE*)location + writeableOffset;
 

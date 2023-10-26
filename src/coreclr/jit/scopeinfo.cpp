@@ -412,7 +412,7 @@ void CodeGenInterface::siVarLoc::siFillRegisterVarLoc(
             this->vlReg.vlrReg = varDsc->GetRegNum();
             break;
 
-#else  // !TARGET_64BIT
+#else // !TARGET_64BIT
 
         case TYP_FLOAT:
         case TYP_DOUBLE:
@@ -1580,7 +1580,7 @@ void CodeGen::siOpenScopesForNonTrackedVars(const BasicBlock* block, unsigned in
             }
         }
 
-#else  // !FEATURE_EH_FUNCLETS
+#else // !FEATURE_EH_FUNCLETS
 
         if (lastBlockILEndOffset != beginOffs)
         {

@@ -117,7 +117,7 @@ UINT32 Logger::ParseLogLevelString(const char* specifierStr)
 {
     UINT32 logLevelMask = LOGMASK_NONE;
 
-    if (strchr(specifierStr, 'q') == nullptr)     // "Quiet" overrides all other specifiers
+    if (strchr(specifierStr, 'q') == nullptr) // "Quiet" overrides all other specifiers
     {
         if (strchr(specifierStr, 'a') != nullptr) // "All" overrides the other specifiers
         {

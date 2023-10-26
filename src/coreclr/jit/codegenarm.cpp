@@ -384,7 +384,7 @@ void CodeGen::genLclHeap(GenTree* tree)
     regNumber            regTmp                   = REG_NA;
     const target_ssize_t ILLEGAL_LAST_TOUCH_DELTA = (target_ssize_t)-1;
     target_ssize_t       lastTouchDelta =
-        ILLEGAL_LAST_TOUCH_DELTA;       // The number of bytes from SP to the last stack address probed.
+        ILLEGAL_LAST_TOUCH_DELTA; // The number of bytes from SP to the last stack address probed.
 
     noway_assert(isFramePointerUsed()); // localloc requires Frame Pointer to be established since SP changes
     noway_assert(genStackLevel == 0);   // Can't have anything on the stack
@@ -1929,7 +1929,7 @@ void CodeGen::genPushFltRegs(regMaskTP regMask)
     // regMask should be contiguously set
     regMaskTP tmpMask = ((regMask >> lowReg) + 1); // tmpMask should have a single bit set
     assert((tmpMask & (tmpMask - 1)) == 0);
-    assert(lowReg == REG_F16);                     // Currently we expect to start at F16 in the unwind codes
+    assert(lowReg == REG_F16); // Currently we expect to start at F16 in the unwind codes
 
     // Our calling convention requires that we only use vpush for TYP_DOUBLE registers
     noway_assert(floatRegCanHoldType(lowReg, TYP_DOUBLE));

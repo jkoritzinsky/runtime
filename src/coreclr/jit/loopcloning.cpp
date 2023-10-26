@@ -2087,7 +2087,7 @@ void Compiler::optCloneLoop(unsigned loopInd, LoopCloneContext* context)
             x2->SetJumpDest(x);
             BlockSetOps::Assign(this, x2->bbReach, h->bbReach);
 
-            fgAddRefPred(x2, b);     // Add b->x2 pred edge
+            fgAddRefPred(x2, b); // Add b->x2 pred edge
             JITDUMP("Adding " FMT_BB " -> " FMT_BB "\n", b->bbNum, x2->bbNum);
             fgReplacePred(x, b, x2); // The pred of x is now x2, not the fall-through of COND b.
             JITDUMP("Replace " FMT_BB " -> " FMT_BB " with " FMT_BB " -> " FMT_BB "\n", b->bbNum, x->bbNum, x2->bbNum,

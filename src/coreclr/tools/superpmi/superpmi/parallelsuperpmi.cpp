@@ -16,7 +16,7 @@ std::string ConvertToUtf8(const WCHAR* str);
 
 #define MAX_LOG_LINE_SIZE 0x1000 // 4 KB
 
-bool closeRequested = false;     // global variable to communicate CTRL+C between threads.
+bool closeRequested = false; // global variable to communicate CTRL+C between threads.
 
 bool StartProcess(char* commandLine, HANDLE hStdOutput, HANDLE hStdError, HANDLE* hProcess)
 {
@@ -40,7 +40,7 @@ bool StartProcess(char* commandLine, HANDLE hStdOutput, HANDLE hStdError, HANDLE
     MultiByteToWideChar(CP_UTF8, 0, commandLine, cmdLen, cmdLineW, cmdLen);
 #endif
     // Start the child process.
-    if (!CreateProcess(NULL,     // No module name (use command line)
+    if (!CreateProcess(NULL, // No module name (use command line)
 #if TARGET_UNIX
                        cmdLineW, // Command line
 #else

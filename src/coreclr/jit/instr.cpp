@@ -654,7 +654,7 @@ void CodeGen::inst_RV_IV(
     GetEmitter()->emitIns_R_R_I(ins, size, reg, reg, val);
 #elif defined(TARGET_LOONGARCH64) || defined(TARGET_RISCV64)
     GetEmitter()->emitIns_R_R_I(ins, size, reg, reg, val);
-#else  // !TARGET_ARM
+#else // !TARGET_ARM
 #ifdef TARGET_AMD64
     // Instead of an 8-byte immediate load, a 4-byte immediate will do fine
     // as the high 4 bytes will be zero anyway.

@@ -27,9 +27,9 @@ public:
         {
             None = 0x00,
 
-            Mark = 0x01,        // An arbitrary "mark" bit that can be used in place of
-                                // a more expensive data structure when processing a set
-                                // of LIR nodes. See for example `LIR::GetTreeRange`.
+            Mark = 0x01, // An arbitrary "mark" bit that can be used in place of
+                         // a more expensive data structure when processing a set
+                         // of LIR nodes. See for example `LIR::GetTreeRange`.
 
             UnusedValue = 0x02, // Set on a node if it produces a value that is not
                                 // subsequently used. Should never be set on nodes

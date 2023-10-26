@@ -1792,16 +1792,16 @@ void emitter::emitIns_R_R_I_I(
             code |= (reg1 /*& 0x1f*/);      // rd
             code |= (reg2 /*& 0x1f*/) << 5; // rj
             assert((0 <= imm2) && (imm2 <= imm1) && (imm1 < 32));
-            code |= (imm1 & 0x1f) << 16;    // msbw
-            code |= (imm2 & 0x1f) << 10;    // lsbw
+            code |= (imm1 & 0x1f) << 16; // msbw
+            code |= (imm2 & 0x1f) << 10; // lsbw
             break;
         case INS_bstrins_d:
         case INS_bstrpick_d:
             code |= (reg1 /*& 0x1f*/);      // rd
             code |= (reg2 /*& 0x1f*/) << 5; // rj
             assert((0 <= imm2) && (imm2 <= imm1) && (imm1 < 64));
-            code |= (imm1 & 0x3f) << 16;    // msbd
-            code |= (imm2 & 0x3f) << 10;    // lsbd
+            code |= (imm1 & 0x3f) << 16; // msbd
+            code |= (imm2 & 0x3f) << 10; // lsbd
             break;
         default:
             unreached();
@@ -1898,7 +1898,7 @@ void emitter::emitIns_R_C(
     assert(reg != REG_R0); // for special. reg Must not be R0.
     id->idReg1(reg);       // destination register that will get the constant value.
 
-    id->idSmallCns(offs);  // usually is 0.
+    id->idSmallCns(offs); // usually is 0.
     id->idInsOpt(INS_OPTS_RC);
     if (emitComp->opts.compReloc)
     {
@@ -1924,8 +1924,8 @@ void emitter::emitIns_R_C(
     }
 
     // TODO-LoongArch64: this maybe deleted.
-    id->idSetIsBound();        // We won't patch address since we will know the exact distance
-                               // once JIT code and data are allocated together.
+    id->idSetIsBound(); // We won't patch address since we will know the exact distance
+                        // once JIT code and data are allocated together.
 
     assert(addrReg == REG_NA); // NOTE: for LOONGARCH64, not support addrReg != REG_NA.
 
@@ -2070,9 +2070,9 @@ void emitter::emitIns_J_R(instruction ins, emitAttr attr, BasicBlock* dst, regNu
 void emitter::emitIns_J(instruction ins, BasicBlock* dst, int instrCount)
 {
     if (dst == nullptr)
-    {                                                                 // Now this case not used for loongarch64.
+    { // Now this case not used for loongarch64.
         assert(instrCount != 0);
-        assert(ins == INS_b);                                         // when dst==nullptr, ins is INS_b by now.
+        assert(ins == INS_b); // when dst==nullptr, ins is INS_b by now.
 
         assert((-33554432 <= instrCount) && (instrCount < 33554432)); // 0x2000000.
         emitIns_I(ins, EA_PTRSIZE, instrCount << 2); // NOTE: instrCount is the number of the instructions.
@@ -2108,7 +2108,7 @@ void emitter::emitIns_J(instruction ins, BasicBlock* dst, int instrCount)
 #ifdef DEBUG
     if (emitComp->opts.compLongAddress) // Force long branches
         id->idjKeepLong = 1;
-#endif                                  // DEBUG
+#endif // DEBUG
 
     /* Record the jump's IG and offset within it */
     id->idjIG   = emitCurIG;
@@ -2165,7 +2165,7 @@ void emitter::emitIns_J_cond_la(instruction ins, BasicBlock* dst, regNumber reg1
 #ifdef DEBUG
     if (emitComp->opts.compLongAddress) // Force long branches
         id->idjKeepLong = 1;
-#endif                                  // DEBUG
+#endif // DEBUG
 
     /* Record the jump's IG and offset within it */
     id->idjIG   = emitCurIG;
@@ -2436,7 +2436,7 @@ void emitter::emitIns_Call(EmitCallType          callType,
 
     id->idDebugOnlyInfo()->idMemCookie = (size_t)methHnd; // method token
     id->idDebugOnlyInfo()->idCallSig   = sigInfo;
-#endif                                                    // DEBUG
+#endif // DEBUG
 
 #ifdef LATE_DISASM
     if (addr != nullptr)
@@ -2492,7 +2492,7 @@ unsigned emitter::emitOutputCall(insGroup* ig, BYTE* dst, instrDesc* id, code_t 
     {
         emitDispGCVarDelta(); // define in emit.cpp
     }
-#endif                        // DEBUG
+#endif // DEBUG
 
     assert(id->idIns() == INS_jirl);
     if (id->idIsCallRegPtr())
@@ -2703,14 +2703,14 @@ AGAIN:
         insGroup* jmpIG;
         insGroup* tgtIG;
 
-        UNATIVE_OFFSET jsz;             // size of the jump instruction in bytes
+        UNATIVE_OFFSET jsz; // size of the jump instruction in bytes
 
         NATIVE_OFFSET  extra;           // How far beyond the short jump range is this jump offset?
         UNATIVE_OFFSET srcInstrOffs;    // offset of the source instruction of the jump
         UNATIVE_OFFSET srcEncodingOffs; // offset of the source used by the instruction set to calculate the relative
                                         // offset of the jump
         UNATIVE_OFFSET dstOffs;
-        NATIVE_OFFSET  jmpDist;         // the relative jump distance, as it will be encoded
+        NATIVE_OFFSET  jmpDist; // the relative jump distance, as it will be encoded
 
         /* Make sure the jumps are properly ordered */
 
@@ -2721,7 +2721,7 @@ AGAIN:
         assert(lastIG == nullptr || lastIG->igNum <= jmp->idjIG->igNum || jmp->idjIG == prologIG ||
                emitNxtIGnum > unsigned(0xFFFF)); // igNum might overflow
         lastIG = jmp->idjIG;
-#endif                                           // DEBUG
+#endif // DEBUG
 
         /* Get hold of the current jump size */
 
@@ -2876,7 +2876,7 @@ AGAIN:
                 printf("Estimate of fwd jump [%08X/%03u]: %04X -> %04X = %04X\n", dspPtr(jmp),
                        jmp->idDebugOnlyInfo()->idNum, srcInstrOffs, dstOffs, jmpDist);
             }
-#endif                            // DEBUG_EMIT
+#endif // DEBUG_EMIT
 
             assert(jmpDist >= 0); // Forward jump
             assert(!(jmpDist & 0x3));
@@ -2964,7 +2964,7 @@ AGAIN:
                 printf("Estimate of bwd jump [%08X/%03u]: %04X -> %04X = %04X\n", dspPtr(jmp),
                        jmp->idDebugOnlyInfo()->idNum, srcInstrOffs, dstOffs, jmpDist);
             }
-#endif                            // DEBUG_EMIT
+#endif // DEBUG_EMIT
 
             assert(jmpDist >= 0); // Backward jump
             assert(!(jmpDist & 0x3));

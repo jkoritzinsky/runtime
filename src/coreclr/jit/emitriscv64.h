@@ -257,4 +257,4 @@ unsigned emitOutputCall(insGroup* ig, BYTE* dst, instrDesc* id, code_t code);
 
 unsigned get_curTotalCodeSize(); // bytes of code
 
-#endif                           // TARGET_RISCV64
+#endif // TARGET_RISCV64

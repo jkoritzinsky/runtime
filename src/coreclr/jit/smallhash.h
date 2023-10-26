@@ -154,14 +154,14 @@ protected:
     // bucket in a chain must be occupied (i.e. `m_isFull` will be true).
     struct Bucket
     {
-        bool m_isFull;          // True if the bucket is occupied; false otherwise.
+        bool m_isFull; // True if the bucket is occupied; false otherwise.
 
         unsigned m_firstOffset; // The offset to the first node in the chain for this bucket index.
         unsigned m_nextOffset;  // The offset to the next node in the chain for this bucket index.
 
-        unsigned m_hash;        // The hash code for the element stored in this bucket.
-        TKey     m_key;         // The key for the element stored in this bucket.
-        TValue   m_value;       // The value for the element stored in this bucket.
+        unsigned m_hash;  // The hash code for the element stored in this bucket.
+        TKey     m_key;   // The key for the element stored in this bucket.
+        TValue   m_value; // The value for the element stored in this bucket.
     };
 
 private:

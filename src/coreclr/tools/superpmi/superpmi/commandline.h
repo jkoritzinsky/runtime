@@ -26,7 +26,7 @@ public:
         bool  applyDiff                    = false;
         bool  parallel                     = false; // User specified to use /parallel mode.
 #if !defined(USE_MSVCDIS) && defined(USE_COREDISTOOLS)
-        bool useCoreDisTools = true;                // Use CoreDisTools library instead of Msvcdis
+        bool useCoreDisTools = true; // Use CoreDisTools library instead of Msvcdis
 #else
         bool useCoreDisTools = false; // Use CoreDisTools library instead of Msvcdis
 #endif

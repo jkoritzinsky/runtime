@@ -1157,7 +1157,7 @@ void CodeGen::genCaptureFuncletPrologEpilogInfo()
                compiler->lvaGetCallerSPRelativeOffset(compiler->lvaPSPSym)); // same offset used in main function and
                                                                              // funclet!
     }
-#endif                                                                       // DEBUG
+#endif // DEBUG
 }
 
 void CodeGen::genFnEpilog(BasicBlock* block)
@@ -2070,7 +2070,7 @@ void CodeGen::genLclHeap(GenTree* tree)
     unsigned             stackAdjustment          = 0;
     const target_ssize_t ILLEGAL_LAST_TOUCH_DELTA = (target_ssize_t)-1;
     target_ssize_t       lastTouchDelta =
-        ILLEGAL_LAST_TOUCH_DELTA;       // The number of bytes from SP to the last stack address probed.
+        ILLEGAL_LAST_TOUCH_DELTA; // The number of bytes from SP to the last stack address probed.
 
     noway_assert(isFramePointerUsed()); // localloc requires Frame Pointer to be established since SP changes
     noway_assert(genStackLevel == 0);   // Can't have anything on the stack
@@ -5295,9 +5295,9 @@ void CodeGen::genPutArgStk(GenTreePutArgStk* treeNode)
         argOffsetOut += EA_SIZE_IN_BYTES(storeAttr);
         assert(argOffsetOut <= argOffsetMax); // We can't write beyond the outgoing area
     }
-    else                                      // We have some kind of a struct argument
+    else // We have some kind of a struct argument
     {
-        assert(source->isContained());        // We expect that this node was marked as contained in Lower
+        assert(source->isContained()); // We expect that this node was marked as contained in Lower
 
         if (source->OperGet() == GT_FIELD_LIST)
         {

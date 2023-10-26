@@ -1758,7 +1758,7 @@ public:
             {
                 continue;
             }
-#endif                                              // FEATURE_FIXED_OUT_ARGS
+#endif // FEATURE_FIXED_OUT_ARGS
 
             bool onStack = (regAvailEstimate == 0); // true when it is likely that this LclVar will have a stack home
 
@@ -2439,7 +2439,7 @@ public:
                     cse_def_cost = 3; // mov [EBP-1C],reg
                     cse_use_cost = 2; //     [EBP-1C]
 
-#else                                 // TARGET_ARM
+#else // TARGET_ARM
 
                     cse_def_cost = 2; // str reg,[sp+0x9c]
                     cse_use_cost = 2; // ldr reg,[sp+0x9c]
@@ -2453,7 +2453,7 @@ public:
                 cse_def_cost += 2;
                 cse_use_cost += 1;
             }
-#endif       // TARGET_AMD64
+#endif // TARGET_AMD64
         }
         else // not SMALL_CODE ...
         {
@@ -2591,7 +2591,7 @@ public:
 
                 if (cseRefCnt < moderateRefCnt) // If Conservative CSE promotion
                 {
-                    extra_yes_cost *= 2;        // full cost if we are being Conservative
+                    extra_yes_cost *= 2; // full cost if we are being Conservative
                 }
             }
 
@@ -3573,7 +3573,7 @@ bool Compiler::optIsCSEcandidate(GenTree* tree)
         case GT_ROR:
             return true; // CSE these Binary Operators
 
-        case GT_ADD:     // Check for ADDRMODE flag on these Binary Operators
+        case GT_ADD: // Check for ADDRMODE flag on these Binary Operators
         case GT_MUL:
         case GT_LSH:
             if ((tree->gtFlags & GTF_ADDRMODE_NO_CSE) != 0)

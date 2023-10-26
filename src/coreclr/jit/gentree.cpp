@@ -3596,14 +3596,14 @@ DONE:
 genTreeOps GenTree::ReverseRelop(genTreeOps relop)
 {
     static constexpr genTreeOps reverseOps[] = {
-        GT_NE,         // GT_EQ
-        GT_EQ,         // GT_NE
-        GT_GE,         // GT_LT
-        GT_GT,         // GT_LE
-        GT_LT,         // GT_GE
-        GT_LE,         // GT_GT
-        GT_TEST_NE,    // GT_TEST_EQ
-        GT_TEST_EQ,    // GT_TEST_NE
+        GT_NE,      // GT_EQ
+        GT_EQ,      // GT_NE
+        GT_GE,      // GT_LT
+        GT_GT,      // GT_LE
+        GT_LT,      // GT_GE
+        GT_LE,      // GT_GT
+        GT_TEST_NE, // GT_TEST_EQ
+        GT_TEST_EQ, // GT_TEST_NE
 #ifdef TARGET_XARCH
         GT_BITTEST_NE, // GT_BITTEST_EQ
         GT_BITTEST_EQ, // GT_BITTEST_NE
@@ -3638,14 +3638,14 @@ genTreeOps GenTree::ReverseRelop(genTreeOps relop)
 genTreeOps GenTree::SwapRelop(genTreeOps relop)
 {
     static constexpr genTreeOps swapOps[] = {
-        GT_EQ,         // GT_EQ
-        GT_NE,         // GT_NE
-        GT_GT,         // GT_LT
-        GT_GE,         // GT_LE
-        GT_LE,         // GT_GE
-        GT_LT,         // GT_GT
-        GT_TEST_EQ,    // GT_TEST_EQ
-        GT_TEST_NE,    // GT_TEST_NE
+        GT_EQ,      // GT_EQ
+        GT_NE,      // GT_NE
+        GT_GT,      // GT_LT
+        GT_GE,      // GT_LE
+        GT_LE,      // GT_GE
+        GT_LT,      // GT_GT
+        GT_TEST_EQ, // GT_TEST_EQ
+        GT_TEST_NE, // GT_TEST_NE
 #ifdef TARGET_XARCH
         GT_BITTEST_EQ, // GT_BITTEST_EQ
         GT_BITTEST_NE, // GT_BITTEST_NE
@@ -4663,7 +4663,7 @@ bool Compiler::gtMarkAddrMode(GenTree* addr, int* pCostEx, int* pCostSz, var_typ
 
         if (cns)
         {
-            if (cns >= 128)     // small offsets fits into a 16-bit instruction
+            if (cns >= 128) // small offsets fits into a 16-bit instruction
             {
                 if (cns < 4096) // medium offsets require a 32-bit instruction
                 {
@@ -10649,11 +10649,11 @@ void GenTree::SetIndirExceptionFlags(Compiler* comp)
     printf("%c", (flags & GTF_GLOB_REF) ? 'G' : '-');
     printf("%c", (debugFlags & GTF_DEBUG_NODE_MORPHED) ? '+' : // First print '+' if GTF_DEBUG_NODE_MORPHED is set
                      (flags & GTF_ORDER_SIDEEFF) ? 'O'
-                                                 : '-');       // otherwise print 'O' or '-'
+                                                 : '-'); // otherwise print 'O' or '-'
     printf("%c", (flags & GTF_COLON_COND) ? '?' : '-');
-    printf("%c", (flags & GTF_DONT_CSE) ? 'N' :                // N is for No cse
+    printf("%c", (flags & GTF_DONT_CSE) ? 'N' : // N is for No cse
                      (flags & GTF_MAKE_CSE) ? 'H'
-                                            : '-');            // H is for Hoist this expr
+                                            : '-'); // H is for Hoist this expr
     printf("%c", (flags & GTF_REVERSE_OPS) ? 'R' : '-');
     printf("%c", (flags & GTF_UNSIGNED) ? 'U' : (flags & GTF_BOOLEAN) ? 'B' : '-');
 #if FEATURE_SET_FLAGS
@@ -15328,7 +15328,7 @@ GenTree* Compiler::gtFoldExprConst(GenTree* tree)
                                 {
                                     d1 = forceCastToFloat(d1); // Truncate precision.
                                 }
-                                goto CNS_DOUBLE;               // Redundant cast.
+                                goto CNS_DOUBLE; // Redundant cast.
 
                             default:
                                 assert(!"Bad CastToType() in gtFoldExprConst() for a cast from double/float");
@@ -26146,7 +26146,7 @@ void ReturnTypeDesc::InitializeStructReturnType(Compiler*                comp,
                 m_regType[i] = comp->getJitGCType(gcPtrs[i]);
             }
 
-#else              //  TARGET_XXX
+#else //  TARGET_XXX
 
             // This target needs support here!
             //
@@ -26163,7 +26163,7 @@ void ReturnTypeDesc::InitializeStructReturnType(Compiler*                comp,
         default:
             unreached(); // By the contract of getReturnTypeForStruct we should never get here.
 
-    }                    // end of switch (howToReturnStruct)
+    } // end of switch (howToReturnStruct)
 
 #ifdef DEBUG
     m_inited = true;
@@ -26184,7 +26184,7 @@ void ReturnTypeDesc::InitializeLongReturnType()
     m_regType[0] = TYP_INT;
     m_regType[1] = TYP_INT;
 
-#else  // not (TARGET_X86 or TARGET_ARM)
+#else // not (TARGET_X86 or TARGET_ARM)
 
     m_regType[0] = TYP_LONG;
 

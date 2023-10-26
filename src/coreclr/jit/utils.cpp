@@ -356,7 +356,7 @@ void dspRegMask(regMaskTP regMask, size_t minSiz)
                     inRegRange = true;
                     sep        = "-";
                 }
-#else  // TARGET*
+#else // TARGET*
 #error Unsupported or unset target architecture
 #endif // TARGET*
             }
@@ -367,8 +367,8 @@ void dspRegMask(regMaskTP regMask, size_t minSiz)
                      || (regNum == REG_R28))                         // last register before FP
 #elif defined(TARGET_LOONGARCH64)
             else if ((regNum == REG_INT_LAST) || (regNum == REG_A7) || (regNum == REG_T8))
-#else                                                                // TARGET_LOONGARCH64
-      // We've already printed a register. Is this the end of a range?
+#else  // TARGET_LOONGARCH64
+       // We've already printed a register. Is this the end of a range?
             else if (regNum == REG_INT_LAST)
 #endif // TARGET_LOONGARCH64
             {
@@ -3800,16 +3800,16 @@ template <>
 const SignedMagic<int32_t>* TryGetSignedMagic(int32_t divisor)
 {
     static const SignedMagic<int32_t> table[]{
-        {0x55555556, 0},          // 3
+        {0x55555556, 0}, // 3
         {},
         {0x66666667, 1},          // 5
         {0x2aaaaaab, 0},          // 6
         {(int32_t)0x92492493, 2}, // 7
         {},
-        {0x38e38e39, 1},          // 9
-        {0x66666667, 2},          // 10
-        {0x2e8ba2e9, 1},          // 11
-        {0x2aaaaaab, 1},          // 12
+        {0x38e38e39, 1}, // 9
+        {0x66666667, 2}, // 10
+        {0x2e8ba2e9, 1}, // 11
+        {0x2aaaaaab, 1}, // 12
     };
 
     return TryGetMagic<3>(table, divisor);

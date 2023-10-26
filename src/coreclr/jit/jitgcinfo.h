@@ -106,8 +106,8 @@ public:
     regMaskTP gcRegGCrefSetCur; // current regs holding GCrefs
     regMaskTP gcRegByrefSetCur; // current regs holding Byrefs
 
-    VARSET_TP gcTrkStkPtrLcls;  // set of tracked stack ptr lcls (GCref and Byref) - no args
-    VARSET_TP gcVarPtrSetCur;   // currently live part of "gcTrkStkPtrLcls"
+    VARSET_TP gcTrkStkPtrLcls; // set of tracked stack ptr lcls (GCref and Byref) - no args
+    VARSET_TP gcVarPtrSetCur;  // currently live part of "gcTrkStkPtrLcls"
 
     //-------------------------------------------------------------------------
     //
@@ -143,12 +143,12 @@ public:
 
     struct regPtrDsc
     {
-        regPtrDsc* rpdNext;          // next entry in the list
-        unsigned   rpdOffs;          // the offset of the instruction
+        regPtrDsc* rpdNext; // next entry in the list
+        unsigned   rpdOffs; // the offset of the instruction
 
-        union                        // 2-16 byte union (depending on architecture)
+        union // 2-16 byte union (depending on architecture)
         {
-            struct                   // 2-16 byte structure (depending on architecture)
+            struct // 2-16 byte structure (depending on architecture)
             {
                 regMaskSmall rpdAdd; // regptr bitset being added
                 regMaskSmall rpdDel; // regptr bitset being removed
@@ -249,8 +249,8 @@ public:
     struct CallDsc
     {
         CallDsc* cdNext;
-        void*    cdBlock;               // the code block of the call
-        unsigned cdOffs;                // the offset     of the call
+        void*    cdBlock; // the code block of the call
+        unsigned cdOffs;  // the offset     of the call
 #ifndef JIT32_GCENCODER
         unsigned short cdCallInstrSize; // the size       of the call instruction.
 #endif
@@ -259,7 +259,7 @@ public:
 
         union
         {
-            struct                       // used if cdArgCnt == 0
+            struct // used if cdArgCnt == 0
             {
                 unsigned cdArgMask;      // ptr arg bitfield
                 unsigned cdByrefArgMask; // byref qualifier for cdArgMask
@@ -353,7 +353,7 @@ public:
 
 private:
     static size_t gcRecordEpilog(void* pCallBackData, unsigned offset);
-#else  // JIT32_GCENCODER
+#else // JIT32_GCENCODER
     void gcInfoBlockHdrSave(GcInfoEncoder* gcInfoEncoder, unsigned methodSize, unsigned prologSize);
 
 #endif // JIT32_GCENCODER
@@ -414,7 +414,7 @@ inline unsigned char encodeUnsigned(BYTE* dest, unsigned value)
         {
             *--p = cont | (value & 0x7f);
             value >>= 7;
-            cont = 0x80;           // Non last bytes have a continuation flag
+            cont = 0x80; // Non last bytes have a continuation flag
         }
         *--p = cont | (BYTE)value; // Now write the first byte
         assert(p == dest);
@@ -454,7 +454,7 @@ inline unsigned char encodeSigned(BYTE* dest, int val)
         {
             *--p = cont | (value & 0x7f);
             value >>= 7;
-            cont = 0x80;                 // Non last bytes have a continuation flag
+            cont = 0x80; // Non last bytes have a continuation flag
         }
         *--p = neg | cont | (BYTE)value; // Now write the first byte
         assert(p == dest);

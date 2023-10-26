@@ -667,7 +667,7 @@ void Compiler::unwindReserveFuncHelper(FuncInfoDsc* func, bool isHotCode)
             unwindCodeBytes = (DWORD)(func->cfiCodes->size() * sizeof(CFI_CODE));
         }
         else
-#endif                                                          // UNIX_AMD64_ABI
+#endif // UNIX_AMD64_ABI
         {
             assert(func->unwindHeader.Version == 1);            // Can't call this before unwindBegProlog
             assert(func->unwindHeader.CountOfUnwindCodes == 0); // Only call this once per prolog
@@ -804,7 +804,7 @@ void Compiler::unwindEmitFuncHelper(FuncInfoDsc* func, void* pHotCode, void* pCo
                 pUnwindInfo->CountOfUnwindCodes * sizeof(UNWIND_CODE); // This is what the unwind codes themselves say;
                                                                        // it better match what we tell the VM.
             assert(unwindCodeBytes == unwindCodeBytesSpecified);
-#endif                                                                 // DEBUG
+#endif // DEBUG
 
             pUnwindBlock = &func->unwindCodes[func->unwindCodeSlot];
         }

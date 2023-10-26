@@ -844,7 +844,7 @@ void CompileResult::applyRelocs(RelocContext* rc, unsigned char* block1, ULONG b
                 }
                 break;
 
-                case IMAGE_REL_ARM64_PAGEBASE_REL21:                           // ADRP 21 bit PC-relative page address
+                case IMAGE_REL_ARM64_PAGEBASE_REL21: // ADRP 21 bit PC-relative page address
                 {
                     if ((section_begin <= address) && (address < section_end)) // A reloc for our section?
                     {
@@ -858,7 +858,7 @@ void CompileResult::applyRelocs(RelocContext* rc, unsigned char* block1, ULONG b
                 }
                 break;
 
-                case IMAGE_REL_ARM64_PAGEOFFSET_12A:                           // ADD 12 bit page offset
+                case IMAGE_REL_ARM64_PAGEOFFSET_12A: // ADD 12 bit page offset
                 {
                     if ((section_begin <= address) && (address < section_end)) // A reloc for our section?
                     {

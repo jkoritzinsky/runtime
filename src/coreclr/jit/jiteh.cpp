@@ -632,7 +632,7 @@ bool Compiler::ehHasCallableHandlers()
 
     return compHndBBtabCount > 0;
 
-#else  // !FEATURE_EH_FUNCLETS
+#else // !FEATURE_EH_FUNCLETS
 
     return ehNeedsShadowSPslots();
 
@@ -1397,11 +1397,11 @@ void Compiler::fgAllocEHTable()
     compHndBBtabAllocCount = info.compXcptnsCount * 2;
 #endif                                             // DEBUG
 
-#else                                              // !FEATURE_EH_FUNCLETS
+#else // !FEATURE_EH_FUNCLETS
 
     compHndBBtabAllocCount = info.compXcptnsCount;
 
-#endif                                             // !FEATURE_EH_FUNCLETS
+#endif // !FEATURE_EH_FUNCLETS
 
     compHndBBtab = new (this, CMK_BasicBlock) EHblkDsc[compHndBBtabAllocCount];
 
@@ -4094,7 +4094,7 @@ bool Compiler::fgIsIntraHandlerPred(BasicBlock* predBlock, BasicBlock* block)
 #if FEATURE_EH_CALLFINALLY_THUNKS
     if (xtab->HasFinallyHandler())
     {
-        assert((xtab->ebdHndBeg == block) ||                 // The normal case
+        assert((xtab->ebdHndBeg == block) || // The normal case
                (xtab->ebdHndBeg->NextIs(block) &&
                 (xtab->ebdHndBeg->bbFlags & BBF_INTERNAL))); // After we've already inserted a header block, and we're
                                                              // trying to decide how to split up the predecessor edges.

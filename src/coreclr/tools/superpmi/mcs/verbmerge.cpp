@@ -244,7 +244,7 @@ int verbMerge::FilterDirectory(LPCWSTR                      searchPattern,
     hSearch = FindFirstFileW(searchPattern, &findData);
 #else  // !TARGET_UNIX
     hSearch = FindFirstFileExW(searchPattern,
-                               FindExInfoBasic,       // We don't care about the short names
+                               FindExInfoBasic, // We don't care about the short names
                                &findData,
                                FindExSearchNameMatch, // standard name matching
                                NULL, FIND_FIRST_EX_LARGE_FETCH);

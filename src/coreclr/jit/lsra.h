@@ -2491,7 +2491,7 @@ public:
                                  // set.
 
     unsigned char copyReg : 1;
-    unsigned char moveReg : 1;      // true if this var is moved to a new register
+    unsigned char moveReg : 1; // true if this var is moved to a new register
 
     unsigned char isPhysRegRef : 1; // true if 'referent' points of a RegRecord, false if it points to an Interval
     unsigned char isFixedRegRef : 1;

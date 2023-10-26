@@ -4255,7 +4255,7 @@ void Compiler::impImportLeave(BasicBlock* block)
     assert(fgBBs == (BasicBlock**)0xCDCD || fgLookupBB(jmpAddr) != NULL); // should be a BB boundary
 
     BasicBlock* step         = DUMMY_INIT(NULL);
-    unsigned    encFinallies = 0;    // Number of enclosing finallies.
+    unsigned    encFinallies = 0; // Number of enclosing finallies.
     GenTree*    endCatches   = NULL;
     Statement*  endLFinStmt  = NULL; // The statement tree to indicate the end of locally-invoked finally.
 
@@ -4501,7 +4501,7 @@ void Compiler::impImportLeave(BasicBlock* block)
 #endif // DEBUG
 }
 
-#else  // FEATURE_EH_FUNCLETS
+#else // FEATURE_EH_FUNCLETS
 
 void Compiler::impImportLeave(BasicBlock* block)
 {

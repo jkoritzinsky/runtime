@@ -623,7 +623,7 @@ protected:
     void genInsertNopForUnwinder(BasicBlock* block);
 #endif
 
-#else  // !FEATURE_EH_FUNCLETS
+#else // !FEATURE_EH_FUNCLETS
 
     // This is a no-op when there are no funclets!
     void genUpdateCurrentFunclet(BasicBlock* block)
@@ -725,8 +725,8 @@ public:
 
 protected:
 #if defined(FEATURE_EH_FUNCLETS)
-    bool siInFuncletRegion;  // Have we seen the start of the funclet region?
-#endif                       // FEATURE_EH_FUNCLETS
+    bool siInFuncletRegion; // Have we seen the start of the funclet region?
+#endif                      // FEATURE_EH_FUNCLETS
 
     IL_OFFSET siLastEndOffs; // IL offset of the (exclusive) end of the last block processed
 

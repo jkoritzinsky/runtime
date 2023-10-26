@@ -2342,7 +2342,7 @@ void Lowering::InsertProfTailCallHook(GenTreeCall* call, GenTree* insertionPoint
         insertionPoint = call;
     }
 
-#else  // !defined(TARGET_X86)
+#else // !defined(TARGET_X86)
 
     if (insertionPoint == nullptr)
     {

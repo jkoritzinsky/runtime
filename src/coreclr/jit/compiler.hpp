@@ -870,7 +870,7 @@ inline unsigned Compiler::funGetFuncIdx(BasicBlock* block)
     return funcIdx;
 }
 
-#else  // !FEATURE_EH_FUNCLETS
+#else // !FEATURE_EH_FUNCLETS
 
 /*****************************************************************************
  *  Get the FuncInfoDsc for the funclet we are currently generating code for.

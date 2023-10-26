@@ -4176,7 +4176,7 @@ bool FlowEdge::setEdgeWeightMinChecked(weight_t newWeight, BasicBlock* bDst, wei
                 getSourceBlock()->bbNum, bDst->bbNum, newWeight, m_edgeWeightMin, m_edgeWeightMax, slop);
         result = false; // break here
     }
-#endif                  // DEBUG
+#endif // DEBUG
 
     return result;
 }
@@ -4286,7 +4286,7 @@ bool FlowEdge::setEdgeWeightMaxChecked(weight_t newWeight, BasicBlock* bDst, wei
                 getSourceBlock()->bbNum, bDst->bbNum, newWeight, m_edgeWeightMin, m_edgeWeightMax, slop);
         result = false; // break here
     }
-#endif                  // DEBUG
+#endif // DEBUG
 
     return result;
 }

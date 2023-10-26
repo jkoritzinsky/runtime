@@ -37,7 +37,7 @@ XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 #ifndef DEBUGGABLE_GENTREE
 #ifdef DEBUG
 #define DEBUGGABLE_GENTREE 1
-#else  // !DEBUG
+#else // !DEBUG
 #define DEBUGGABLE_GENTREE 0
 #endif // !DEBUG
 #endif // !DEBUGGABLE_GENTREE
@@ -71,10 +71,10 @@ enum SpecialCodeKind
 //
 enum GenTreeOperKind
 {
-    GTK_SPECIAL = 0x00,                                             // special operator
-    GTK_LEAF    = 0x01,                                             // leaf    operator
-    GTK_UNOP    = 0x02,                                             // unary   operator
-    GTK_BINOP   = 0x04,                                             // binary  operator
+    GTK_SPECIAL = 0x00, // special operator
+    GTK_LEAF    = 0x01, // leaf    operator
+    GTK_UNOP    = 0x02, // unary   operator
+    GTK_BINOP   = 0x04, // binary  operator
 
     GTK_KINDMASK = (GTK_SPECIAL | GTK_LEAF | GTK_UNOP | GTK_BINOP), // operator kind mask
     GTK_SMPOP    = (GTK_UNOP | GTK_BINOP),
@@ -112,7 +112,7 @@ enum gtCallTypes : BYTE
     CT_HELPER,    // Jit-helper
     CT_INDIRECT,  // Indirect call
 
-    CT_COUNT      // fake entry (must be last)
+    CT_COUNT // fake entry (must be last)
 };
 
 enum class ExceptionSetFlags : uint32_t
@@ -719,8 +719,8 @@ struct GenTree
 #define GET_CSE_INDEX(x) (((x) > 0) ? x : -(x))
 #define TO_CSE_DEF(x) (-(x))
 
-    signed char gtCSEnum;     // 0 or the CSE index (negated if def)
-                              // valid only for CSE expressions
+    signed char gtCSEnum; // 0 or the CSE index (negated if def)
+                          // valid only for CSE expressions
 
     unsigned char gtLIRFlags; // Used for nodes that are in LIR. See LIR::Flags in lir.h for the various flags.
 
@@ -835,7 +835,7 @@ public:
 private:
     genRegTag gtRegTag; // What is in _gtRegNum?
 
-#endif                  // DEBUG
+#endif // DEBUG
 
 private:
     // This stores the register assigned to the node. If a register is not assigned, _gtRegNum is set to REG_NA.
@@ -1010,7 +1010,7 @@ public:
     unsigned gtTreeID;
     unsigned gtSeqNum; // liveness traversal order within the current statement
 
-    int gtUseNum;      // use-ordered traversal within the function
+    int gtUseNum; // use-ordered traversal within the function
 #endif
 
     static const unsigned char gtOperKindTable[];
@@ -5483,9 +5483,9 @@ struct GenTreeCall final : public GenTree
     gtCallTypes      gtCallType : 3;   // value from the gtCallTypes enumeration
     var_types        gtReturnType : 5; // exact return type
 
-    uint8_t gtInlineInfoCount;         // number of inline candidates for the given call
+    uint8_t gtInlineInfoCount; // number of inline candidates for the given call
 
-    CORINFO_CLASS_HANDLE gtRetClsHnd;  // The return type handle of the call if it is a struct; always available
+    CORINFO_CLASS_HANDLE gtRetClsHnd; // The return type handle of the call if it is a struct; always available
     union
     {
         void*                gtStubCallStubAddr; // GTF_CALL_VIRT_STUB - these are never inlined
@@ -6724,12 +6724,12 @@ struct GenTreeIndexAddr : public GenTreeOp
 
     CORINFO_CLASS_HANDLE gtStructElemClass; // If the element type is a struct, this is the struct type.
 
-    BasicBlock* gtIndRngFailBB;             // Basic block to jump to for array-index-out-of-range
+    BasicBlock* gtIndRngFailBB; // Basic block to jump to for array-index-out-of-range
 
-    var_types gtElemType;                   // The element type of the array.
-    unsigned  gtElemSize;                   // size of elements in the array
-    unsigned  gtLenOffset;                  // The offset from the array's base address to its length.
-    unsigned  gtElemOffset;                 // The offset from the array's base address to its first element.
+    var_types gtElemType;   // The element type of the array.
+    unsigned  gtElemSize;   // size of elements in the array
+    unsigned  gtLenOffset;  // The offset from the array's base address to its length.
+    unsigned  gtElemOffset; // The offset from the array's base address to its first element.
 
     GenTreeIndexAddr(GenTree*             arr,
                      GenTree*             ind,
@@ -6974,11 +6974,11 @@ struct GenTreeArrElem : public GenTree
     GenTree*      gtArrInds[GT_ARR_MAX_RANK]; // Indices
     unsigned char gtArrRank;                  // Rank of the array
 
-    unsigned char gtArrElemSize;              // !!! Caution, this is an "unsigned char", it is used only
-                                              // on the optimization path of array intrinsics.
-                                              // It stores the size of array elements WHEN it can fit
-                                              // into an "unsigned char".
-                                              // This has caused VSW 571394.
+    unsigned char gtArrElemSize; // !!! Caution, this is an "unsigned char", it is used only
+                                 // on the optimization path of array intrinsics.
+                                 // It stores the size of array elements WHEN it can fit
+                                 // into an "unsigned char".
+                                 // This has caused VSW 571394.
 
     // Requires that "inds" is a pointer to an array of "rank" nodes for the indices.
     GenTreeArrElem(var_types type, GenTree* arr, unsigned char rank, unsigned char elemSize, GenTree** inds)
@@ -7425,7 +7425,7 @@ struct GenTreeRetExpr : public GenTree
 // In LIR there are no longer statements so debug information is inserted linearly using these nodes.
 struct GenTreeILOffset : public GenTree
 {
-    DebugInfo gtStmtDI;         // debug info
+    DebugInfo gtStmtDI; // debug info
 #ifdef DEBUG
     IL_OFFSET gtStmtLastILoffs; // instr offset at end of stmt
 #endif
@@ -7883,7 +7883,7 @@ public:
         return gtPutInIncomingArgArea;
     }
 
-#else  // !FEATURE_FASTTAILCALL
+#else // !FEATURE_FASTTAILCALL
 
     bool putInIncomingArgArea() const
     {
@@ -8978,7 +8978,7 @@ inline bool GenTree::IsValidCallArgument()
 
         return false;
 
-#else  // FEATURE_MULTIREG_ARGS or FEATURE_PUT_STRUCT_ARG_STK
+#else // FEATURE_MULTIREG_ARGS or FEATURE_PUT_STRUCT_ARG_STK
 
         // We allow this GT_FIELD_LIST as an argument
         return true;

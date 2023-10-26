@@ -709,7 +709,7 @@ void CodeGen::genFuncletEpilog()
                                   /* reportUnwindData */ true);
 
         int offset2 = frameSize + spDelta + genFuncletInfo.fiSP_to_PSP_slot_delta + 8;
-        assert(offset2 < 2040);                  // can amend.
+        assert(offset2 < 2040); // can amend.
 
         regsToRestoreMask &= ~(RBM_RA | RBM_FP); // We restore FP/RA at the end
         genRestoreCalleeSavedRegistersHelp(regsToRestoreMask, offset2, 0);
@@ -1698,7 +1698,7 @@ void CodeGen::genLclHeap(GenTree* tree)
     unsigned             stackAdjustment          = 0;
     const target_ssize_t ILLEGAL_LAST_TOUCH_DELTA = (target_ssize_t)-1;
     target_ssize_t       lastTouchDelta =
-        ILLEGAL_LAST_TOUCH_DELTA;       // The number of bytes from SP to the last stack address probed.
+        ILLEGAL_LAST_TOUCH_DELTA; // The number of bytes from SP to the last stack address probed.
 
     noway_assert(isFramePointerUsed()); // localloc requires Frame Pointer to be established since SP changes
     noway_assert(genStackLevel == 0);   // Can't have anything on the stack
@@ -5053,9 +5053,9 @@ void CodeGen::genPutArgStk(GenTreePutArgStk* treeNode)
         argOffsetOut += EA_SIZE_IN_BYTES(storeAttr);
         assert(argOffsetOut <= argOffsetMax); // We can't write beyond the outgoing arg area
     }
-    else                                      // We have some kind of a struct argument
+    else // We have some kind of a struct argument
     {
-        assert(source->isContained());        // We expect that this node was marked as contained in Lower
+        assert(source->isContained()); // We expect that this node was marked as contained in Lower
 
         if (source->OperGet() == GT_FIELD_LIST)
         {
@@ -7398,7 +7398,7 @@ void CodeGen::genPushCalleeSavedRegisters(regNumber initReg, bool* pInitRegZeroe
             GetEmitter()->emitIns_R_R_I(INS_sd, EA_PTRSIZE, REG_RA, REG_SPBASE, offsetSpToSavedFp + 8);
             compiler->unwindSaveReg(REG_RA, offsetSpToSavedFp + 8);
 
-            maskSaveRegsInt &= ~(RBM_FP | RBM_RA);                   // We've already saved FP/RA
+            maskSaveRegsInt &= ~(RBM_FP | RBM_RA); // We've already saved FP/RA
 
             offset = compiler->compLclFrameSize + 2 * REGSIZE_BYTES; // FP/RA
         }

@@ -1569,17 +1569,17 @@ class LoopSearch
     Compiler*    comp;
 
     // See LoopSearch class comment header for a diagram relating these fields:
-    BasicBlock* head;              // Predecessor of unique entry edge
-    BasicBlock* top;               // Successor of back-edge from BOTTOM
-    BasicBlock* bottom;            // Predecessor of back-edge to TOP, also lexically last in-loop block
-    BasicBlock* entry;             // Successor of unique entry edge
+    BasicBlock* head;   // Predecessor of unique entry edge
+    BasicBlock* top;    // Successor of back-edge from BOTTOM
+    BasicBlock* bottom; // Predecessor of back-edge to TOP, also lexically last in-loop block
+    BasicBlock* entry;  // Successor of unique entry edge
 
-    BasicBlock*   lastExit;        // Most recently discovered exit block
-    unsigned char exitCount;       // Number of discovered exit edges
-    unsigned int  oldBlockMaxNum;  // Used to identify new blocks created during compaction
-    BlockSet      bottomBlocks;    // BOTTOM blocks of already-recorded loops
+    BasicBlock*   lastExit;       // Most recently discovered exit block
+    unsigned char exitCount;      // Number of discovered exit edges
+    unsigned int  oldBlockMaxNum; // Used to identify new blocks created during compaction
+    BlockSet      bottomBlocks;   // BOTTOM blocks of already-recorded loops
 #ifdef DEBUG
-    bool forgotExit = false;       // Flags a rare case where lastExit gets nulled out, for assertions
+    bool forgotExit = false; // Flags a rare case where lastExit gets nulled out, for assertions
 #endif
     bool changedFlowGraph = false; // Signals that loop compaction has modified the flow graph
 
@@ -3530,7 +3530,7 @@ bool Compiler::optIterSmallOverflow(int iterAtExit, var_types incrType)
             type_MAX = USHRT_MAX;
             break;
 
-        case TYP_UINT:    // Detected by checking for 32bit ....
+        case TYP_UINT: // Detected by checking for 32bit ....
         case TYP_INT:
             return false; // ... overflow same as done for TYP_INT
 
@@ -3579,7 +3579,7 @@ bool Compiler::optIterSmallUnderflow(int iterAtExit, var_types decrType)
             type_MIN = 0;
             break;
 
-        case TYP_UINT:    // Detected by checking for 32bit ....
+        case TYP_UINT: // Detected by checking for 32bit ....
         case TYP_INT:
             return false; // ... underflow same as done for TYP_INT
 
@@ -4116,8 +4116,8 @@ PhaseStatus Compiler::optUnrollLoops()
         genTreeOps testOper;     // type of loop test (i.e. GT_LE, GT_GE, etc.)
         bool       unsTest;      // Is the comparison unsigned?
 
-        unsigned loopRetCount;   // number of BBJ_RETURN blocks in loop
-        unsigned totalIter;      // total number of iterations in the constant loop
+        unsigned loopRetCount; // number of BBJ_RETURN blocks in loop
+        unsigned totalIter;    // total number of iterations in the constant loop
 
         const unsigned loopFlags = loop.lpFlags;
 

@@ -119,9 +119,9 @@ struct EHblkDsc
     //   funclet index, just subtract 1.
     unsigned short ebdFuncIndex;
 
-#endif                            // FEATURE_EH_FUNCLETS
+#endif // FEATURE_EH_FUNCLETS
 
-    IL_OFFSET ebdTryBegOffset;    // IL offsets of EH try/end regions as they are imported
+    IL_OFFSET ebdTryBegOffset; // IL offsets of EH try/end regions as they are imported
     IL_OFFSET ebdTryEndOffset;
     IL_OFFSET ebdFilterBegOffset; // only set if HasFilter()
     IL_OFFSET ebdHndBegOffset;

@@ -1862,8 +1862,8 @@ protected:
     pasMaskType pasBottomMask;      // The first 32 args
     pasMaskType pasByrefBottomMask; // byref qualifier for pasBottomMask
 
-    BYTE*    pasTopArray;           // More than 32 args are represented here
-    unsigned pasPtrsInTopArray;     // How many GCptrs here
+    BYTE*    pasTopArray;       // More than 32 args are represented here
+    unsigned pasPtrsInTopArray; // How many GCptrs here
 };
 
 //-----------------------------------------------------------------------------
@@ -3165,10 +3165,10 @@ size_t GCInfo::gcMakeRegPtrTable(BYTE* dest, int mask, const InfoHdr& header, un
                 thisRegNum = genRegNumFromMask(tmpMask);
                 switch (thisRegNum)
                 {
-                    case 0:             // EAX
-                    case 1:             // ECX
-                    case 2:             // EDX
-                    case 4:             // ESP
+                    case 0: // EAX
+                    case 1: // ECX
+                    case 2: // EDX
+                    case 4: // ESP
                         break;
                     case 7:             // EDI
                         *dest++ = 0xF4; /* 11110100  This pointer is in EDI */
@@ -3616,7 +3616,7 @@ void GCInfo::gcFindPtrsInFrame(const void* infoBlock, const void* codeBlock, uns
 
 #endif // DUMP_GC_TABLES
 
-#else  // !JIT32_GCENCODER
+#else // !JIT32_GCENCODER
 
 #include "gcinfoencoder.h"
 

@@ -36,7 +36,7 @@
 #endif
 
 #define MSC_ONLY(x) x
-#else  // !_MSC_VER
+#else // !_MSC_VER
 #define MSC_ONLY(x)
 #endif // !_MSC_VER
 
@@ -85,7 +85,7 @@
 #ifndef W
 #ifdef TARGET_UNIX
 #define W(str) u##str
-#else  // TARGET_UNIX
+#else // TARGET_UNIX
 #define W(str) L##str
 #endif // TARGET_UNIX
 #endif // !W
@@ -114,7 +114,7 @@
 
 #ifdef TARGET_UNIX
 #define PLATFORM_SHARED_LIB_SUFFIX_A PAL_SHLIB_SUFFIX
-#else  // !TARGET_UNIX
+#else // !TARGET_UNIX
 #define PLATFORM_SHARED_LIB_SUFFIX_A ".dll"
 #endif // !TARGET_UNIX
 

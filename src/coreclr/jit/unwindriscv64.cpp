@@ -246,9 +246,9 @@ unsigned UnwindCodesBase::GetCodeSizeFromUnwindCodes(bool isProlog)
         BYTE b1 = *pCodes;
         if (IsEndCode(b1))
         {
-            break;                          // We hit an "end" code; we're done
+            break; // We hit an "end" code; we're done
         }
-        size += 4;                          // All codes represent 4 byte instructions.
+        size += 4; // All codes represent 4 byte instructions.
         pCodes += GetUnwindSizeFromUnwindHeader(b1);
         assert(pCodes - pCodesStart < 256); // 255 is the absolute maximum number of code bytes allowed
     }
@@ -864,7 +864,7 @@ void Compiler::unwindEmitFunc(FuncInfoDsc* func, void* pHotCode, void* pColdCode
 
 void UnwindPrologCodes::SetFinalSize(int headerBytes, int epilogBytes)
 {
-#if 0  // TODO COMMENTED OUT BECAUSE s_UnwindSize is not set
+#if 0 // TODO COMMENTED OUT BECAUSE s_UnwindSize is not set
 #ifdef DEBUG
     // We're done adding codes. Check that we didn't accidentally create a bigger prolog.
     unsigned codeSize = GetCodeSizeFromUnwindCodes(true);
@@ -874,7 +874,7 @@ void UnwindPrologCodes::SetFinalSize(int headerBytes, int epilogBytes)
 
     int prologBytes = Size();
 
-    EnsureSize(headerBytes + prologBytes + epilogBytes + 3);      // 3 = padding bytes for alignment
+    EnsureSize(headerBytes + prologBytes + epilogBytes + 3); // 3 = padding bytes for alignment
 
     upcUnwindBlockSlot = upcCodeSlot - headerBytes - epilogBytes; // Index of the first byte of the unwind header
 
@@ -1409,7 +1409,7 @@ void UnwindFragmentInfo::MergeCodes()
                                                                       // Words or Extended Epilog Count?
                          + epilogScopes                               // One DWORD per epilog scope, for EBit = 0
                          ) *
-                        sizeof(DWORD);                                // convert it to bytes
+                        sizeof(DWORD); // convert it to bytes
 
     DWORD finalSize = headerBytes + codeBytes; // Size of actual unwind codes, aligned up to 4-byte words,
                                                // including end padding if necessary
@@ -1466,8 +1466,8 @@ void UnwindFragmentInfo::Finalize(UNATIVE_OFFSET functionLength)
     noway_assert((functionLength & 3) == 0);
     DWORD headerFunctionLength = functionLength / 4;
 
-    DWORD headerVers = 0;    // Version of the unwind info is zero. No other version number is currently defined.
-    DWORD headerXBit = 0;    // We never generate "exception data", but the VM might add some.
+    DWORD headerVers = 0; // Version of the unwind info is zero. No other version number is currently defined.
+    DWORD headerXBit = 0; // We never generate "exception data", but the VM might add some.
     DWORD headerEBit;
     DWORD headerEpilogCount; // This depends on how we set headerEBit.
     DWORD headerCodeWords;

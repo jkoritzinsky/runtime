@@ -694,7 +694,7 @@ void Compiler::lvaInitUserArgs(InitVarDscInfo* varDscInfo, unsigned skipArgs, un
                 if (varDscInfo->canEnreg(TYP_INT, 1) &&     // The beginning of the struct can go in a register
                     !varDscInfo->canEnreg(TYP_INT, cSlots)) // The end of the struct can't fit in a register
                 {
-                    cSlotsToEnregister = 1;                 // Force the split
+                    cSlotsToEnregister = 1; // Force the split
                 }
             }
         }
@@ -757,8 +757,8 @@ void Compiler::lvaInitUserArgs(InitVarDscInfo* varDscInfo, unsigned skipArgs, un
                 !varDscInfo->canEnreg(TYP_INT, cSlots) && // The end of the struct can't fit in a register
                 varDscInfo->existAnyFloatStackArgs())     // There's at least one stack-based FP arg already
             {
-                varDscInfo->setAllRegArgUsed(TYP_INT);    // Prevent all future use of integer registers
-                preSpill = false; // This struct won't be prespilled, since it will go on the stack
+                varDscInfo->setAllRegArgUsed(TYP_INT); // Prevent all future use of integer registers
+                preSpill = false;                      // This struct won't be prespilled, since it will go on the stack
             }
         }
 
@@ -1600,7 +1600,7 @@ unsigned Compiler::compMap2ILvarNum(unsigned varNum) const
     {
         return (unsigned)ICorDebugInfo::UNKNOWN_ILNUM; // Cannot be mapped
     }
-#endif                                                 // FEATURE_FIXED_OUT_ARGS
+#endif // FEATURE_FIXED_OUT_ARGS
 
     // Now mutate varNum to remove extra parameters from the count.
     if ((info.compMethodInfo->args.callConv & CORINFO_CALLCONV_PARAMTYPE) && varNum > (unsigned)info.compTypeCtxtArg)
@@ -3813,7 +3813,7 @@ size_t LclVarDsc::lvArgStackSize() const
         }
 #endif // defined(TARGET_ARM64) || defined(TARGET_LOONGARCH64) || defined(TARGET_RISCV64)
 
-#else  // !TARGET_ARM64 !WINDOWS_AMD64_ABI !UNIX_AMD64_ABI !TARGET_LOONGARCH64 !TARGET_RISCV64
+#else // !TARGET_ARM64 !WINDOWS_AMD64_ABI !UNIX_AMD64_ABI !TARGET_LOONGARCH64 !TARGET_RISCV64
 
         NYI("Unsupported target.");
         unreached();
@@ -5866,7 +5866,7 @@ int Compiler::lvaAssignVirtualFrameOffsetToArg(unsigned    lclNum,
             argOffs += TARGET_POINTER_SIZE;
         }
 
-#else  // TARGET*
+#else // TARGET*
 #error Unsupported or unset target architecture
 #endif // TARGET*
     }
@@ -6065,7 +6065,7 @@ void Compiler::lvaAssignVirtualFrameOffsetsToLocals()
     {
         codeGen->SetSaveFpLrWithAllCalleeSavedRegisters(true); // Force using new frames
     }
-#endif                                                         // TARGET_ARM64
+#endif // TARGET_ARM64
 
 #ifdef TARGET_XARCH
     // On x86/amd64, the return address has already been pushed by the call instruction in the caller.
@@ -6712,7 +6712,7 @@ void Compiler::lvaAssignVirtualFrameOffsetsToLocals()
 
             /* Need to align the offset? */
 
-            if (mustDoubleAlign && (varDsc->lvType == TYP_DOUBLE  // Align doubles for ARM and x86
+            if (mustDoubleAlign && (varDsc->lvType == TYP_DOUBLE // Align doubles for ARM and x86
 #ifdef TARGET_ARM
                                     || varDsc->lvType == TYP_LONG // Align longs for ARM
 #endif
@@ -6882,7 +6882,7 @@ void Compiler::lvaAssignVirtualFrameOffsetsToLocals()
 #if defined(TARGET_RISCV64)
     assert(isFramePointerUsed()); // Note that currently we always have a frame pointer
     stkOffs -= 2 * REGSIZE_BYTES;
-#endif                            // TARGET_RISCV64
+#endif // TARGET_RISCV64
 
 #if FEATURE_FIXED_OUT_ARGS
     if (lvaOutgoingArgSpaceSize > 0)
@@ -6921,7 +6921,7 @@ void Compiler::lvaAssignVirtualFrameOffsetsToLocals()
     {
         pushedCount += 1; // pushed EBP (frame pointer)
     }
-    pushedCount += 1;     // pushed PC (return address)
+    pushedCount += 1; // pushed PC (return address)
 #endif
 
     noway_assert(compLclFrameSize + originalFrameSize ==
@@ -7692,7 +7692,7 @@ void Compiler::lvaTableDump(FrameLayoutState curState)
 
     // Figure out some sizes, to help line things up
 
-    size_t refCntWtdWidth = 6;            // Use 6 as the minimum width
+    size_t refCntWtdWidth = 6; // Use 6 as the minimum width
 
     if (curState != INITIAL_FRAME_LAYOUT) // don't need this info for INITIAL_FRAME_LAYOUT
     {

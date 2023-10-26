@@ -291,7 +291,7 @@ public:
 
 private:
     bool m_cgDoubleAlign;
-#else  // !DOUBLE_ALIGN
+#else // !DOUBLE_ALIGN
 
 public:
     bool doubleAlignOrFramePointerUsed() const
@@ -731,14 +731,14 @@ public:
 
         Compiler* m_Compiler;
 
-        VariableLiveDescriptor* m_vlrLiveDsc;          // Array of descriptors that manage VariableLiveRanges.
-                                                       // Its indices correspond to lvaTable indexes (or lvSlotNum).
+        VariableLiveDescriptor* m_vlrLiveDsc; // Array of descriptors that manage VariableLiveRanges.
+                                              // Its indices correspond to lvaTable indexes (or lvSlotNum).
 
         VariableLiveDescriptor* m_vlrLiveDscForProlog; // Array of descriptors that manage VariableLiveRanges.
                                                        // Its indices correspond to lvaTable indexes (or lvSlotNum).
 
-        bool m_LastBasicBlockHasBeenEmitted;           // When true no more siEndVariableLiveRange is considered.
-                                                       // No update/start happens when code has been generated.
+        bool m_LastBasicBlockHasBeenEmitted; // When true no more siEndVariableLiveRange is considered.
+                                             // No update/start happens when code has been generated.
 
     public:
         VariableLiveKeeper(unsigned int  totalLocalCount,

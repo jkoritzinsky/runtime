@@ -883,9 +883,9 @@ void CodeGen::genPutArgStk(GenTreePutArgStk* treeNode)
         argOffsetOut += EA_SIZE_IN_BYTES(storeAttr);
         assert(argOffsetOut <= argOffsetMax); // We can't write beyond the outgoing arg area
     }
-    else                                      // We have some kind of a struct argument
+    else // We have some kind of a struct argument
     {
-        assert(source->isContained());        // We expect that this node was marked as contained in Lower
+        assert(source->isContained()); // We expect that this node was marked as contained in Lower
 
         if (source->OperGet() == GT_FIELD_LIST)
         {
@@ -1008,8 +1008,8 @@ void CodeGen::genPutArgStk(GenTreePutArgStk* treeNode)
                 // Emit stp instruction to store the two registers into the outgoing argument area
                 emit->emitIns_S_S_R_R(INS_stp, emitTypeSize(type0), emitTypeSize(type1), loReg, hiReg, varNumOut,
                                       argOffsetOut);
-                argOffsetOut += (2 * TARGET_POINTER_SIZE);  // We stored 16-bytes of the struct
-                assert(argOffsetOut <= argOffsetMax);       // We can't write beyond the outgoing arg area
+                argOffsetOut += (2 * TARGET_POINTER_SIZE); // We stored 16-bytes of the struct
+                assert(argOffsetOut <= argOffsetMax);      // We can't write beyond the outgoing arg area
 
                 remainingSize -= (2 * TARGET_POINTER_SIZE); // We loaded 16-bytes of the struct
                 structOffset += (2 * TARGET_POINTER_SIZE);

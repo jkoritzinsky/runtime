@@ -28,7 +28,7 @@ public:
     }
 
 private:
-    Compiler* m_comp;                   // The Compiler instance.
+    Compiler* m_comp; // The Compiler instance.
 
     BasicBlock* m_startBlock;           // First block in the If Conversion.
     BasicBlock* m_finalBlock = nullptr; // Block where the flows merge. In a return case, this can be nullptr.
@@ -41,11 +41,11 @@ private:
         GenTree*    node  = nullptr;
     };
 
-    GenTree*           m_cond;                // The condition in the conversion
-    IfConvertOperation m_thenOperation;       // The single operation in the Then case.
-    IfConvertOperation m_elseOperation;       // The single operation in the Else case.
+    GenTree*           m_cond;          // The condition in the conversion
+    IfConvertOperation m_thenOperation; // The single operation in the Then case.
+    IfConvertOperation m_elseOperation; // The single operation in the Else case.
 
-    int m_checkLimit = 4;                     // Max number of chained blocks to allow in both the True and Else cases.
+    int m_checkLimit = 4; // Max number of chained blocks to allow in both the True and Else cases.
 
     genTreeOps m_mainOper         = GT_COUNT; // The main oper of the if conversion.
     bool       m_doElseConversion = false;    // Does the If conversion have an else statement.

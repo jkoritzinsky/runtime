@@ -710,9 +710,9 @@ unsigned UnwindCodesBase::GetCodeSizeFromUnwindCodes(bool isProlog)
         BYTE b1 = *pCodes;
         if (IsEndCode(b1))
         {
-            break;                          // We hit an "end" code; we're done
+            break; // We hit an "end" code; we're done
         }
-        size += 4;                          // All codes represent 4 byte instructions.
+        size += 4; // All codes represent 4 byte instructions.
         pCodes += GetUnwindSizeFromUnwindHeader(b1);
         assert(pCodes - pCodesStart < 256); // 255 is the absolute maximum number of code bytes allowed
     }

@@ -177,7 +177,7 @@ union bitMaskImm
         unsigned immR : 6; // bits 6..11
         unsigned immN : 1; // bits 12
     };
-    unsigned immNRS;       // concat N:R:S forming a 13-bit unsigned immediate
+    unsigned immNRS; // concat N:R:S forming a 13-bit unsigned immediate
 };
 
 /************************************************************************
@@ -203,7 +203,7 @@ union halfwordImm
         unsigned immVal : 16; // bits  0..15
         unsigned immHW : 2;   // bits 16..17
     };
-    unsigned immHWVal;        // concat HW:Val forming a 18-bit unsigned immediate
+    unsigned immHWVal; // concat HW:Val forming a 18-bit unsigned immediate
 };
 
 /************************************************************************
@@ -230,7 +230,7 @@ union byteShiftedImm
         unsigned immBY : 2;   // bits  8..9
         unsigned immOnes : 1; // bit   10
     };
-    unsigned immBSVal;        // concat Ones:BY:Val forming a 10-bit unsigned immediate
+    unsigned immBSVal; // concat Ones:BY:Val forming a 10-bit unsigned immediate
 };
 
 /************************************************************************
@@ -257,7 +257,7 @@ union floatImm8
         unsigned immExp : 3;  // bits 4..6
         unsigned immSign : 1; // bits 7
     };
-    unsigned immFPIVal;       // concat Sign:Exp:Mant forming an 8-bit unsigned immediate
+    unsigned immFPIVal; // concat Sign:Exp:Mant forming an 8-bit unsigned immediate
 };
 
 /************************************************************************
@@ -283,7 +283,7 @@ union condFlagsImm
         insCflags flags : 4; // bits  4..7
         unsigned  imm5 : 5;  // bits  8..12
     };
-    unsigned immCFVal;       // concat imm5:flags:cond forming an 13-bit unsigned immediate
+    unsigned immCFVal; // concat imm5:flags:cond forming an 13-bit unsigned immediate
 };
 
 // Returns an encoding for the specified register used in the 'Rd' position

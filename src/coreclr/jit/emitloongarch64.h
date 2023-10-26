@@ -234,4 +234,4 @@ unsigned emitOutputCall(insGroup* ig, BYTE* dst, instrDesc* id, code_t code);
 
 unsigned get_curTotalCodeSize(); // bytes of code
 
-#endif                           // TARGET_LOONGARCH64
+#endif // TARGET_LOONGARCH64

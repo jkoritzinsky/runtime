@@ -1393,9 +1393,9 @@ DONE:
 {
     if ((imm & 0x0000ffff) == imm) // 16-bit immediate
         return true;
-    if (isModImmConst(imm))        // funky arm immediate
+    if (isModImmConst(imm)) // funky arm immediate
         return true;
-    if (isModImmConst(~imm))       // funky arm immediate via mvn
+    if (isModImmConst(~imm)) // funky arm immediate via mvn
         return true;
     return false;
 }
@@ -1419,9 +1419,9 @@ DONE:
 {
     if ((unsigned_abs(imm) <= 0x00000fff) && (flags != INS_FLAGS_SET)) // 12-bit immediate via add/sub
         return true;
-    if (isModImmConst(imm))                                            // funky arm immediate
+    if (isModImmConst(imm)) // funky arm immediate
         return true;
-    if (isModImmConst(-imm))                                           // funky arm immediate via sub
+    if (isModImmConst(-imm)) // funky arm immediate via sub
         return true;
     return false;
 }
@@ -1433,7 +1433,7 @@ DONE:
  */
 /*static*/ bool emitter::emitIns_valid_imm_for_cmp(int imm, insFlags flags)
 {
-    if (isModImmConst(imm))  // funky arm immediate
+    if (isModImmConst(imm)) // funky arm immediate
         return true;
     if (isModImmConst(-imm)) // funky arm immediate via sub
         return true;
@@ -1540,7 +1540,7 @@ void emitter::emitIns_I(instruction ins, emitAttr attr, target_ssize_t imm)
         case INS_push:
             assert((imm & 0xA000) == 0); // Cannot push PC or SP
 
-            if (imm & 0x4000)            // Is the LR being pushed?
+            if (imm & 0x4000) // Is the LR being pushed?
                 hasLR = true;
 
             goto COMMON_PUSH_POP;
@@ -1549,9 +1549,9 @@ void emitter::emitIns_I(instruction ins, emitAttr attr, target_ssize_t imm)
             assert((imm & 0x2000) == 0);      // Cannot pop SP
             assert((imm & 0xC000) != 0xC000); // Cannot pop both PC and LR
 
-            if (imm & 0x8000)                 // Is the PC being popped?
+            if (imm & 0x8000) // Is the PC being popped?
                 hasPC = true;
-            if (imm & 0x4000)                 // Is the LR being popped?
+            if (imm & 0x4000) // Is the LR being popped?
             {
                 hasLR = true;
                 useT2 = true;
@@ -1794,7 +1794,7 @@ void emitter::emitIns_R_I(instruction                                ins,
             assert((imm & 0xC000) != 0xC000); // Cannot pop both PC and LR
             assert((imm & 0xFFFF0000) == 0);  // Can only contain lower 16 bits
 
-            if (imm & 0x8000)                 // Is the PC being popped?
+            if (imm & 0x8000) // Is the PC being popped?
                 hasPC = true;
 
             if (imm & 0x4000) // Is the LR being pushed?
@@ -1806,12 +1806,12 @@ void emitter::emitIns_R_I(instruction                                ins,
             if (!isLowRegister(reg))
                 useT2 = true;
 
-            if (((imm - 1) & imm) == 0)       // Is only one or zero bits set in imm?
+            if (((imm - 1) & imm) == 0) // Is only one or zero bits set in imm?
             {
                 if (((imm == 0) && !hasLR) || // imm has no bits set, but hasLR is set
                     (!hasPC && !hasLR))       // imm has one bit set, and neither of hasPC/hasLR are set
                 {
-                    onlyT1 = true;            // if only one bit is set we must use the T1 encoding
+                    onlyT1 = true; // if only one bit is set we must use the T1 encoding
                 }
             }
 
@@ -3212,7 +3212,7 @@ void emitter::emitIns_R_R_R(instruction ins,
             FALLTHROUGH;
         case INS_sdiv:
         case INS_udiv:
-#endif                              // !USE_HELPERS_FOR_INT_DIV
+#endif // !USE_HELPERS_FOR_INT_DIV
 
             assert(reg1 != REG_PC); // VM debugging single stepper doesn't support PC register with this instruction.
             assert(reg2 != REG_PC);
@@ -3342,7 +3342,7 @@ void emitter::emitIns_R_R_I_I(instruction ins,
     int lsb   = imm1;
     int width = imm2;
     int msb   = lsb + width - 1;
-    int imm   = 0;                        /* combined immediate */
+    int imm   = 0; /* combined immediate */
 
     assert((lsb >= 0) && (lsb <= 31));    // required for encodings
     assert((width > 0) && (width <= 32)); // required for encodings
@@ -4396,7 +4396,7 @@ void emitter::emitIns_J(instruction ins, BasicBlock* dst, int instrCount /* = 0 
 #ifdef DEBUG
         if (emitComp->opts.compLongAddress) // Force long branches
             id->idjKeepLong = 1;
-#endif                                      // DEBUG
+#endif // DEBUG
     }
     else
     {
@@ -5782,7 +5782,7 @@ size_t emitter::emitOutputInstr(insGroup* ig, instrDesc* id, BYTE** dp)
             sz                      = SMALL_IDSC_SIZE;
         }
         break;
-#endif                // FEATURE_ITINSTRUCTION
+#endif // FEATURE_ITINSTRUCTION
 
         case IF_T1_C: // T1_C    .....iiiiinnnddd                       R1  R2              imm5
             sz   = SMALL_IDSC_SIZE;
@@ -6109,9 +6109,9 @@ size_t emitter::emitOutputInstr(insGroup* ig, instrDesc* id, BYTE** dp)
             imm = emitGetInsSC(id);
             assert((imm & 0x3) != 0x3);
             if (imm & 0x2)
-                code |= 0x8000;    //  PC bit
+                code |= 0x8000; //  PC bit
             if (imm & 0x1)
-                code |= 0x4000;    //  LR bit
+                code |= 0x4000; //  LR bit
             imm >>= 2;
             assert(imm <= 0x1fff); //  13 bits
             code |= imm;
@@ -6172,7 +6172,7 @@ size_t emitter::emitOutputInstr(insGroup* ig, instrDesc* id, BYTE** dp)
             }
             assert(isModImmConst(imm)); // Funky ARM imm encoding
             imm = encodeModImmConst(imm);
-            assert(imm <= 0xfff);       //  12 bits
+            assert(imm <= 0xfff); //  12 bits
             code |= (imm & 0x00ff);
             code |= (imm & 0x0700) << 4;
             code |= (imm & 0x0800) << 15;
@@ -6329,7 +6329,7 @@ size_t emitter::emitOutputInstr(insGroup* ig, instrDesc* id, BYTE** dp)
 
             imm = emitGetInsSC(id);
             if (imm < 0)
-                imm = -imm;      // bit 23 at 0 means negate
+                imm = -imm; // bit 23 at 0 means negate
             else
                 code |= 1 << 23; // set the positive bit
 
@@ -7741,7 +7741,7 @@ void emitter::emitDispLargeJmp(
     pidJmp->idInsSize(emitInsSize(IF_T1_K));
     pidJmp->idjShort = 1;
     pidJmp->idAddr()->iiaSetInstrCount(1);
-    pidJmp->idDebugOnlyInfo(id->idDebugOnlyInfo());  // share the idDebugOnlyInfo() field
+    pidJmp->idDebugOnlyInfo(id->idDebugOnlyInfo()); // share the idDebugOnlyInfo() field
 
     size_t bcondSizeOrZero = (code == NULL) ? 0 : 2; // branch is 2 bytes
     emitDispInsHelp(pidJmp, false, doffs, asmfm, offset, code, bcondSizeOrZero,
@@ -7770,7 +7770,7 @@ void emitter::emitDispLargeJmp(
     }
     pidJmp->idDebugOnlyInfo(id->idDebugOnlyInfo()); // share the idDebugOnlyInfo() field
 
-    size_t brSizeOrZero = (code == NULL) ? 0 : 4;   // unconditional branch is 4 bytes
+    size_t brSizeOrZero = (code == NULL) ? 0 : 4; // unconditional branch is 4 bytes
     emitDispInsHelp(pidJmp, isNew, doffs, asmfm, offset, code, brSizeOrZero, ig);
 }
 

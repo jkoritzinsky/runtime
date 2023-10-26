@@ -1076,7 +1076,7 @@ private:
 
                 assert(&typeid(T) == &typeid(size_t)); // We represent ref/byref constants as size_t's.
 
-#endif                                                 // _MSC_VER
+#endif // _MSC_VER
 
                 FALLTHROUGH;
 

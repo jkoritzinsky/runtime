@@ -678,7 +678,7 @@ public:
     static_assert_no_msg((BBF_SPLIT_NONEXIST & BBF_SPLIT_LOST) == 0);
     static_assert_no_msg((BBF_SPLIT_NONEXIST & BBF_SPLIT_GAINED) == 0);
 
-    unsigned bbNum;  // the block's number
+    unsigned bbNum; // the block's number
 
     unsigned bbRefs; // number of blocks that can reach here, either by fall-through or a branch. If this falls to zero,
                      // the block is unreachable.
@@ -715,15 +715,15 @@ public:
     void dspBlockHeader(Compiler* compiler, bool showKind = true, bool showFlags = false, bool showPreds = true);
 
     const char* dspToString(int blockNumPadding = 0);
-#endif                               // DEBUG
+#endif // DEBUG
 
 #define BB_UNITY_WEIGHT 100.0        // how much a normal execute once block weighs
 #define BB_UNITY_WEIGHT_UNSIGNED 100 // how much a normal execute once block weighs
 #define BB_LOOP_WEIGHT_SCALE 8.0     // synthetic profile scale factor for loops
 #define BB_ZERO_WEIGHT 0.0
-#define BB_MAX_WEIGHT FLT_MAX        // maximum finite weight  -- needs rethinking.
+#define BB_MAX_WEIGHT FLT_MAX // maximum finite weight  -- needs rethinking.
 
-    weight_t bbWeight;               // The dynamic execution weight of this block
+    weight_t bbWeight; // The dynamic execution weight of this block
 
     // getCalledCount -- get the value used to normalize weights for this method
     static weight_t getCalledCount(Compiler* comp);
@@ -937,7 +937,7 @@ public:
 
     EntryState* bbEntryState; // verifier tracked state of all entries in stack.
 
-#define NO_BASE_TMP UINT_MAX  // base# to use when we have none
+#define NO_BASE_TMP UINT_MAX // base# to use when we have none
 
     union
     {
@@ -1141,11 +1141,11 @@ public:
                                   // BAD_IL_OFFSET.
 #endif                            // DEBUG
 
-    VARSET_TP bbVarUse;           // variables used     by block (before a definition)
-    VARSET_TP bbVarDef;           // variables assigned by block (before a use)
+    VARSET_TP bbVarUse; // variables used     by block (before a definition)
+    VARSET_TP bbVarDef; // variables assigned by block (before a use)
 
-    VARSET_TP bbLiveIn;           // variables live on entry
-    VARSET_TP bbLiveOut;          // variables live on exit
+    VARSET_TP bbLiveIn;  // variables live on entry
+    VARSET_TP bbLiveOut; // variables live on exit
 
     // Use, def, live in/out information for the implicit memory variable.
     MemoryKindSet bbMemoryUse : MemoryKindCount; // must be set for any MemoryKinds this block references
@@ -1182,7 +1182,7 @@ public:
     unsigned bbMemorySsaNumIn[MemoryKindCount];  // The SSA # of memory on entry to the block.
     unsigned bbMemorySsaNumOut[MemoryKindCount]; // The SSA # of memory on exit from the block.
 
-    VARSET_TP bbScope;                           // variables in scope over the block
+    VARSET_TP bbScope; // variables in scope over the block
 
     void InitVarSets(class Compiler* comp);
 
@@ -1217,8 +1217,8 @@ public:
 #endif // defined(FEATURE_EH_FUNCLETS) && defined(TARGET_ARM)
 
 #ifdef VERIFIER
-    stackDesc bbStackIn;    // stack descriptor for  input
-    stackDesc bbStackOut;   // stack descriptor for output
+    stackDesc bbStackIn;  // stack descriptor for  input
+    stackDesc bbStackOut; // stack descriptor for output
 
     verTypeVal* bbTypesIn;  // list of variable types on  input
     verTypeVal* bbTypesOut; // list of variable types on output

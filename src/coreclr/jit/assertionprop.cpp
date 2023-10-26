@@ -1217,7 +1217,7 @@ AssertionIndex Compiler::optCreateAssertion(GenTree*         op1,
                         {
                             goto DONE_ASSERTION; // Don't make an assertion
                         }
-#endif                                           // TARGET_ARM
+#endif // TARGET_ARM
 
                         assertion.op2.u1.iconVal = iconVal;
                         assertion.op2.SetIconFlag(op2->GetIconHandleFlag(), op2->AsIntCon()->gtFieldSeq);

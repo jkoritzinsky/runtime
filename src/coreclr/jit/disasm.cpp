@@ -28,7 +28,7 @@
 #define DISASM_DUMP(...)                                                                                               \
     if (VERBOSE)                                                                                                       \
     printf(__VA_ARGS__)
-#else  // !DEBUG
+#else // !DEBUG
 #define DISASM_DUMP(...) printf(__VA_ARGS__)
 #endif // !DEBUG
 #else  // !DISASM_DEBUG
@@ -318,7 +318,7 @@ size_t DisAssembler::disCchAddrMember(
             break;
     }
 
-#else  // TARGET*
+#else // TARGET*
 #error Unsupported or unset target architecture
 #endif // TARGET*
 
@@ -567,7 +567,7 @@ size_t DisAssembler::disCchFixupMember(
             break;
     }
 
-#else  // TARGET*
+#else // TARGET*
 #error Unsupported or unset target architecture
 #endif // TARGET*
 
@@ -780,7 +780,7 @@ size_t DisAssembler::disCchRegRelMember(
             break;
     }
 
-#else  // TARGET*
+#else // TARGET*
 #error Unsupported or unset target architecture
 #endif // TARGET*
 
@@ -1081,10 +1081,10 @@ size_t DisAssembler::CbDisassemble(DIS*        pdis,
                 /* jump is not in the current code block */
                 break;
 
-        }                        // end switch
-#else     // TARGET*
+        } // end switch
+#else // TARGET*
 #error Unsupported or unset target architecture
-#endif    // TARGET*
+#endif // TARGET*
 
         return cb;
     } // end if
@@ -1112,7 +1112,7 @@ size_t DisAssembler::CbDisassemble(DIS*        pdis,
         }
 
 #ifdef TARGET_ARM64
-#define CCH_INDENT 8  // fixed sized instructions, always 8 characters
+#define CCH_INDENT 8 // fixed sized instructions, always 8 characters
 #elif defined(TARGET_AMD64)
 #define CCH_INDENT 30 // large constants sometimes
 #else
@@ -1321,11 +1321,11 @@ void DisAssembler::DisasmBuffer(FILE* pfile, bool printit)
         size_t cb;
 
         cb = CbDisassemble(pdis, ibCur, addr + ibCur, disGetLinearAddr(ibCur), disGetBufferSize(ibCur), pfile,
-                           false,        // find labels
+                           false, // find labels
                            printit,
                            !disDiffable, // display relative offset
 #ifdef DEBUG
-                           !disDiffable  // Display code bytes?
+                           !disDiffable // Display code bytes?
 #else
                            false // Display code bytes?
 #endif

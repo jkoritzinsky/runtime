@@ -3779,7 +3779,7 @@ ValueNum ValueNumStore::EvalFuncForConstantArgs(var_types typ, VNFunc func, Valu
                 }
             }
         }
-        else                                                // both args are TYP_REF or both args are TYP_BYREF
+        else // both args are TYP_REF or both args are TYP_BYREF
         {
             size_t arg0Val = ConstantValue<size_t>(arg0VN); // We represent ref/byref constants as size_t's.
             size_t arg1Val = ConstantValue<size_t>(arg1VN); // Also we consider null to be zero.
@@ -4709,9 +4709,9 @@ ValueNum ValueNumStore::EvalUsingMathIdentity(var_types typ, VNFunc func, ValueN
 {
     ValueNum resultVN = NoVN; // set default result to unsuccessful
 
-    if (typ == TYP_BYREF)     // We don't want/need to optimize a zero byref
+    if (typ == TYP_BYREF) // We don't want/need to optimize a zero byref
     {
-        return resultVN;      // return the unsuccessful value
+        return resultVN; // return the unsuccessful value
     }
 
     // (0 + x) == x
@@ -9108,8 +9108,8 @@ void ValueNumStore::vnDumpValWithExc(Compiler* comp, VNFuncApp* valWithExc)
 {
     assert(valWithExc->m_func == VNF_ValWithExc); // Precondition.
 
-    ValueNum normVN = valWithExc->m_args[0];      // First arg is the VN from normal execution
-    ValueNum excVN  = valWithExc->m_args[1];      // Second arg is the set of possible exceptions
+    ValueNum normVN = valWithExc->m_args[0]; // First arg is the VN from normal execution
+    ValueNum excVN  = valWithExc->m_args[1]; // Second arg is the set of possible exceptions
 
     assert(IsVNFunc(excVN));
     VNFuncApp excSeq;
@@ -9157,8 +9157,8 @@ void ValueNumStore::vnDumpMapSelect(Compiler* comp, VNFuncApp* mapSelect)
 {
     assert(mapSelect->m_func == VNF_MapSelect); // Precondition.
 
-    ValueNum mapVN   = mapSelect->m_args[0];    // First arg is the map id
-    ValueNum indexVN = mapSelect->m_args[1];    // Second arg is the index
+    ValueNum mapVN   = mapSelect->m_args[0]; // First arg is the map id
+    ValueNum indexVN = mapSelect->m_args[1]; // Second arg is the index
 
     comp->vnPrint(mapVN, 0);
     printf("[");
@@ -9170,10 +9170,10 @@ void ValueNumStore::vnDumpMapStore(Compiler* comp, VNFuncApp* mapStore)
 {
     assert(mapStore->m_func == VNF_MapStore); // Precondition.
 
-    ValueNum mapVN    = mapStore->m_args[0];  // First arg is the map id
-    ValueNum indexVN  = mapStore->m_args[1];  // Second arg is the index
-    ValueNum newValVN = mapStore->m_args[2];  // Third arg is the new value
-    unsigned loopNum  = mapStore->m_args[3];  // Fourth arg is the loop num
+    ValueNum mapVN    = mapStore->m_args[0]; // First arg is the map id
+    ValueNum indexVN  = mapStore->m_args[1]; // Second arg is the index
+    ValueNum newValVN = mapStore->m_args[2]; // Third arg is the new value
+    unsigned loopNum  = mapStore->m_args[3]; // Fourth arg is the loop num
 
     comp->vnPrint(mapVN, 0);
     printf("[");
@@ -9372,7 +9372,7 @@ static genTreeOps genTreeOpsIllegalAsVNFunc[] = {GT_IND, // When we do heap memo
                                                  GT_CMPXCHG, GT_LCLHEAP, GT_BOX, GT_XORR, GT_XAND, GT_STORE_DYN_BLK,
                                                  GT_STORE_LCL_VAR, GT_STORE_LCL_FLD, GT_STOREIND, GT_STORE_BLK,
                                                  // These need special semantics:
-                                                 GT_COMMA,    // == second argument (but with exception(s) from first).
+                                                 GT_COMMA, // == second argument (but with exception(s) from first).
                                                  GT_ARR_ADDR, GT_BOUNDS_CHECK,
                                                  GT_BLK,      // May reference heap memory.
                                                  GT_INIT_VAL, // Not strictly a pass-through.
@@ -11248,8 +11248,8 @@ void Compiler::fgValueNumberTree(GenTree* tree)
 
             // These do not represent values.
             case GT_NO_OP:
-            case GT_JMP:      // Control flow
-            case GT_LABEL:    // Control flow
+            case GT_JMP:   // Control flow
+            case GT_LABEL: // Control flow
 #if !defined(FEATURE_EH_FUNCLETS)
             case GT_END_LFIN: // Control flow
 #endif
@@ -11734,7 +11734,7 @@ void Compiler::fgValueNumberTree(GenTree* tree)
 
                 GenTreeCmpXchg* const cmpXchg = tree->AsCmpXchg();
 
-                assert(tree->OperIsImplicitIndir());         // special node with an implicit indirections
+                assert(tree->OperIsImplicitIndir()); // special node with an implicit indirections
 
                 GenTree* location  = cmpXchg->gtOpLocation;  // arg1
                 GenTree* value     = cmpXchg->gtOpValue;     // arg2
@@ -13564,7 +13564,7 @@ void Compiler::fgValueNumberAddExceptionSet(GenTree* tree)
             case GT_CAST: // A cast with an overflow check
                 break;    // Already handled by VNPairForCast()
 
-            case GT_ADD:  // An Overflow checking ALU operation
+            case GT_ADD: // An Overflow checking ALU operation
             case GT_SUB:
             case GT_MUL:
                 assert(tree->gtOverflowEx());

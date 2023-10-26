@@ -437,7 +437,7 @@ bool CommandLine::Parse(int argc, char* argv[], /* OUT */ Options* o)
             {
 #ifndef USE_COREDISTOOLS // If USE_COREDISTOOLS is not defined, then allow the switch, but ignore it.
                 o->useCoreDisTools = true;
-#endif                   // USE_COREDISTOOLS
+#endif // USE_COREDISTOOLS
             }
             else if ((_strnicmp(&argv[i][1], "matchHash", argLen) == 0))
             {

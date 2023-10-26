@@ -334,7 +334,7 @@ void Compiler::unwindPushMaskInt(regMaskTP maskInt)
         unwindPushPopMaskCFI(maskInt, false);
         return;
     }
-#endif                                                                   // FEATURE_CFI_SUPPORT
+#endif // FEATURE_CFI_SUPPORT
 
     bool useOpsize16 = ((maskInt & (RBM_LOW_REGS | RBM_LR)) == maskInt); // Can PUSH use the 16-bit encoding?
     unwindPushPopMaskInt(maskInt, useOpsize16);
@@ -573,7 +573,7 @@ void Compiler::unwindReserveFunc(FuncInfoDsc* func)
     {
         funcHasColdSection = false; // "Trick" the VM into thinking we don't have a cold section.
     }
-#endif                              // DEBUG
+#endif // DEBUG
 
 #ifdef FEATURE_EH_FUNCLETS
     // If hot/cold splitting occurred at fgFirstFuncletBB, then the main body is not split.
@@ -833,7 +833,7 @@ void UnwindPrologCodes::SetFinalSize(int headerBytes, int epilogBytes)
 
     int prologBytes = Size();
 
-    EnsureSize(headerBytes + prologBytes + epilogBytes + 3);      // 3 = padding bytes for alignment
+    EnsureSize(headerBytes + prologBytes + epilogBytes + 3); // 3 = padding bytes for alignment
 
     upcUnwindBlockSlot = upcCodeSlot - headerBytes - epilogBytes; // Index of the first byte of the unwind header
 
@@ -1403,7 +1403,7 @@ void UnwindFragmentInfo::MergeCodes()
                                                                       // Words or Extended Epilog Count?
                          + epilogScopes                               // One DWORD per epilog scope, for EBit = 0
                          ) *
-                        sizeof(DWORD);                                // convert it to bytes
+                        sizeof(DWORD); // convert it to bytes
 
     DWORD finalSize = headerBytes + codeBytes; // Size of actual unwind codes, aligned up to 4-byte words,
                                                // including end padding if necessary
@@ -1464,7 +1464,7 @@ void UnwindFragmentInfo::Finalize(UNATIVE_OFFSET functionLength)
 #elif defined(TARGET_ARM64)
     noway_assert((functionLength & 3) == 0);
     DWORD headerFunctionLength = functionLength / 4;
-#endif                    // TARGET_ARM64
+#endif // TARGET_ARM64
 
     DWORD headerVers = 0; // Version of the unwind info is zero. No other version number is currently defined.
     DWORD headerXBit = 0; // We never generate "exception data", but the VM might add some.
@@ -1476,7 +1476,7 @@ void UnwindFragmentInfo::Finalize(UNATIVE_OFFSET functionLength)
 #endif                                              // defined(TARGET_ARM)
     DWORD headerEpilogCount;                        // This depends on how we set headerEBit.
     DWORD headerCodeWords;
-    DWORD headerExtendedEpilogCount = 0;            // This depends on how we set headerEBit.
+    DWORD headerExtendedEpilogCount = 0; // This depends on how we set headerEBit.
     DWORD headerExtendedCodeWords   = 0;
 
     if (ufiSetEBit)
@@ -1573,7 +1573,7 @@ void UnwindFragmentInfo::Finalize(UNATIVE_OFFSET functionLength)
             noway_assert((headerEpilogStartOffset & 3) == 0);
             headerEpilogStartOffset /= 4; // The unwind data stores the actual offset divided by 4 (since the low 2 bits
                                           // of the actual offset is always zero)
-#endif                                    // defined(TARGET_ARM64)
+#endif // defined(TARGET_ARM64)
 
             DWORD headerEpilogStartIndex = pEpi->GetStartIndex();
 

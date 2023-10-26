@@ -238,7 +238,7 @@ BasicBlock* Compiler::fgCreateGCPoll(GCPollType pollType, BasicBlock* block)
             printf("*** creating GC Poll in block " FMT_BB "\n", block->bbNum);
             gtDispBlockStmts(block);
         }
-#endif   // DEBUG
+#endif // DEBUG
     }
     else // GCPOLL_INLINE
     {

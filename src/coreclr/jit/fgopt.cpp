@@ -2570,7 +2570,7 @@ void Compiler::fgUnreachableBlock(BasicBlock* block)
     {
         printf("\nRemoving unreachable " FMT_BB "\n", block->bbNum);
     }
-#endif                               // DEBUG
+#endif // DEBUG
 
     noway_assert(!block->IsFirst()); // Can't use this function to remove the first block
 
@@ -3038,7 +3038,7 @@ bool Compiler::fgOptimizeEmptyBlock(BasicBlock* block)
                             printf("\nKeeping empty block " FMT_BB " - it is the target of a catch return\n",
                                    block->bbNum);
                         }
-#endif                         // DEBUG
+#endif // DEBUG
 
                         break; // go to the next block
                     }
@@ -4785,7 +4785,7 @@ bool Compiler::fgExpandRarelyRunBlocks()
                            " is rarely run\n",
                            block->bbNum, bPrev->bbNum);
                 }
-#endif           // DEBUG
+#endif // DEBUG
             }
             else // Both blocks are hot, bPrev is known not to be using profiled weight
             {
@@ -6163,12 +6163,12 @@ bool Compiler::fgUpdateFlowGraph(bool doTailDuplication, bool isPhase)
                 // (b) block jump target is elsewhere but join free, and
                 //      bNext's jump target has a join.
                 //
-                if (block->KindIs(BBJ_COND) &&           // block is a BBJ_COND block
-                    (bNext != nullptr) &&                // block is not the last block
-                    (bNext->bbRefs == 1) &&              // No other block jumps to bNext
-                    bNext->KindIs(BBJ_ALWAYS) &&         // The next block is a BBJ_ALWAYS block
-                    bNext->isEmpty() &&                  // and it is an empty block
-                    !bNext->HasJumpTo(bNext) &&          // special case for self jumps
+                if (block->KindIs(BBJ_COND) &&   // block is a BBJ_COND block
+                    (bNext != nullptr) &&        // block is not the last block
+                    (bNext->bbRefs == 1) &&      // No other block jumps to bNext
+                    bNext->KindIs(BBJ_ALWAYS) && // The next block is a BBJ_ALWAYS block
+                    bNext->isEmpty() &&          // and it is an empty block
+                    !bNext->HasJumpTo(bNext) &&  // special case for self jumps
                     !bDest->IsFirstColdBlock(this) &&
                     !fgInDifferentRegions(block, bDest)) // do not cross hot/cold sections
                 {

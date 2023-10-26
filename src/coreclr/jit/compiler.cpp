@@ -212,7 +212,7 @@ size_t gcPtrMapISize; // GC pointer map size: interruptible methods
 size_t gcHeaderNSize; // GC header      size: non-interruptible methods
 size_t gcPtrMapNSize; // GC pointer map size: non-interruptible methods
 
-#endif                // DISPLAY_SIZES
+#endif // DISPLAY_SIZES
 
 /*****************************************************************************
  *
@@ -754,7 +754,7 @@ var_types Compiler::getArgTypeForStruct(CORINFO_CLASS_HANDLE clsHnd,
                 howToPassStruct = SPK_ByValue;
                 useType         = TYP_STRUCT;
 
-#else  //  TARGET_XXX
+#else //  TARGET_XXX
 
                 noway_assert(!"Unhandled TARGET in getArgTypeForStruct (with FEATURE_MULTIREG_ARGS=1)");
 
@@ -781,7 +781,7 @@ var_types Compiler::getArgTypeForStruct(CORINFO_CLASS_HANDLE clsHnd,
             howToPassStruct = SPK_ByReference;
             useType         = TYP_UNKNOWN;
 
-#else  //  TARGET_XXX
+#else //  TARGET_XXX
 
             noway_assert(!"Unhandled TARGET in getArgTypeForStruct");
 
@@ -1081,7 +1081,7 @@ var_types Compiler::getReturnTypeForStruct(CORINFO_CLASS_HANDLE     clsHnd,
                 howToReturnStruct = SPK_ByValue;
                 useType           = TYP_STRUCT;
 
-#else  //  TARGET_XXX
+#else //  TARGET_XXX
 
                 noway_assert(!"Unhandled TARGET in getReturnTypeForStruct (with FEATURE_MULTIREG_ARGS=1)");
 
@@ -1678,7 +1678,7 @@ void Compiler::compShutdown()
 #if LOOP_HOIST_STATS
 #ifdef DEBUG // Always display loop stats in retail
     if (JitConfig.DisplayLoopHoistStats() != 0)
-#endif       // DEBUG
+#endif // DEBUG
     {
         PrintAggregateLoopHoistStats(jitstdout());
     }
@@ -2151,7 +2151,7 @@ const char* Compiler::compRegVarName(regNumber reg, bool displayVar, bool isFloa
                                                                 // consecutive calls before printing
             static int index = 0;                               // for circular index into the name array
 
-            index = (index + 1) % 2;                            // circular reuse of index
+            index = (index + 1) % 2; // circular reuse of index
             sprintf_s(nameVarReg[index], NAME_VAR_REG_BUFFER_LEN, "%s'%s'", getRegName(reg), VarNameToStr(varName));
 
             return nameVarReg[index];
@@ -2567,7 +2567,7 @@ void Compiler::compInitOptions(JitFlags* jitFlags)
         }
     }
 
-#else  // !DEBUG
+#else // !DEBUG
 
     const char* altJitVal;
     if (jitFlags->IsSet(JitFlags::JIT_FLAG_PREJIT))
@@ -4363,7 +4363,7 @@ void Compiler::compFunctionTraceStart()
                info.compFullName, info.compMethodHash(),
                compGetTieringName()); /* } editor brace matching workaround for this printf */
     }
-#endif                                // DEBUG
+#endif // DEBUG
 }
 
 void Compiler::compFunctionTraceEnd(void* methodCodePtr, ULONG methodCodeSize, bool isNYI)
@@ -5223,7 +5223,7 @@ void Compiler::compCompile(void** methodCodePtr, uint32_t* methodCodeSize, JitFl
 #endif
         fprintf(compJitFuncInfoFile, ""); // in our logic this causes a flush
     }
-#endif                                    // FUNC_INFO_LOGGING
+#endif // FUNC_INFO_LOGGING
 }
 
 #if FEATURE_LOOP_ALIGN
@@ -5875,7 +5875,7 @@ int Compiler::compCompile(CORINFO_MODULE_HANDLE classPtr,
             {
 #if defined(DEBUG) && !defined(HOST_UNIX) // no 'perror' in the PAL
                 perror("Failed to open JitFuncInfoLogFile");
-#endif                                    // defined(DEBUG) && !defined(HOST_UNIX)
+#endif // defined(DEBUG) && !defined(HOST_UNIX)
             }
         }
     }
@@ -6217,7 +6217,7 @@ int Compiler::compCompile(CORINFO_MODULE_HANDLE classPtr,
             }
         }
     }
-#endif                                 // DEBUG
+#endif // DEBUG
 
     info.compProfilerCallback = false; // Assume false until we are told to hook this method.
 
