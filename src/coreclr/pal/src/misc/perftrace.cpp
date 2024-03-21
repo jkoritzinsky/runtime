@@ -110,7 +110,7 @@ typedef char PAL_API_NAME[PAL_PERF_MAX_FUNCTION_NAME];
 static PAL_API_NAME API_list[PAL_API_NUMBER] ;
 static pal_perf_program_info program_info;
 
-static pthread_key_t PERF_tlsTableKey=0 ;
+static thread_local pal_perf_thread_info* PERF_tlsTable=NULL;
 
 static pal_thread_list_node * process_pal_thread_list=NULL;
 static BOOL pal_profile_on=FALSE;
@@ -315,30 +315,16 @@ PERFInitialize(LPWSTR command_line, LPWSTR exe_path)
         return FALSE;
 
     pal_profile_on = FALSE;  // turn it off until we setup everything.
-    // allocate the TLS index for  structures
-    if( pthread_key_create(&PERF_tlsTableKey , NULL) != 0 )
-       ret = FALSE;
 
-    if( ret == TRUE )
+    pal_function_map = (char*)PAL_malloc(PAL_API_NUMBER);
+    if(pal_function_map != NULL)
     {
-        pal_function_map = (char*)PAL_malloc(PAL_API_NUMBER);
-        if(pal_function_map != NULL)
-        {
-            bRead = PERFReadSetting( );  // we don't quit even we failed to read the file.
-            ret = TRUE;
-        }
-        /* free the index in TLS */
-        else
-        {
-
-            pthread_key_delete(PERF_tlsTableKey );
-            ret = FALSE;
-        }
+        (void)!PERFReadSetting( );  // we don't quit even we failed to read the file.
     }
 
     PERFCalibrate("Overhead when profiling is disabled process-wide");
 
-    return ret;
+    return pal_function_map != NULL;
 }
 
 
@@ -354,7 +340,6 @@ void PERFTerminate(  )
         return;
 
     PERFlushAllLogs();
-    pthread_key_delete(PERF_tlsTableKey );
     PAL_free(pal_function_map);
 }
 
@@ -440,8 +425,7 @@ BOOL PERFAllocThreadInfo(  )
     local_info->start_ticks = 0;
     memset(log_buf, 0, PAL_PERF_PROFILE_BUFFER_SIZE);
 
-    if (pthread_setspecific(PERF_tlsTableKey, local_info) != 0)
-       ret = FALSE;
+    PERF_tlsTable = local_info;
 
 PERFAllocThreadInfoExit:
     if (ret == TRUE)
@@ -1033,7 +1017,7 @@ PERFLogFunctionEntry(unsigned int pal_api_id, ULONGLONG *pal_perf_start_tick )
 
     if( pal_function_map[pal_api_id] )
     {
-        local_info= (pal_perf_thread_info * )pthread_getspecific(PERF_tlsTableKey);
+        local_info= PERF_tlsTable;
 
         if (local_info==NULL  )
         {
@@ -1122,7 +1106,7 @@ PERFLogFunctionExit(unsigned int pal_api_id, ULONGLONG *pal_perf_start_tick )
 
     if( pal_function_map[pal_api_id] )
     {
-        local_info = (pal_perf_thread_info*)pthread_getspecific(PERF_tlsTableKey);
+        local_info = PERF_tlsTable;
 
         if (NULL == local_info ){
             return;
@@ -1162,7 +1146,7 @@ PERFNoLatencyProfileEntry(unsigned int pal_api_id )
         return;
     if( pal_function_map[pal_api_id] )
     {
-         local_info= (pal_perf_thread_info * )pthread_getspecific(PERF_tlsTableKey);
+         local_info= PERF_tlsTable;
          if (local_info==NULL  )
          {
             return;
@@ -1182,7 +1166,7 @@ PERFEnableThreadProfile(BOOL isInternal)
     pal_perf_thread_info * local_info;
     if (!pal_perf_enabled)
         return;
-    if (NULL != (local_info = (pal_perf_thread_info*)pthread_getspecific(PERF_tlsTableKey)))
+    if (NULL != (local_info = PERF_tlsTable))
     {
          if (!isInternal || nested_tracing) {
             local_info->profile_enabled = TRUE;
@@ -1198,7 +1182,7 @@ PERFDisableThreadProfile(BOOL isInternal)
     pal_perf_thread_info * local_info;
     if (!pal_perf_enabled)
         return;
-    if (NULL != (local_info = (pal_perf_thread_info*)pthread_getspecific(PERF_tlsTableKey)))
+    if (NULL != (local_info = PERF_tlsTable))
     {
          if (!isInternal || nested_tracing) {
             local_info->profile_enabled = FALSE;
