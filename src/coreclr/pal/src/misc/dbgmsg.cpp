@@ -116,7 +116,7 @@ static const char ENV_ASSERTS[]="PAL_DISABLE_ASSERTS";
 static const char ENV_ENTRY_LEVELS[]="PAL_API_LEVELS";
 
 /* per-thread storage for ENTRY tracing level */
-static pthread_key_t entry_level_key;
+static thread_local int entry_level = 0;
 
 /* entry level limitation */
 static int max_entry_level;
@@ -351,17 +351,6 @@ BOOL DBG_init_channels(void)
         max_entry_level = 1;
     }
 
-    /* if necessary, allocate TLS key for entry nesting level */
-    if(0 != max_entry_level)
-    {
-        if ((ret = pthread_key_create(&entry_level_key,NULL)) != 0)
-        {
-            fprintf(stderr, "ERROR : pthread_key_create() failed error:%d (%s)\n",
-                   ret, strerror(ret));
-            return FALSE;
-        }
-    }
-
     InternalInitializeCriticalSection(&fprintf_crit_section);
 
     return TRUE;
@@ -389,19 +378,6 @@ void DBG_close_channels()
     output_file = NULL;
 
     DeleteCriticalSection(&fprintf_crit_section);
-
-    /* if necessary, release TLS key for entry nesting level */
-    if(0 != max_entry_level)
-    {
-        int retval;
-
-        retval = pthread_key_delete(entry_level_key);
-        if(0 != retval)
-        {
-            fprintf(stderr, "ERROR : pthread_key_delete() returned %d! (%s)\n",
-                    retval, strerror(retval));
-        }
-    }
 }
 
 
@@ -595,29 +571,15 @@ static BOOL DBG_get_indent(DBG_LEVEL_ID level, const char *format,
                exit */
             if(DLI_EXIT == level)
             {
-                nesting = (INT_PTR) pthread_getspecific(entry_level_key);
                 /* avoid going negative */
-                if(nesting != 0)
+                if (entry_level != 0)
                 {
-                    nesting--;
-                    if ((ret = pthread_setspecific(entry_level_key,
-                                                     (LPVOID)nesting)) != 0)
-                    {
-                        fprintf(stderr, "ERROR : pthread_setspecific() failed "
-                                "error:%d (%s)\n", ret, strerror(ret));
-                    }
+                    entry_level--;
                 }
             }
             else
             {
-                nesting = (INT_PTR) pthread_getspecific(entry_level_key);
-
-                if ((ret = pthread_setspecific(entry_level_key,
-                                                 (LPVOID)(nesting+1))) != 0)
-                {
-                    fprintf(stderr, "ERROR : pthread_setspecific() failed "
-                            "error:%d (%s)\n", ret, strerror(ret));
-                }
+                entry_level++;
             }
 
             /* see if we're past the level treshold */
@@ -670,14 +632,10 @@ int DBG_change_entrylevel(int new_level)
     {
         return 0;
     }
-    old_level = PtrToInt(pthread_getspecific(entry_level_key));
+    old_level = entry_level;
     if(-1 != new_level)
     {
-        if ((ret = pthread_setspecific(entry_level_key,(LPVOID)(IntToPtr(new_level)))) != 0)
-        {
-            fprintf(stderr, "ERROR : pthread_setspecific() failed "
-                    "error:%d (%s)\n", ret, strerror(ret));
-        }
+        entry_level = new_level;
     }
     return old_level;
 }
