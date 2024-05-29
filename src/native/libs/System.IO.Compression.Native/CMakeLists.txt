@@ -7,18 +7,6 @@ set(NATIVECOMPRESSION_SOURCES
 )
 
 if (NOT CLR_CMAKE_TARGET_BROWSER AND NOT CLR_CMAKE_TARGET_WASI)
-
-    if (CLR_CMAKE_USE_SYSTEM_BROTLI)
-        add_definitions(-DFEATURE_USE_SYSTEM_BROTLI)
-    else ()
-        include(${CLR_SRC_NATIVE_DIR}/external/brotli.cmake)
-
-        set (NATIVECOMPRESSION_SOURCES
-            ${NATIVECOMPRESSION_SOURCES}
-            ${BROTLI_SOURCES}
-        )
-    endif ()
-
     set (NATIVECOMPRESSION_SOURCES
         ${NATIVECOMPRESSION_SOURCES}
         entrypoints.c
@@ -43,12 +31,6 @@ if (CLR_CMAKE_TARGET_UNIX OR CLR_CMAKE_TARGET_BROWSER OR CLR_CMAKE_TARGET_WASI)
     # Disable no strict prototypes warning for Zlib
     # https://github.com/madler/zlib/issues/633
     set(FLAGS "${FLAGS} -Wno-strict-prototypes")
-
-    # Delete this suppression once brotli is upgraded to vNext (current latest v1.0.9
-    # does not contain upstream fix: https://github.com/google/brotli/commit/0a3944c)
-    if (NOT CLR_CMAKE_TARGET_WASI)
-        set(FLAGS "${FLAGS} -Wno-vla-parameter")
-    endif ()
 
     set_source_files_properties(${NATIVECOMPRESSION_SOURCES} PROPERTIES COMPILE_FLAGS ${FLAGS})
 
@@ -97,7 +79,14 @@ if (CLR_CMAKE_TARGET_UNIX OR CLR_CMAKE_TARGET_BROWSER OR CLR_CMAKE_TARGET_WASI)
     )
 
     set_target_properties(System.IO.Compression.Native-Static PROPERTIES OUTPUT_NAME System.IO.Compression.Native CLEAN_DIRECT_OUTPUT 1)
+    target_link_libraries(System.IO.Compression.Native-Static
+        PUBLIC
+        ${NATIVE_LIBS_EXTRA}
+    )
 else ()
+    set(NATIVE_LIBS_EXTRA)
+    append_extra_compression_libs(NATIVE_LIBS_EXTRA)
+
     if (GEN_SHARED_LIB)
         include (GenerateExportHeader)
     endif ()
@@ -122,6 +111,11 @@ else ()
             System.IO.Compression.Native.def
             ${VERSION_FILE_RC_PATH}
         )
+
+        target_link_libraries(System.IO.Compression.Native
+            PRIVATE
+            ${NATIVE_LIBS_EXTRA}
+        )
     endif ()
 
     if (NOT GEN_SHARED_LIB AND NOT CLR_CMAKE_TARGET_MACCATALYST AND NOT CLR_CMAKE_TARGET_IOS AND NOT CLR_CMAKE_TARGET_TVOS AND NOT CLR_CMAKE_TARGET_ANDROID AND NOT CLR_CMAKE_TARGET_BROWSER AND NOT CLR_CMAKE_TARGET_WASI)
@@ -133,11 +127,22 @@ else ()
         ${NATIVECOMPRESSION_SOURCES}
     )
 
+    target_link_libraries(System.IO.Compression.Native-Static
+        PUBLIC
+        ${NATIVE_LIBS_EXTRA}
+    )
+
     if(STATIC_LIBS_ONLY)
         add_library(System.IO.Compression.Native.Aot
             STATIC
             ${NATIVECOMPRESSION_SOURCES}
         )
+
+        target_link_libraries(System.IO.Compression.Native
+            PRIVATE
+            ${NATIVE_LIBS_EXTRA}
+        )
+
         set_target_properties(System.IO.Compression.Native.Aot PROPERTIES CLR_CONTROL_FLOW_GUARD OFF)
         set_target_properties(System.IO.Compression.Native.Aot PROPERTIES INTERPROCEDURAL_OPTIMIZATION OFF)
 
@@ -145,6 +150,12 @@ else ()
             STATIC
             ${NATIVECOMPRESSION_SOURCES}
         )
+
+        target_link_libraries(System.IO.Compression.Native
+            PRIVATE
+            ${NATIVE_LIBS_EXTRA}
+        )
+
         set_target_properties(System.IO.Compression.Native.Aot.GuardCF PROPERTIES INTERPROCEDURAL_OPTIMIZATION OFF)
     endif()
 
