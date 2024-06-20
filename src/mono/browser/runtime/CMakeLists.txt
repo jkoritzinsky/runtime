@@ -3,7 +3,6 @@ cmake_minimum_required(VERSION 3.20)
 project(mono-wasm-runtime C)
 
 option(DISABLE_THREADS "defined if the build does NOT support multithreading" ON)
-option(DISABLE_LEGACY_JS_INTEROP "defined if the build does not support legacy JavaScript interop" OFF)
 option(ENABLE_JS_INTEROP_BY_VALUE "defined when JS interop without pointers to managed objects" OFF)
 
 set(CMAKE_EXECUTABLE_SUFFIX ".js")
@@ -45,7 +44,7 @@ set(ignoreMeEmsdkPath "${EMSDK_PATH}")
 
 if(CMAKE_BUILD_TYPE STREQUAL "Release")
     add_custom_command(TARGET dotnet.native
-                        POST_BUILD COMMAND ${EMSDK_PATH}/upstream/bin/wasm-opt --enable-exception-handling ${CONFIGURATION_WASM_OPT_FLAGS} --strip-dwarf ${NATIVE_BIN_DIR}/dotnet.native.wasm -o ${NATIVE_BIN_DIR}/dotnet.native.wasm
+                        POST_BUILD COMMAND ${EMSDK_PATH}/bin/wasm-opt --enable-exception-handling ${CONFIGURATION_WASM_OPT_FLAGS} --strip-dwarf ${NATIVE_BIN_DIR}/dotnet.native.wasm -o ${NATIVE_BIN_DIR}/dotnet.native.wasm
                         COMMENT "Stripping debug symbols from dotnet.native.wasm using wasm-opt")
 endif()
 

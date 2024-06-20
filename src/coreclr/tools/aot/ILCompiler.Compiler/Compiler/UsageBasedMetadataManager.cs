@@ -34,7 +34,7 @@ namespace ILCompiler
     /// This class is responsible for managing native metadata to be emitted into the compiled
     /// module. It applies a policy that every type/method that is statically used shall be reflectable.
     /// </summary>
-    public sealed class UsageBasedMetadataManager : GeneratingMetadataManager
+    public sealed class UsageBasedMetadataManager : MetadataManager
     {
         private readonly CompilationModuleGroup _compilationModuleGroup;
 
@@ -581,7 +581,7 @@ namespace ILCompiler
 
                 if (target.IsVirtual)
                 {
-                    DelegateTargetVirtualMethodNode targetVirtualMethod = factory.DelegateTargetVirtualMethod(target.GetCanonMethodTarget(CanonicalFormKind.Specific));
+                    DelegateTargetVirtualMethodNode targetVirtualMethod = factory.ReflectedDelegateTargetVirtualMethod(target.GetCanonMethodTarget(CanonicalFormKind.Specific));
 
                     dependencies.Add(new DependencyNodeCore<NodeFactory>.CombinedDependencyListEntry(
                         targetVirtualMethod,
@@ -615,7 +615,7 @@ namespace ILCompiler
                 dependencies ??= new CombinedDependencyList();
                 dependencies.Add(new DependencyNodeCore<NodeFactory>.CombinedDependencyListEntry(
                     factory.ReflectedMethod(impl.GetCanonMethodTarget(CanonicalFormKind.Specific)),
-                    factory.DelegateTargetVirtualMethod(decl.GetCanonMethodTarget(CanonicalFormKind.Specific)),
+                    factory.ReflectedDelegateTargetVirtualMethod(decl.GetCanonMethodTarget(CanonicalFormKind.Specific)),
                     "Virtual method declaration is reflectable"));
             }
         }
@@ -1039,6 +1039,11 @@ namespace ILCompiler
                     return true;
                 }
                 return GeneratesMetadata(targetType) || !_factory.CompilationModuleGroup.ContainsType(targetType);
+            }
+
+            public bool GeneratesInterfaceImpl(MetadataType typeDef, MetadataType interfaceImpl)
+            {
+                return _factory.MetadataManager.IsInterfaceUsed(interfaceImpl.GetTypeDefinition());
             }
 
             public bool IsBlocked(MetadataType typeDef)

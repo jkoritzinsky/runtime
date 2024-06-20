@@ -1,14 +1,15 @@
 // Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 
-import { mono_wasm_imports, mono_wasm_legacy_interop_imports, mono_wasm_threads_imports } from "./exports-binding";
+import { mono_wasm_imports, mono_wasm_threads_imports } from "./exports-binding";
 import gitHash from "consts:gitHash";
+import { mono_wasm_hybrid_globalization_imports } from "./globalization";
 
-export function export_linker_indexes_as_code(): string {
+export function export_linker_indexes_as_code (): string {
     const indexByName: any = {
         mono_wasm_imports: {},
         mono_wasm_threads_imports: {},
-        mono_wasm_legacy_interop_imports: {},
+        mono_wasm_hybrid_globalization_imports: {},
     };
     let idx = 0;
     for (const wi of mono_wasm_imports) {
@@ -19,8 +20,8 @@ export function export_linker_indexes_as_code(): string {
         indexByName.mono_wasm_threads_imports[wi.name] = idx;
         idx++;
     }
-    for (const wi of mono_wasm_legacy_interop_imports) {
-        indexByName.mono_wasm_legacy_interop_imports[wi.name] = idx;
+    for (const wi of mono_wasm_hybrid_globalization_imports) {
+        indexByName.mono_wasm_hybrid_globalization_imports[wi.name] = idx;
         idx++;
     }
     return `
@@ -30,5 +31,5 @@ export function export_linker_indexes_as_code(): string {
     `;
 }
 
-// this is running during runtime compile time inside rollup process. 
+// this is running during runtime compile time inside rollup process.
 (globalThis as any).export_linker_indexes_as_code = export_linker_indexes_as_code;

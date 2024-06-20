@@ -304,6 +304,13 @@ namespace System.Text.RegularExpressions
                 +"\u3041\u3097\u3099\u30A0\u30A1\u30FB\u30FC\u3100\u3105\u312D\u3131\u318F\u3190\u31B8\u31F0\u321D\u3220\u3244\u3251\u327C\u327F\u32CC\u32D0\u32FF\u3300\u3377\u337B\u33DE\u33E0\u33FF\u3400\u4DB6\u4E00\u9FA6\uA000\uA48D\uA490\uA4C7\uAC00\uD7A4\uF900\uFA2E\uFA30\uFA6B\uFB00\uFB07\uFB13\uFB18\uFB1D\uFB37\uFB38\uFB3D\uFB3E\uFB3F\uFB40\uFB42\uFB43\uFB45\uFB46\uFBB2\uFBD3\uFD3E\uFD50\uFD90\uFD92\uFDC8\uFDF0\uFDFD\uFE00\uFE10\uFE20\uFE24\uFE62\uFE63\uFE64\uFE67\uFE69\uFE6A\uFE70\uFE75\uFE76\uFEFD\uFF04\uFF05\uFF0B\uFF0C\uFF10\uFF1A\uFF1C\uFF1F\uFF21\uFF3B\uFF3E\uFF3F\uFF40\uFF5B\uFF5C\uFF5D\uFF5E\uFF5F\uFF66\uFFBF\uFFC2\uFFC8\uFFCA\uFFD0\uFFD2\uFFD8\uFFDA\uFFDD\uFFE0\uFFE7\uFFE8\uFFEF\uFFFC\uFFFE"],
         ];
 
+        private static readonly char[] s_whitespaceChars =
+            ['\u0009', '\u000A', '\u000B', '\u000C', '\u000D',
+             '\u0020', '\u0085', '\u00A0', '\u1680', '\u2000',
+             '\u2001', '\u2002', '\u2003', '\u2004', '\u2005',
+             '\u2006', '\u2007', '\u2008', '\u2009', '\u200A',
+             '\u2028', '\u2029', '\u202F', '\u205F', '\u3000'];
+
         private List<(char First, char Last)>? _rangelist;
         private StringBuilder? _categories;
         private RegexCharClass? _subtractor;
@@ -323,6 +330,12 @@ namespace System.Text.RegularExpressions
             for (int i = 0; i < len - 1; i++)
                 Debug.Assert(string.Compare(s_propTable[i][0], s_propTable[i + 1][0], StringComparison.Ordinal) < 0, $"RegexCharClass s_propTable is out of order at ({s_propTable[i][0]}, {s_propTable[i + 1][0]})");
 
+            // Make sure character information is in sync with Unicode data.
+            var whitespaceSet = new HashSet<char>(s_whitespaceChars);
+            for (int i = 0; i <= char.MaxValue; i++)
+            {
+                Debug.Assert(whitespaceSet.Contains((char)i) == char.IsWhiteSpace((char)i));
+            }
         }
 #endif
 
@@ -550,7 +563,7 @@ namespace System.Text.RegularExpressions
             }
 
             return
-#if NETCOREAPP2_1_OR_GREATER
+#if NET
                 string
 #else
                 StringExtensions
@@ -802,17 +815,23 @@ namespace System.Text.RegularExpressions
         /// If 0 is returned, no assumptions can be made about the characters.
         /// </returns>
         /// <remarks>
-        /// Only considers character classes that only contain sets (no categories)
-        /// and no subtraction... just simple sets containing starting/ending pairs.
-        /// The returned characters may be negated: if IsNegated(set) is false, then
-        /// the returned characters are the only ones that match; if it returns true,
-        /// then the returned characters are the only ones that don't match.
+        /// Only considers character classes that only contain sets (no categories),
+        /// just simple sets containing starting/ending pairs (subtraction from those pairs
+        /// is factored in, however).The returned characters may be negated: if IsNegated(set)
+        /// is false, then the returned characters are the only ones that match; if it returns
+        /// true, then the returned characters are the only ones that don't match.
         /// </remarks>
         public static int GetSetChars(string set, Span<char> chars)
         {
             // We get the characters by enumerating the set portion, so we validate that it's
             // set up to enable that, e.g. no categories.
-            if (!CanEasilyEnumerateSetContents(set))
+            if (!CanEasilyEnumerateSetContents(set, out bool hasSubtraction))
+            {
+                return 0;
+            }
+
+            // Negation with subtraction is too cumbersome to reason about efficiently.
+            if (hasSubtraction && IsNegated(set))
             {
                 return 0;
             }
@@ -824,38 +843,35 @@ namespace System.Text.RegularExpressions
             // based on it a) complicating things, and b) it being really unlikely to
             // be part of a small set.
             int setLength = set[SetLengthIndex];
-            int count = 0;
+            int count = 0, evaluated = 0;
             for (int i = SetStartIndex; i < SetStartIndex + setLength; i += 2)
             {
                 int curSetEnd = set[i + 1];
                 for (int c = set[i]; c < curSetEnd; c++)
                 {
-                    if (count >= chars.Length)
+                    // Keep track of how many characters we've checked. This could work
+                    // just comparing count rather than evaluated, but we also want to
+                    // limit how much work is done here, which we can do by constraining
+                    // the number of checks to the size of the storage provided.
+                    if (++evaluated > chars.Length)
                     {
                         return 0;
                     }
 
+                    // If the set is all ranges but has a subtracted class,
+                    // validate the char is actually in the set prior to storing it:
+                    // it might be in the subtracted range.
+                    if (hasSubtraction && !CharInClass((char)c, set))
+                    {
+                        continue;
+                    }
+
+                    Debug.Assert(count <= evaluated);
                     chars[count++] = (char)c;
                 }
             }
 
             return count;
-        }
-
-        public static bool TryGetAsciiSetChars(string set, [NotNullWhen(true)] out char[]? asciiChars)
-        {
-            Span<char> chars = stackalloc char[128];
-
-            chars = chars.Slice(0, GetSetChars(set, chars));
-
-            if (chars.IsEmpty || !IsAscii(chars))
-            {
-                asciiChars = null;
-                return false;
-            }
-
-            asciiChars = chars.ToArray();
-            return true;
         }
 
         /// <summary>
@@ -945,6 +961,32 @@ namespace System.Text.RegularExpressions
             }
         }
 
+        /// <summary>
+        /// Gets whether the specified set is a named set with a reasonably small count
+        /// of Unicode characters.
+        /// </summary>
+        /// <param name="set">The set description.</param>
+        /// <param name="chars">The chars that make up the known set.</param>
+        /// <param name="negated">Whether the <paramref name="chars"/> need to be negated.</param>
+        /// <param name="description">A description suitable for use in C# code as a variable name.</param>
+        public static bool IsUnicodeCategoryOfSmallCharCount(string set, [NotNullWhen(true)] out char[]? chars, out bool negated, [NotNullWhen(true)] out string? description)
+        {
+            switch (set)
+            {
+                case SpaceClass:
+                case NotSpaceClass:
+                    chars = s_whitespaceChars;
+                    negated = set == NotSpaceClass;
+                    description = "whitespace";
+                    return true;
+            }
+
+            chars = default;
+            negated = false;
+            description = null;
+            return false;
+        }
+
         /// <summary>Gets whether the specified character participates in case conversion.</summary>
         /// <remarks>
         /// This method is used to perform operations as if they were case-sensitive even if they're
@@ -1013,6 +1055,21 @@ namespace System.Text.RegularExpressions
 
             return true;
 #endif
+        }
+
+        /// <summary>Gets whether the set description string is for two ASCII letters that case to each other under OrdinalIgnoreCase rules.</summary>
+        public static bool SetContainsAsciiOrdinalIgnoreCaseCharacter(string set, Span<char> twoChars)
+        {
+            Debug.Assert(twoChars.Length >= 2);
+            return
+                !IsNegated(set) &&
+                GetSetChars(set, twoChars) == 2 &&
+                twoChars[0] < 128 &&
+                twoChars[1] < 128 &&
+                twoChars[0] != twoChars[1] &&
+                char.IsLetter(twoChars[0]) &&
+                char.IsLetter(twoChars[1]) &&
+                (twoChars[0] | 0x20) == (twoChars[1] | 0x20);
         }
 
         /// <summary>Gets whether we can iterate through the set list pairs in order to completely enumerate the set's contents.</summary>
@@ -1247,7 +1304,7 @@ namespace System.Text.RegularExpressions
                 }
 
                 uint[]? cache = asciiLazyCache ?? Interlocked.CompareExchange(ref asciiLazyCache, new uint[CacheArrayLength], null) ?? asciiLazyCache;
-#if NET5_0_OR_GREATER
+#if NET
                 Interlocked
 #else
                 InterlockedExtensions
@@ -1537,7 +1594,7 @@ namespace System.Text.RegularExpressions
 #pragma warning disable CS8500 // takes address of managed type
             ReadOnlySpan<char> tmpChars = chars; // avoid address exposing the span and impacting the other code in the method that uses it
             return
-#if NETCOREAPP2_1_OR_GREATER
+#if NET
                 string
 #else
                 StringExtensions

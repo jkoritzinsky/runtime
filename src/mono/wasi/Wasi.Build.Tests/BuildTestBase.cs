@@ -160,6 +160,7 @@ namespace Wasm.Build.Tests
             @$"<Project Sdk=""Microsoft.NET.Sdk"">
               <PropertyGroup>
                 <TargetFramework>{DefaultTargetFramework}</TargetFramework>
+                <RuntimeIdentifier>wasi-wasm</RuntimeIdentifier>
                 <OutputType>Exe</OutputType>
                 <WasmGenerateRunV8Script>true</WasmGenerateRunV8Script>
                 <WasmMainJSPath>test-main.js</WasmMainJSPath>
@@ -573,7 +574,7 @@ namespace Wasm.Build.Tests
 
                 // this will ensure that all the async event handling has completed
                 // and should be called after process.WaitForExit(int)
-                // https://docs.microsoft.com/en-us/dotnet/api/system.diagnostics.process.waitforexit?view=net-5.0#System_Diagnostics_Process_WaitForExit_System_Int32_
+                // https://learn.microsoft.com/dotnet/api/system.diagnostics.process.waitforexit?view=net-5.0#System_Diagnostics_Process_WaitForExit_System_Int32_
                 process.WaitForExit();
 
                 process.ErrorDataReceived -= logStdErr;

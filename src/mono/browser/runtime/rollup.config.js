@@ -14,19 +14,18 @@ import gitCommitInfo from "git-commit-info";
 import MagicString from "magic-string";
 
 const configuration = process.env.Configuration;
-const isDebug = configuration !== "Release";
+const isDebug = false;
 const isContinuousIntegrationBuild = process.env.ContinuousIntegrationBuild === "true" ? true : false;
 const productVersion = process.env.ProductVersion || "8.0.0-dev";
 const nativeBinDir = process.env.NativeBinDir ? process.env.NativeBinDir.replace(/"/g, "") : "bin";
 const wasmObjDir = process.env.WasmObjDir ? process.env.WasmObjDir.replace(/"/g, "") : "obj";
-const monoWasmThreads = process.env.MonoWasmThreads === "true" ? true : false;
+const wasmEnableThreads = process.env.WasmEnableThreads === "true" ? true : false;
 const wasmEnableSIMD = process.env.WASM_ENABLE_SIMD === "1" ? true : false;
 const wasmEnableExceptionHandling = process.env.WASM_ENABLE_EH === "1" ? true : false;
-const wasmEnableLegacyJsInterop = process.env.DISABLE_LEGACY_JS_INTEROP !== "1" ? true : false;
 const wasmEnableJsInteropByValue = process.env.ENABLE_JS_INTEROP_BY_VALUE == "1" ? true : false;
 const monoDiagnosticsMock = process.env.MonoDiagnosticsMock === "true" ? true : false;
 // because of stack walk at src/mono/wasm/debugger/BrowserDebugProxy/MonoProxy.cs
-// and unit test at src\libraries\System.Runtime.InteropServices.JavaScript\tests\System.Runtime.InteropServices.JavaScript.Legacy.UnitTests\timers.mjs
+// and unit test at with timers.mjs
 const keep_fnames = /(mono_wasm_runtime_ready|mono_wasm_fire_debugger_agent_message_with_data|mono_wasm_fire_debugger_agent_message_with_data_to_pause|mono_wasm_schedule_timer_tick)/;
 const keep_classnames = /(ManagedObject|ManagedError|Span|ArraySegment|WasmRootBuffer|SessionOptionsBuilder)/;
 const terserConfig = {
@@ -69,7 +68,18 @@ const inlineAssert = [
         // eslint-disable-next-line quotes
         pattern: 'mono_assert\\(([^,]*), \\(\\) => *`([^`]*)`\\);',
         replacement: (match) => `if (!(${match[1]})) mono_assert(false, \`${match[2]}\`); // inlined mono_assert condition`
-    }
+    },
+    {
+        // eslint-disable-next-line quotes
+        pattern: 'mono_log_debug\\(*"([^"]*)"\\);',
+        // eslint-disable-next-line quotes
+        replacement: (match) => `if (loaderHelpers.diagnosticTracing) mono_log_debug("${match[1]}"); // inlined mono_log_debug condition`
+    },
+    {
+        // eslint-disable-next-line quotes
+        pattern: 'mono_log_debug\\(\\(\\) => *`([^`]*)`\\);',
+        replacement: (match) => `if (loaderHelpers.diagnosticTracing) mono_log_debug(\`${match[1]}\`); // inlined mono_log_debug condition`
+    },
 ];
 const checkAssert =
 {
@@ -98,18 +108,17 @@ try {
 const envConstants = {
     productVersion,
     configuration,
-    monoWasmThreads,
+    wasmEnableThreads,
     wasmEnableSIMD,
     wasmEnableExceptionHandling,
     monoDiagnosticsMock,
     gitHash,
-    wasmEnableLegacyJsInterop,
     wasmEnableJsInteropByValue,
     isContinuousIntegrationBuild,
 };
 
 const locationCache = {};
-function sourcemapPathTransform(relativeSourcePath, sourcemapPath) {
+function sourcemapPathTransform (relativeSourcePath, sourcemapPath) {
     let res = locationCache[relativeSourcePath];
     if (res === undefined) {
         if (!isContinuousIntegrationBuild) {
@@ -127,7 +136,7 @@ function sourcemapPathTransform(relativeSourcePath, sourcemapPath) {
     return res;
 }
 
-function consts(dict) {
+function consts (dict) {
     // implement rollup-plugin-const in terms of @rollup/plugin-virtual
     // It's basically the same thing except "consts" names all its modules with a "consts:" prefix,
     // and the virtual module always exports a single default binding (the const value).
@@ -214,21 +223,22 @@ const typesConfig = {
     ],
     external: externalDependencies,
     plugins: [dts()],
+    onwarn: onwarn
 };
-const legacyTypesConfig = {
-    input: "./net6-legacy/export-types.ts",
+const hybridGlobalizationConfig = {
+    input: "./hybrid-globalization/module-exports.ts",
     output: [
         {
             format: "es",
-            file: nativeBinDir + "/dotnet-legacy.d.ts",
-            banner: banner_dts,
-            plugins: [writeOnChangePlugin()],
+            file: nativeBinDir + "/dotnet.globalization.js",
+            banner,
+            sourcemap: true,
+            sourcemapPathTransform,
         }
     ],
-    external: externalDependencies,
-    plugins: [dts()],
+    plugins: [...outputCodePlugins],
+    onwarn: onwarn
 };
-
 
 let diagnosticMockTypesConfig = undefined;
 
@@ -238,12 +248,6 @@ if (isDebug) {
     typesConfig.output.push({
         format: "es",
         file: "./dotnet.d.ts",
-        banner: banner_dts,
-        plugins: [alwaysLF(), writeOnChangePlugin()],
-    });
-    legacyTypesConfig.output.push({
-        format: "es",
-        file: "./dotnet-legacy.d.ts",
         banner: banner_dts,
         plugins: [alwaysLF(), writeOnChangePlugin()],
     });
@@ -261,11 +265,12 @@ if (isDebug) {
         ],
         external: externalDependencies,
         plugins: [dts()],
+        onwarn: onwarn
     };
 }
 
 /* Web Workers */
-function makeWorkerConfig(workerName, workerInputSourcePath) {
+function makeWorkerConfig (workerName, workerInputSourcePath) {
     const workerConfig = {
         input: workerInputSourcePath,
         output: [
@@ -289,19 +294,20 @@ const allConfigs = [
     runtimeConfig,
     wasmImportsConfig,
     typesConfig,
-    legacyTypesConfig,
-].concat(workerConfigs)
+    hybridGlobalizationConfig,
+]
+    .concat(workerConfigs)
     .concat(diagnosticMockTypesConfig ? [diagnosticMockTypesConfig] : []);
 export default defineConfig(allConfigs);
 
-function evalCodePlugin() {
+function evalCodePlugin () {
     return {
         name: "evalCode",
         generateBundle: evalCode
     };
 }
 
-async function evalCode(options, bundle) {
+async function evalCode (options, bundle) {
     try {
         const name = Object.keys(bundle)[0];
         const asset = bundle[name];
@@ -317,7 +323,7 @@ async function evalCode(options, bundle) {
 
 
 // this would create .sha256 file next to the output file, so that we do not touch datetime of the file if it's same -> faster incremental build.
-function writeOnChangePlugin() {
+function writeOnChangePlugin () {
     return {
         name: "writeOnChange",
         generateBundle: writeWhenChanged
@@ -325,7 +331,7 @@ function writeOnChangePlugin() {
 }
 
 // force always unix line ending
-function alwaysLF() {
+function alwaysLF () {
     return {
         name: "writeOnChange",
         generateBundle: (options, bundle) => {
@@ -337,7 +343,7 @@ function alwaysLF() {
     };
 }
 
-async function writeWhenChanged(options, bundle) {
+async function writeWhenChanged (options, bundle) {
     try {
         const name = Object.keys(bundle)[0];
         const asset = bundle[name];
@@ -368,31 +374,31 @@ async function writeWhenChanged(options, bundle) {
     }
 }
 
-function checkFileExists(file) {
+function checkFileExists (file) {
     return fs.promises.access(file, fs.constants.F_OK)
         .then(() => true)
         .catch(() => false);
 }
 
-function regexCheck(checks = []) {
+function regexCheck (checks = []) {
     const filter = createFilter("**/*.ts");
 
     return {
         name: "regexCheck",
 
-        renderChunk(code, chunk) {
+        renderChunk (code, chunk) {
             const id = chunk.fileName;
             if (!filter(id)) return null;
             return executeCheck(this, code, id);
         },
 
-        transform(code, id) {
+        transform (code, id) {
             if (!filter(id)) return null;
             return executeCheck(this, code, id);
         }
     };
 
-    function executeCheck(self, code, id) {
+    function executeCheck (self, code, id) {
         // self.warn("executeCheck" + id);
         for (const rep of checks) {
             const { pattern, failure } = rep;
@@ -408,25 +414,25 @@ function regexCheck(checks = []) {
 }
 
 
-function regexReplace(replacements = []) {
+function regexReplace (replacements = []) {
     const filter = createFilter("**/*.ts");
 
     return {
         name: "regexReplace",
 
-        renderChunk(code, chunk) {
+        renderChunk (code, chunk) {
             const id = chunk.fileName;
             if (!filter(id)) return null;
             return executeReplacement(this, code, id);
         },
 
-        transform(code, id) {
+        transform (code, id) {
             if (!filter(id)) return null;
             return executeReplacement(this, code, id);
         }
     };
 
-    function executeReplacement(_, code, id) {
+    function executeReplacement (_, code, id) {
         const magicString = new MagicString(code);
         if (!codeHasReplacements(code, id, magicString)) {
             return null;
@@ -437,7 +443,7 @@ function regexReplace(replacements = []) {
         return result;
     }
 
-    function codeHasReplacements(code, id, magicString) {
+    function codeHasReplacements (code, id, magicString) {
         let result = false;
         let match;
         for (const rep of replacements) {
@@ -462,7 +468,7 @@ function regexReplace(replacements = []) {
 // Returns an array of objects {"workerName": "foo", "path": "/path/dotnet-foo-worker.ts"}
 //
 // A file looks like a webworker toplevel input if it's `dotnet-{name}-worker.ts` or `.js`
-function findWebWorkerInputs(basePath) {
+function findWebWorkerInputs (basePath) {
     const glob = "dotnet-*-worker.[tj]s";
     const files = fast_glob.sync(glob, { cwd: basePath });
     if (files.length == 0) {
@@ -479,7 +485,7 @@ function findWebWorkerInputs(basePath) {
     return results;
 }
 
-function onwarn(warning) {
+function onwarn (warning) {
     if (warning.code === "CIRCULAR_DEPENDENCY") {
         return;
     }

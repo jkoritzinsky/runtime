@@ -141,9 +141,19 @@ void SsaBuilder::ComputeDominanceFrontiers(BasicBlock** postOrder, int count, Bl
         // Otherwise, there are > 1 preds.  Each is a candidate B2 in the definition --
         // *unless* it dominates "block"/B3.
 
+        FlowGraphDfsTree*       dfsTree = m_pCompiler->m_dfsTree;
+        FlowGraphDominatorTree* domTree = m_pCompiler->m_domTree;
+
         for (FlowEdge* pred = blockPreds; pred != nullptr; pred = pred->getNextPredEdge())
         {
-            DBG_SSA_JITDUMP("   Considering predecessor " FMT_BB ".\n", pred->getSourceBlock()->bbNum);
+            BasicBlock* predBlock = pred->getSourceBlock();
+            DBG_SSA_JITDUMP("   Considering predecessor " FMT_BB ".\n", predBlock->bbNum);
+
+            if (!dfsTree->Contains(predBlock))
+            {
+                DBG_SSA_JITDUMP("    Unreachable node\n");
+                continue;
+            }
 
             // If we've found a B2, then consider the possible B1's.  We start with
             // B2, since a block dominates itself, then traverse upwards in the dominator
@@ -153,7 +163,7 @@ void SsaBuilder::ComputeDominanceFrontiers(BasicBlock** postOrder, int count, Bl
             // Along this way, make "block"/B3 part of the dom frontier of the B1.
             // When we reach this immediate dominator, the definition no longer applies, since this
             // potential B1 *does* dominate "block"/B3, so we stop.
-            for (BasicBlock* b1 = pred->getSourceBlock(); (b1 != nullptr) && (b1 != block->bbIDom); // !root && !loop
+            for (BasicBlock* b1 = predBlock; (b1 != nullptr) && (b1 != block->bbIDom); // !root && !loop
                  b1             = b1->bbIDom)
             {
                 DBG_SSA_JITDUMP("      Adding " FMT_BB " to dom frontier of pred dom " FMT_BB ".\n", block->bbNum,
@@ -221,7 +231,7 @@ void SsaBuilder::ComputeIteratedDominanceFrontier(BasicBlock* b, const BlkToBlkV
 
         for (BasicBlock* f : *bDF)
         {
-            BitVecOps::AddElemD(&m_visitedTraits, m_visited, f->bbNewPostorderNum);
+            BitVecOps::AddElemD(&m_visitedTraits, m_visited, f->bbPostorderNum);
             bIDF->push_back(f);
         }
 
@@ -239,7 +249,7 @@ void SsaBuilder::ComputeIteratedDominanceFrontier(BasicBlock* b, const BlkToBlkV
             {
                 for (BasicBlock* ff : *fDF)
                 {
-                    if (BitVecOps::TryAddElemD(&m_visitedTraits, m_visited, ff->bbNewPostorderNum))
+                    if (BitVecOps::TryAddElemD(&m_visitedTraits, m_visited, ff->bbPostorderNum))
                     {
                         bIDF->push_back(ff);
                     }
@@ -773,7 +783,6 @@ void SsaBuilder::AddDefToEHSuccessorPhis(BasicBlock* block, unsigned lclNum, uns
         assert(phiFound);
 
         return BasicBlockVisit::Continue;
-
     });
 }
 
@@ -956,8 +965,8 @@ void SsaBuilder::AddPhiArgsToSuccessors(BasicBlock* block)
         // Walk the statements for phi nodes.
         for (Statement* const stmt : succ->Statements())
         {
-            // A prefix of the statements of the block are phi definition nodes. If we complete processing
-            // that prefix, exit.
+            // A prefix of the statements of the block are phi definition nodes. If we complete
+            // processing that prefix, exit.
             if (!stmt->IsPhiDefnStmt())
             {
                 break;
@@ -979,8 +988,9 @@ void SsaBuilder::AddPhiArgsToSuccessors(BasicBlock* block)
             {
                 if ((memoryKind == GcHeap) && m_pCompiler->byrefStatesMatchGcHeapStates)
                 {
-                    // We've already propagated the "out" number to the phi shared with ByrefExposed,
-                    // but still need to update bbMemorySsaPhiFunc to be in sync between GcHeap and ByrefExposed.
+                    // We've already propagated the "out" number to the phi shared with
+                    // ByrefExposed, but still need to update bbMemorySsaPhiFunc to be in sync
+                    // between GcHeap and ByrefExposed.
                     assert(memoryKind > ByrefExposed);
                     assert(block->bbMemorySsaNumOut[memoryKind] == block->bbMemorySsaNumOut[ByrefExposed]);
                     assert((succ->bbMemorySsaPhiFunc[ByrefExposed] == succMemoryPhi) ||
@@ -1000,8 +1010,9 @@ void SsaBuilder::AddPhiArgsToSuccessors(BasicBlock* block)
                     BasicBlock::MemoryPhiArg* curArg = succMemoryPhi;
                     unsigned                  ssaNum = block->bbMemorySsaNumOut[memoryKind];
                     bool                      found  = false;
-                    // This is a quadratic algorithm.  We might need to consider some switch over to a hash table
-                    // representation for the arguments of a phi node, to make this linear.
+                    // This is a quadratic algorithm.  We might need to consider some switch over
+                    // to a hash table representation for the arguments of a phi node, to make this
+                    // linear.
                     while (curArg != nullptr)
                     {
                         if (curArg->m_ssaNum == ssaNum)
@@ -1171,6 +1182,7 @@ void SsaBuilder::RenameVariables()
 {
     JITDUMP("*************** In SsaBuilder::RenameVariables()\n");
 
+    m_pCompiler->Metrics.VarsInSsa = 0;
     // The first thing we do is treat parameters and must-init variables as if they have a
     // virtual definition before entry -- they start out at SSA name 1.
     for (unsigned lclNum = 0; lclNum < m_pCompiler->lvaCount; lclNum++)
@@ -1180,10 +1192,13 @@ void SsaBuilder::RenameVariables()
             continue;
         }
 
+        m_pCompiler->Metrics.VarsInSsa++;
+
         LclVarDsc* varDsc = m_pCompiler->lvaGetDesc(lclNum);
         assert(varDsc->lvTracked);
 
         if (varDsc->lvIsParam || m_pCompiler->info.compInitMem || varDsc->lvMustInit ||
+            (varTypeIsGC(varDsc) && !varDsc->lvHasExplicitInit) ||
             VarSetOps::IsMember(m_pCompiler, m_pCompiler->fgFirstBB->bbLiveIn, varDsc->lvVarIndex))
         {
             unsigned ssaNum = varDsc->lvPerSsaData.AllocSsaNum(m_allocator);
@@ -1213,7 +1228,7 @@ void SsaBuilder::RenameVariables()
     // memory ssa numbers to have some initial value.
     for (BasicBlock* const block : m_pCompiler->Blocks())
     {
-        if (block->bbIDom == nullptr)
+        if (!m_pCompiler->m_dfsTree->Contains(block))
         {
             for (MemoryKind memoryKind : allMemoryKinds())
             {
@@ -1223,14 +1238,16 @@ void SsaBuilder::RenameVariables()
         }
     }
 
-    class SsaRenameDomTreeVisitor : public NewDomTreeVisitor<SsaRenameDomTreeVisitor>
+    class SsaRenameDomTreeVisitor : public DomTreeVisitor<SsaRenameDomTreeVisitor>
     {
         SsaBuilder*     m_builder;
         SsaRenameState* m_renameStack;
 
     public:
         SsaRenameDomTreeVisitor(Compiler* compiler, SsaBuilder* builder, SsaRenameState* renameStack)
-            : NewDomTreeVisitor(compiler), m_builder(builder), m_renameStack(renameStack)
+            : DomTreeVisitor(compiler)
+            , m_builder(builder)
+            , m_renameStack(renameStack)
         {
         }
 

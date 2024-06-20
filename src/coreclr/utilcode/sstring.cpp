@@ -10,8 +10,7 @@
 #include "sstring.h"
 #include "ex.h"
 #include "holder.h"
-#include <minipal/utf8.h>
-
+#include <minipal/strings.h>
 
 #if defined(_MSC_VER)
 #pragma inline_depth (25)
@@ -88,7 +87,7 @@ static WCHAR MapChar(WCHAR wc, DWORD dwFlags)
 #ifdef SELF_NO_HOST
             toupper(wc);
 #else
-            PAL_ToUpperInvariant(wc);
+            minipal_toupper_invariant(wc);
 #endif
     }
     else
@@ -98,7 +97,7 @@ static WCHAR MapChar(WCHAR wc, DWORD dwFlags)
 #ifdef SELF_NO_HOST
             tolower(wc);
 #else
-            PAL_ToLowerInvariant(wc);
+            minipal_tolower_invariant(wc);
 #endif
     }
 #endif // !TARGET_UNIX
@@ -820,13 +819,13 @@ void SString::ConvertToUnicode(SString &s) const
         UNREACHABLE();
     }
 
-    COUNT_T length = WszMultiByteToWideChar(page, 0, GetRawANSI(), GetRawCount()+1, 0, 0);
+    COUNT_T length = MultiByteToWideChar(page, 0, GetRawANSI(), GetRawCount()+1, 0, 0);
     if (length == 0)
         ThrowLastError();
 
     s.Resize(length-1, REPRESENTATION_UNICODE);
 
-    length = WszMultiByteToWideChar(page, 0, GetRawANSI(), GetRawCount()+1, s.GetRawUnicode(), length);
+    length = MultiByteToWideChar(page, 0, GetRawANSI(), GetRawCount()+1, s.GetRawUnicode(), length);
     if (length == 0)
         ThrowLastError();
 
@@ -865,25 +864,27 @@ COUNT_T SString::ConvertToUTF8(SString &s) const
         UNREACHABLE();
     }
 
-    size_t length = minipal_get_length_utf16_to_utf8((CHAR16_T*)GetRawUnicode(), GetCount(), MINIPAL_MB_NO_REPLACE_INVALID_CHARS);
+    // <TODO> @todo: use WC_NO_BEST_FIT_CHARS </TODO>
+    bool  allAscii;
+    DWORD length;
 
-    if (length >= COUNT_T_MAX)
+    HRESULT hr = FString::Unicode_Utf8_Length(GetRawUnicode(), & allAscii, & length);
+
+    if (SUCCEEDED(hr))
     {
-        ThrowHR(COR_E_OVERFLOW);
-    }
+        s.Resize(length, REPRESENTATION_UTF8);
 
-    s.Resize((COUNT_T)length, REPRESENTATION_UTF8);
-
-    //we optimize the empty string by replacing it with null for SString above in Resize
-    if (length > 0)
-    {
-        if (!minipal_convert_utf16_to_utf8((CHAR16_T*)GetRawUnicode(), GetCount(), s.GetRawUTF8(), length, MINIPAL_MB_NO_REPLACE_INVALID_CHARS))
+	//FString::Unicode_Utf8 expects an array all the time
+        //we optimize the empty string by replacing it with null for SString above in Resize
+        if (length > 0)
         {
-            ThrowHR(EMAKEHR(errno));
+            hr = FString::Unicode_Utf8(GetRawUnicode(), allAscii, (LPSTR) s.GetRawUTF8(), length);
         }
     }
 
-    RETURN (COUNT_T)length + 1;
+    IfFailThrow(hr);
+
+    RETURN length + 1;
 }
 
 //-----------------------------------------------------------------------------
@@ -1855,7 +1856,7 @@ BOOL SString::FormatMessage(DWORD dwFlags, LPCVOID lpSource, DWORD dwMessageId, 
         // First, try to use our existing buffer to hold the result.
         Resize(GetRawCount(), REPRESENTATION_UNICODE);
 
-        DWORD result = ::WszFormatMessage(dwFlags | FORMAT_MESSAGE_ARGUMENT_ARRAY,
+        DWORD result = ::FormatMessage(dwFlags | FORMAT_MESSAGE_ARGUMENT_ARRAY,
                                           lpSource, dwMessageId, dwLanguageId,
                                           GetRawUnicode(), GetRawCount()+1, (va_list*)args);
 
@@ -1877,7 +1878,7 @@ BOOL SString::FormatMessage(DWORD dwFlags, LPCVOID lpSource, DWORD dwMessageId, 
     // We don't have enough space in our buffer, do dynamic allocation.
     LocalAllocHolder<WCHAR> string;
 
-    DWORD result = ::WszFormatMessage(dwFlags | FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_ARGUMENT_ARRAY,
+    DWORD result = ::FormatMessage(dwFlags | FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_ARGUMENT_ARRAY,
                                       lpSource, dwMessageId, dwLanguageId,
                                       (LPWSTR)(LPWSTR*)&string, 0, (va_list*)args);
 
@@ -2343,11 +2344,11 @@ bool SString::DacGetUnicode(COUNT_T                                   cBufChars,
             // iPage defaults to CP_ACP.
             if (pcNeedChars)
             {
-                *pcNeedChars = WszMultiByteToWideChar(iPage, 0, reinterpret_cast<PSTR>(pContent), -1, NULL, 0);
+                *pcNeedChars = MultiByteToWideChar(iPage, 0, reinterpret_cast<PSTR>(pContent), -1, NULL, 0);
             }
             if (pBuffer && cBufChars)
             {
-                if (!WszMultiByteToWideChar(iPage, 0, reinterpret_cast<PSTR>(pContent), -1, pBuffer, cBufChars))
+                if (!MultiByteToWideChar(iPage, 0, reinterpret_cast<PSTR>(pContent), -1, pBuffer, cBufChars))
                 {
                     return false;
                 }

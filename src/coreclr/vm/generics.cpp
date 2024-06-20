@@ -114,7 +114,7 @@ TypeHandle ClassLoader::CanonicalizeGenericArg(TypeHandle thGenericArg)
 
 #ifndef DACCESS_COMPILE
 
-TypeHandle ClassLoader::LoadCanonicalGenericInstantiation(TypeKey *pTypeKey,
+TypeHandle ClassLoader::LoadCanonicalGenericInstantiation(const TypeKey *pTypeKey,
                                                           LoadTypesFlag fLoadTypes/*=LoadTypes*/,
                                                           ClassLoadLevel level/*=CLASS_LOADED*/)
 {
@@ -157,7 +157,7 @@ TypeHandle ClassLoader::LoadCanonicalGenericInstantiation(TypeKey *pTypeKey,
 /* static */
 TypeHandle
 ClassLoader::CreateTypeHandleForNonCanonicalGenericInstantiation(
-    TypeKey         *pTypeKey,
+    const TypeKey         *pTypeKey,
     AllocMemTracker *pamTracker)
 {
     CONTRACT(TypeHandle)
@@ -278,7 +278,13 @@ ClassLoader::CreateTypeHandleForNonCanonicalGenericInstantiation(
     memcpy((BYTE*)pMT - cbGC, (BYTE*) pOldMT - cbGC, cbGC);
 
     // Allocate the private data block
-    pMT->AllocateAuxiliaryData(pAllocator, pLoaderModule, pamTracker, fHasGenericsStaticsInfo);
+    MethodTableStaticsFlags staticsFlags = MethodTableStaticsFlags::None;
+    if (fHasGenericsStaticsInfo)
+        staticsFlags |= MethodTableStaticsFlags::Generic | MethodTableStaticsFlags::Present;
+    if (pOldMT->GetNumThreadStaticFields() > 0)
+        staticsFlags |= MethodTableStaticsFlags::Thread;
+
+    pMT->AllocateAuxiliaryData(pAllocator, pLoaderModule, pamTracker, staticsFlags);
     pMT->SetModule(pOldMT->GetModule());
 
     pMT->GetAuxiliaryDataForWrite()->SetIsNotFullyLoadedForBuildMethodTable();
@@ -334,15 +340,16 @@ ClassLoader::CreateTypeHandleForNonCanonicalGenericInstantiation(
     if (fContainsGenericVariables)
         pMT->SetContainsGenericVariables();
 
-    if (fHasGenericsStaticsInfo)
-        pMT->SetDynamicStatics(TRUE);
-
     // Since we are fabricating a new MT based on an existing one, the per-inst info should
     // be non-null
     _ASSERTE(pOldMT->HasPerInstInfo());
 
     // Fill in per-inst map pointer (which points to the array of generic dictionary pointers)
     pMT->SetPerInstInfo((MethodTable::PerInstInfoElem_t *) (pMemory + cbMT + cbOptional + cbIMap + sizeof(GenericsDictInfo)));
+
+    if (fHasGenericsStaticsInfo)
+        pMT->SetDynamicStatics();
+
     _ASSERTE(FitsIn<WORD>(pOldMT->GetNumDicts()));
     _ASSERTE(FitsIn<WORD>(pOldMT->GetNumGenericArgs()));
     pMT->SetDictInfo(static_cast<WORD>(pOldMT->GetNumDicts()), static_cast<WORD>(pOldMT->GetNumGenericArgs()));
@@ -479,8 +486,6 @@ ClassLoader::CreateTypeHandleForNonCanonicalGenericInstantiation(
 
     // We never have non-virtual slots in this method table (set SetNumVtableSlots and SetNumVirtuals above)
     _ASSERTE(!pMT->HasNonVirtualSlots());
-
-    pMT->GetAuxiliaryDataForWrite()->SetIsRestoredForBuildMethodTable();
 
     RETURN(TypeHandle(pMT));
 } // ClassLoader::CreateTypeHandleForNonCanonicalGenericInstantiation

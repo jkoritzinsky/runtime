@@ -121,16 +121,8 @@ ClrDataTask::GetCurrentAppDomain(
 
     EX_TRY
     {
-        if (m_thread->GetDomain())
-        {
-            *appDomain = new (nothrow)
-                ClrDataAppDomain(m_dac, m_thread->GetDomain());
-            status = *appDomain ? S_OK : E_OUTOFMEMORY;
-        }
-        else
-        {
-            status = E_INVALIDARG;
-        }
+        *appDomain = new (nothrow) ClrDataAppDomain(m_dac, AppDomain::GetCurrentDomain());
+        status = *appDomain ? S_OK : E_OUTOFMEMORY;
     }
     EX_CATCH
     {
@@ -549,7 +541,7 @@ ClrDataTask::GetLastExceptionState(
         {
             *exception = new (nothrow)
                 ClrDataExceptionState(m_dac,
-                                      m_thread->GetDomain(),
+                                      AppDomain::GetCurrentDomain(),
                                       m_thread,
                                       CLRDATA_EXCEPTION_PARTIAL,
                                       NULL,
@@ -732,7 +724,8 @@ ClrDataAppDomain::GetName(
             }
             else
             {
-                status = u16_strcpy_s(name, bufLen, (PCWSTR)rawName) != NULL ? S_OK : S_FALSE;
+                status = StringCchCopy(name, bufLen, (PCWSTR)rawName) == S_OK ?
+                    S_OK : S_FALSE;
                 if (nameLen)
                 {
                     size_t cchName = u16_strlen((PCWSTR)rawName) + 1;
@@ -2496,14 +2489,9 @@ ClrDataModule::GetFlags(
         }
 
         PTR_Assembly pAssembly = m_module->GetAssembly();
-        PTR_BaseDomain pBaseDomain = pAssembly->GetDomain();
-        if (pBaseDomain->IsAppDomain())
+        if (pAssembly == AppDomain::GetCurrentDomain()->GetRootAssembly())
         {
-            PTR_AppDomain pAppDomain = pBaseDomain->AsAppDomain();
-            if (pAssembly == pAppDomain->GetRootAssembly())
-            {
-                (*flags) |= CLRDATA_MODULE_IS_MAIN_MODULE;
-            }
+            (*flags) |= CLRDATA_MODULE_IS_MAIN_MODULE;
         }
         status = S_OK;
     }
@@ -4767,7 +4755,7 @@ ClrDataExceptionState::GetString(
                                                  message->GetStringLength(),
                                                  true);
 
-            status = u16_strcpy_s(str, bufLen, msgStr) != NULL ? S_OK : S_FALSE;
+            status = StringCchCopy(str, bufLen, msgStr) == S_OK ? S_OK : S_FALSE;
             if (strLen != NULL)
             {
                 size_t cchName = u16_strlen(msgStr) + 1;
@@ -4966,7 +4954,7 @@ ClrDataExceptionState::NewFromThread(ClrDataAccess* dac,
 
     exIf = new (nothrow)
         ClrDataExceptionState(dac,
-                              thread->GetDomain(),
+                              AppDomain::GetCurrentDomain(),
                               thread,
                               CLRDATA_EXCEPTION_DEFAULT,
                               exState,
@@ -5126,7 +5114,7 @@ EnumMethodDefinitions::CdStart(Module* mod,
 {
     HRESULT status;
 
-    *handle = NULL;
+    *handle = 0;
 
     if (!mod)
     {

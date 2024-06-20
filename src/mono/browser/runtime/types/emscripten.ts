@@ -23,28 +23,10 @@ export declare interface CharPtrPtr extends NativePointer {
 }
 
 export declare interface EmscriptenModule {
-    /** @deprecated Please use localHeapViewI8() instead.*/
-    HEAP8: Int8Array,
-    /** @deprecated Please use localHeapViewI16() instead.*/
-    HEAP16: Int16Array;
-    /** @deprecated Please use localHeapViewI32() instead. */
-    HEAP32: Int32Array;
-    /** @deprecated Please use localHeapViewI64() instead. */
-    HEAP64: BigInt64Array;
-    /** @deprecated Please use localHeapViewU8() instead. */
-    HEAPU8: Uint8Array;
-    /** @deprecated Please use localHeapViewU16() instead. */
-    HEAPU16: Uint16Array;
-    /** @deprecated Please use localHeapViewU32() instead */
-    HEAPU32: Uint32Array;
-    /** @deprecated Please use localHeapViewF32() instead */
-    HEAPF32: Float32Array;
-    /** @deprecated Please use localHeapViewF64() instead. */
-    HEAPF64: Float64Array;
-
     // this should match emcc -s EXPORTED_FUNCTIONS
     _malloc(size: number): VoidPtr;
     _free(ptr: VoidPtr): void;
+    _sbrk(size: number): VoidPtr;
 
     // this should match emcc -s EXPORTED_RUNTIME_METHODS
     out(message: string): void;
@@ -58,6 +40,7 @@ export declare interface EmscriptenModule {
     UTF8ToString(ptr: CharPtr, maxBytesToRead?: number): string;
     UTF8ArrayToString(u8Array: Uint8Array, idx?: number, maxBytesToRead?: number): string;
     stringToUTF8Array(str: string, heap: Uint8Array, outIdx: number, maxBytesToWrite: number): void;
+    lengthBytesUTF8(str: string): number;
     FS_createPath(parent: string, path: string, canRead?: boolean, canWrite?: boolean): string;
     FS_createDataFile(parent: string, name: string, data: TypedArray, canRead: boolean, canWrite: boolean, canOwn?: boolean): string;
     addFunction(fn: Function, signature: string): number;

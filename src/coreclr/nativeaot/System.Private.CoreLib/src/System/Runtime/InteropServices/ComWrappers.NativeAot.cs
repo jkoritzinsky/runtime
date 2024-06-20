@@ -9,6 +9,8 @@ using System.Runtime.CompilerServices;
 using System.Runtime.Versioning;
 using System.Threading;
 
+using Internal.Runtime;
+
 namespace System.Runtime.InteropServices
 {
     /// <summary>
@@ -42,7 +44,7 @@ namespace System.Runtime.InteropServices
         private static readonly List<GCHandle> s_referenceTrackerNativeObjectWrapperCache = new List<GCHandle>();
 
         private readonly ConditionalWeakTable<object, ManagedObjectWrapperHolder> _ccwTable = new ConditionalWeakTable<object, ManagedObjectWrapperHolder>();
-        private readonly Lock _lock = new Lock();
+        private readonly Lock _lock = new Lock(useTrivialWaits: true);
         private readonly Dictionary<IntPtr, GCHandle> _rcwCache = new Dictionary<IntPtr, GCHandle>();
 
         internal static bool TryGetComInstanceForIID(object obj, Guid iid, out IntPtr unknown, out long wrapperId)
@@ -129,13 +131,13 @@ namespace System.Runtime.InteropServices
             /// <remarks>
             /// This is useful in scenarios when the caller has no need to rely on an IUnknown instance
             /// that is used when running managed code is not possible (i.e. during a GC). In traditional
-            /// COM scenarios this is common, but scenarios involving <see href="https://docs.microsoft.com/windows/win32/api/windows.ui.xaml.hosting.referencetracker/nn-windows-ui-xaml-hosting-referencetracker-ireferencetrackertarget">Reference Tracker hosting</see>
+            /// COM scenarios this is common, but scenarios involving <see href="https://learn.microsoft.com/windows/win32/api/windows.ui.xaml.hosting.referencetracker/nn-windows-ui-xaml-hosting-referencetracker-ireferencetrackertarget">Reference Tracker hosting</see>
             /// calling of the IUnknown API during a GC is possible.
             /// </remarks>
             CallerDefinedIUnknown = 1,
 
             /// <summary>
-            /// Flag used to indicate the COM interface should implement <see href="https://docs.microsoft.com/windows/win32/api/windows.ui.xaml.hosting.referencetracker/nn-windows-ui-xaml-hosting-referencetracker-ireferencetrackertarget">IReferenceTrackerTarget</see>.
+            /// Flag used to indicate the COM interface should implement <see href="https://learn.microsoft.com/windows/win32/api/windows.ui.xaml.hosting.referencetracker/nn-windows-ui-xaml-hosting-referencetracker-ireferencetrackertarget">IReferenceTrackerTarget</see>.
             /// When this flag is passed, the resulting COM interface will have an internal implementation of IUnknown
             /// and as such none should be supplied by the caller.
             /// </summary>
@@ -417,7 +419,7 @@ namespace System.Runtime.InteropServices
             static ManagedObjectWrapperHolder()
             {
                 delegate* unmanaged<IntPtr, bool> callback = &IsRootedCallback;
-                if (!RuntimeImports.RhRegisterRefCountedHandleCallback((nint)callback, EETypePtr.EETypePtrOf<ManagedObjectWrapperHolder>()))
+                if (!RuntimeImports.RhRegisterRefCountedHandleCallback((nint)callback, MethodTable.Of<ManagedObjectWrapperHolder>()))
                 {
                     throw new OutOfMemoryException();
                 }
