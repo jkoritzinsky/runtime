@@ -38,6 +38,7 @@
     typedef int16_t SHORT;
     typedef uint16_t USHORT;
     typedef int32_t INT;
+    typedef int32_t INT32;
     typedef uint32_t UINT;
     typedef int32_t LONG;
     typedef uint32_t ULONG;
@@ -93,6 +94,32 @@
 
     // 00000000-0000-0000-0000-000000000000
     extern IID const GUID_NULL;
+
+    typedef union {
+        struct {
+#ifdef DNCP_BIG_ENDIAN
+            LONG HighPart;
+            DWORD LowPart;
+#else
+            DWORD LowPart;
+            LONG HighPart;
+#endif
+        } u;
+        LONGLONG QuadPart;
+    } LARGE_INTEGER;
+
+    typedef union {
+        struct {
+#ifdef DNCP_BIG_ENDIAN
+            DWORD HighPart;
+            DWORD LowPart;
+#else
+            DWORD LowPart;
+            DWORD HighPart;
+#endif
+        } u;
+        ULONGLONG QuadPart;
+    } ULARGE_INTEGER;
 #endif // DNCP_TYPEDEFS
 
 #ifdef __cplusplus
@@ -167,7 +194,7 @@ HRESULT PAL_IIDFromString(LPCOLESTR, IID*);
                 EXTERN_C constexpr IID itf = {l1,s1,s2,{c1,c2,c3,c4,c5,c6,c7,c8}}
         #else
             #define EXTERN_GUID(itf,l1,s1,s2,c1,c2,c3,c4,c5,c6,c7,c8) \
-                EXTERN_C IID itf
+                EXTERN_C const IID itf
         #endif // !DNCP_DEFINE_GUID
 
         inline bool operator==(REFGUID a, REFGUID b)
@@ -184,14 +211,27 @@ HRESULT PAL_IIDFromString(LPCOLESTR, IID*);
         #define _In_
         #define _In_z_
         #define _In_opt_
+        #define _In_reads_bytes_(x)
         #define _Inout_
         #define _Out_
         #define _Out_opt_
         #define _Out_writes_to_opt_(x,y)
+        #define _Out_writes_bytes_to_(x, y)
         #define _Out_writes_to_(x,y)
         #define _COM_Outptr_
         #define __RPC_FAR
+        #define __RPC_USER
+        #define __RPC__in
+        #define __RPC__in_xcount(x)
+        #define __RPC__in_ecount_full(x)
+        #define __RPC__in_opt
+        #define __RPC__inout
+        #define __RPC__inout_xcount(x)
+        #define __RPC__out
+        #define __RPC__out_ecount_part(x,y)
+        #define __RPC__deref_out_ecount_full_opt(x)
         #define __RPC__deref_out_opt
+        #define __RPC__out
 
         // COM Interface definitions
         #define __uuidof(type) IID_##type
@@ -212,8 +252,9 @@ HRESULT PAL_IIDFromString(LPCOLESTR, IID*);
         #include <unknwn.h>
 
         // Unusable COM and RPC types
+        struct tagSTATSTG;
+        using STATSTG = tagSTATSTG;
         interface ITypeInfo;
-        interface IStream;
         interface IDispatch;
         interface IRpcChannelBuffer;
         interface IRecordInfo;
@@ -225,6 +266,9 @@ HRESULT PAL_IIDFromString(LPCOLESTR, IID*);
         using LPSTARTUPINFOW = SIZE_T;
         using LPPROCESS_INFORMATION = SIZE_T;
         using LPSECURITY_ATTRIBUTES = SIZE_T;
+
+        // Other COM interfaces
+        #include <objidl.h>
 
         // OLE VARIANT types
         typedef struct {
