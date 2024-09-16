@@ -2,22 +2,25 @@ cmake_minimum_required(VERSION 3.10)
 project(dnmd
     LANGUAGES C CXX)
 
-option(INCLUDE_VENDORED_LIBS "Include vendored libraries (submodules) instead of discovering dependencies through packages." ON)
+# Always include our public headers
+include_directories(src/inc)
 
-set(CMAKE_INSTALL_PREFIX ${CMAKE_BINARY_DIR})
+# Include the metadata API headers provided by CoreCLR
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../coreclr/inc ${CMAKE_CURRENT_SOURCE_DIR}/../../coreclr/pal/prebuilt/inc)
 
-if (INCLUDE_VENDORED_LIBS)
-    add_subdirectory(external/dncp)
-else()
-    find_package(dncp REQUIRED)
+if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
+  add_compile_options(-Wno-error=unknown-pragmas)
 endif()
 
-include_directories(src/inc)
-include_directories(src/inc/external) # Hiding the "external" subdirectory due to uses of <...> in cor.h.
+add_subdirectory(../dncp dncp)
 
 add_subdirectory(src/)
 
-enable_testing()
+option(DNMD_BUILD_TESTS "Build tests for dnmd" ON)
+option(DNMD_INSTALL "Install dnmd targets" ON)
 
-add_subdirectory(test/)
+if (DNMD_BUILD_TESTS)
+    enable_testing()
 
+    add_subdirectory(test/)
+endif()

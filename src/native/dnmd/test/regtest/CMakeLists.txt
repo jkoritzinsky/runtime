@@ -37,7 +37,7 @@ endif()
 
 add_custom_target(Regression.TargetAssembly
   dotnet build ${CMAKE_CURRENT_SOURCE_DIR}/../Regression.TargetAssembly/Regression.TargetAssembly.ilproj -c $<CONFIG>
-  BYPRODUCTS ${CMAKE_BINARY_DIR}/managed/bin/Regression.TargetAssembly/$<LOWER_CASE:$<CONFIG>>/Regression.TargetAssembly.dll
+  BYPRODUCTS ${CMAKE_SOURCE_DIR}/artifacts/managed/bin/Regression.TargetAssembly/$<LOWER_CASE:$<CONFIG>>/Regression.TargetAssembly.dll
   COMMENT "Building Regression.TargetAssembly.dll"
   )
 
@@ -45,7 +45,7 @@ add_dependencies(regtest Regression.TargetAssembly)
 
 add_custom_command(TARGET regtest POST_BUILD
                     COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:dnmd::interfaces> $<TARGET_FILE_DIR:regtest>
-                    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_BINARY_DIR}/managed/bin/Regression.TargetAssembly/$<LOWER_CASE:$<CONFIG>>/Regression.TargetAssembly.dll $<TARGET_FILE_DIR:regtest>)
+                    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/artifacts/managed/bin/Regression.TargetAssembly/$<LOWER_CASE:$<CONFIG>>/Regression.TargetAssembly.dll $<TARGET_FILE_DIR:regtest>)
 
 if(WIN32)
     add_custom_command(TARGET regtest POST_BUILD

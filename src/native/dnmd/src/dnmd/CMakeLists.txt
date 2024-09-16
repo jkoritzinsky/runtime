@@ -44,10 +44,12 @@ set_target_properties(dnmd_pdb PROPERTIES
   PUBLIC_HEADER "../inc/dnmd.h;../inc/dnmd.hpp;../inc/dnmd_pdb.h"
   POSITION_INDEPENDENT_CODE ON)
 
-install(TARGETS dnmd dnmd_pdb EXPORT dnmd
-  PUBLIC_HEADER DESTINATION include
-  ARCHIVE DESTINATION lib
-  LIBRARY DESTINATION lib
-  RUNTIME DESTINATION bin)
+if (DNMD_INSTALL)
+  install(TARGETS dnmd dnmd_pdb EXPORT dnmd
+    PUBLIC_HEADER DESTINATION include
+    ARCHIVE DESTINATION lib
+    LIBRARY DESTINATION lib
+    RUNTIME DESTINATION bin)
 
-install(EXPORT dnmd NAMESPACE dnmd:: FILE dnmdlib.cmake DESTINATION lib/cmake/dnmd)
+  install(EXPORT dnmd NAMESPACE dnmd:: FILE dnmdlib.cmake DESTINATION lib/cmake/dnmd)
+endif()

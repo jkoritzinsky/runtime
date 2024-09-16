@@ -24,6 +24,8 @@
 #include <cstdlib>
 #include <cstdint>
 
+#define _HRESULT_TYPEDEF_(_sc) ((HRESULT)_sc)
+
 #include <dncp.h>
 #include <cor.h>
 #include <dnmd.hpp>

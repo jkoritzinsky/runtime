@@ -8,8 +8,8 @@
 #include "pal.hpp"
 #include "importhelpers.hpp"
 
-#include <external/cor.h>
-#include <external/corhdr.h>
+#include <cor.h>
+#include <corhdr.h>
 
 #include <cstdint>
 #include <mutex>

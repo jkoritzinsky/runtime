@@ -14,4 +14,6 @@ if(NOT MSVC)
   target_link_libraries(mdmerge dncp::winhdrs)
 endif()
 
-install(TARGETS mdmerge)
+if (DNMD_INSTALL)
+  install(TARGETS mdmerge)
+endif()

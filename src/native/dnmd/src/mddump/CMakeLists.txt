@@ -14,4 +14,6 @@ if(NOT MSVC)
   target_link_libraries(mddump dncp::winhdrs)
 endif()
 
-install(TARGETS mddump)
+if (DNMD_INSTALL)
+  install(TARGETS mddump)
+endif()
