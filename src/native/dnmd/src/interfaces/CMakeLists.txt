@@ -94,7 +94,7 @@ elseif(APPLE)
 endif()
 
 set_target_properties(dnmd_interfaces PROPERTIES
-  PUBLIC_HEADER ../inc/dnmd_interfaces.hpp
+  PUBLIC_HEADER ${CMAKE_CURRENT_SOURCE_DIR}/../inc/dnmd_interfaces.hpp
   INTERPROCEDURAL_OPTIMIZATION $<$<NOT:$<CONFIG:DEBUG>>:TRUE>)
 
 if (DNMD_INSTALL)
