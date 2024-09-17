@@ -8,11 +8,15 @@ include_directories(src/inc)
 # Include the metadata API headers provided by CoreCLR
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../coreclr/inc ${CMAKE_CURRENT_SOURCE_DIR}/../../coreclr/pal/prebuilt/inc)
 
-if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
-  add_compile_options(-Wno-error=unknown-pragmas)
+if ("${CMAKE_CURRENT_SOURCE_DIR}" STREQUAL "${CMAKE_SOURCE_DIR}")
+    # This is our root CMakeList.txt, so we need to set up some global settings and include the minipal here.
+    include(../../../eng/native/configurepaths.cmake)
+    include(${CLR_ENG_NATIVE_DIR}/configurecompiler.cmake)
+
+    add_subdirectory(${CLR_SRC_NATIVE_DIR}/minipal minipal)
 endif()
 
-add_subdirectory(../minipal minipal)
+include_directories(${CLR_SRC_NATIVE_DIR})
 
 add_subdirectory(src/)
 

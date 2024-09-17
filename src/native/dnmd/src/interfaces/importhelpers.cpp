@@ -1382,6 +1382,7 @@ namespace
                             // This type is from a file in the source assembly, so we need to create an AssemblyRef to the source assembly.
                             RETURN_IF_FAILED(ImportReferenceToAssembly(sourceAssembly, sourceAssemblyHash, targetModule, targetAssembly, onRowAdded, &targetOutermostScope));
                         }
+                        FALLTHROUGH;
                         case mdtAssemblyRef:
                         {
                             // This type is a type-forward from another assembly.
@@ -1708,6 +1709,8 @@ HRESULT ImportReferenceToTypeDefOrRefOrSpec(
             
             if (!md_cursor_to_token(typeSpec, importedToken))
                 return E_FAIL;
+            
+            return S_OK;
         }
         default:
             return E_INVALIDARG;
