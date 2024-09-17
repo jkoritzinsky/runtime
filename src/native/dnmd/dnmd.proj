@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.Build.NoTargets">
+  <PropertyGroup>
+    <CMakeConfiguration>$(Configuration)</CMakeConfiguration>
+    <CMakeConfiguration Condition="'$(Configuration)' == 'Checked'">Debug</CMakeConfiguration>
+    <IsUnitTestProject>true</IsUnitTestProject>
+  </PropertyGroup>
+
+  <Target Name="BuildNative" BeforeTargets="Build">
+    <Exec Command="cmake -S $(MSBuildThisFileDirectory) -B $(IntermediateOutputPath) -DCMAKE_BUILD_TYPE=$(CMakeConfiguration)" />
+    <Exec Command="cmake --build $(IntermediateOutputPath)" />
+  </Target>
+
+  <Target Name="RunTests" BeforeTargets="VSTest">
+    <Exec Command="ctest --test-dir $(IntermediateOutputPath) -T Test"/>
+    <ItemGroup>
+      <CTestResults Include="$(IntermediateOutputPath)\Testing\**\Test.xml" />
+    </ItemGroup>
+    <Copy SourceFiles="@(CTestResults)" DestinationFiles="@(CTestResults->'$(ArtifactsTestResultsDir)/dnmd/%(RecursiveDir)/Test.ctestxml')" />
+  </Target>
+</Project>
