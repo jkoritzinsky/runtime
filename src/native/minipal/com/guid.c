@@ -36,7 +36,7 @@ IID const GUID_NULL = { 0x0, 0x0, 0x0, { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0
 //
 HRESULT PAL_CoCreateGuid(GUID* guid)
 {
-    if (!minipal_get_cryptographically_secure_random_bytes((uint8_t*)guid, sizeof(*guid)))
+    if (minipal_get_cryptographically_secure_random_bytes((uint8_t*)guid, sizeof(*guid)) != 0)
         return E_FAIL;
 
     {
