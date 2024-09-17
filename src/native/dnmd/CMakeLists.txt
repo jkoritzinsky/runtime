@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.10)
 project(dnmd
-    LANGUAGES C CXX)
+    LANGUAGES C)
 
 # Always include our public headers
 include_directories(src/inc)
@@ -18,10 +18,17 @@ endif()
 
 include_directories(${CLR_SRC_NATIVE_DIR})
 
-add_subdirectory(src/)
-
 option(DNMD_BUILD_TESTS "Build tests for dnmd" ON)
 option(DNMD_INSTALL "Install dnmd targets" ON)
+option(DNMD_BUILD_INTERFACES "Build implementations of the metadata interfaces for DNMD" ON)
+option(DNMD_BUILD_TOOLS "Build tools for dnmd" ON)
+
+if (DNMD_BUILD_INTERFACES OR DNMD_BUILD_TESTS OR DNMD_BUILD_TOOLS)
+    enable_language(CXX)
+endif()
+
+add_subdirectory(src/)
+
 
 if (DNMD_BUILD_TESTS)
     enable_testing()

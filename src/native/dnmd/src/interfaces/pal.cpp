@@ -2,10 +2,7 @@
 #include <cstring>
 #include <cassert>
 #include <functional>
-
-#if defined(BUILD_MACOS) || defined(BUILD_UNIX)
-#include <unicode/ustring.h>
-#endif
+#include <minipal/utf8.h>
 
 #if defined(BUILD_WINDOWS)
 #include <bcrypt.h>
@@ -29,49 +26,26 @@ HRESULT pal::ConvertUtf16ToUtf8(
     _Out_opt_ uint32_t* writtenOrNeeded)
 {
     assert(str != nullptr);
+    size_t length = PAL_wcslen(str) + 1;
 
-    int32_t length;
-#ifdef BUILD_WINDOWS
-    length = ::WideCharToMultiByte(CP_UTF8, 0, str, -1, buffer, bufferLength, nullptr, nullptr);
-    if (length <= 0)
+    size_t requiredBufferLength = minipal_get_length_utf16_to_utf8((CHAR16_T*)str, length, 0) + 1;
+
+    if (requiredBufferLength > bufferLength)
     {
-        if (::GetLastError() == ERROR_INSUFFICIENT_BUFFER)
+        if (writtenOrNeeded != nullptr)
         {
-            if (writtenOrNeeded != nullptr)
-                *writtenOrNeeded = ::WideCharToMultiByte(CP_UTF8, 0, str, -1, nullptr, 0, nullptr, nullptr);
-            return E_NOT_SUFFICIENT_BUFFER;
+            *writtenOrNeeded = requiredBufferLength;
         }
-        return E_FAIL;
+        return E_NOT_SUFFICIENT_BUFFER;
     }
-#elif defined(BUILD_MACOS) || defined(BUILD_UNIX)
-    // Buffer lengths assume null terminator
-    if (bufferLength > 0)
-        bufferLength -= 1;
 
-    UErrorCode err = U_ZERO_ERROR;
-    (void)::u_strToUTF8(buffer, bufferLength, &length, (UChar const*)str, -1, &err);
-    if (U_FAILURE(err))
+    size_t retval = minipal_convert_utf16_to_utf8((CHAR16_T*)str, length, buffer, bufferLength, 0);
+    if (retval >= 0)
     {
-        if (err != U_BUFFER_OVERFLOW_ERROR)
-            return E_FAIL;
-
-        if (bufferLength != 0)
-        {
-            if (writtenOrNeeded != nullptr)
-                *writtenOrNeeded = (uint32_t)length + 1; // Add null terminator
-            return E_NOT_SUFFICIENT_BUFFER;
-        }
+        *writtenOrNeeded = retval;
+        return S_OK;
     }
-    if (buffer != nullptr)
-        buffer[length] = '\0';
-    length += 1; // Add null terminator
-#else
-#error Missing implementation
-#endif // !BUILD_WINDOWS
-
-    if (writtenOrNeeded != nullptr)
-        *writtenOrNeeded = (uint32_t)length;
-    return S_OK;
+    return E_FAIL;
 }
 
 HRESULT pal::ConvertUtf8ToUtf16(
@@ -81,49 +55,26 @@ HRESULT pal::ConvertUtf8ToUtf16(
     _Out_opt_ uint32_t* writtenOrNeeded)
 {
     assert(str != nullptr);
+    size_t length = strlen(str) + 1;
 
-    int32_t length;
-#ifdef BUILD_WINDOWS
-    length = ::MultiByteToWideChar(CP_UTF8, 0, str, -1, buffer, bufferLength);
-    if (length <= 0)
+    size_t requiredBufferLength = minipal_get_length_utf8_to_utf16(str, length, 0) + 1;
+
+    if (requiredBufferLength > bufferLength)
     {
-        if (::GetLastError() == ERROR_INSUFFICIENT_BUFFER)
+        if (writtenOrNeeded != nullptr)
         {
-            if (writtenOrNeeded != nullptr)
-                *writtenOrNeeded = ::MultiByteToWideChar(CP_UTF8, 0, str, -1, nullptr, 0);
-            return E_NOT_SUFFICIENT_BUFFER;
+            *writtenOrNeeded = requiredBufferLength;
         }
-        return E_FAIL;
+        return E_NOT_SUFFICIENT_BUFFER;
     }
-#elif defined(BUILD_MACOS) || defined(BUILD_UNIX)
-    // Buffer lengths assume null terminator
-    if (bufferLength > 0)
-        bufferLength -= 1;
 
-    UErrorCode err = U_ZERO_ERROR;
-    (void)::u_strFromUTF8((UChar*)buffer, bufferLength, &length, str, -1, &err);
-    if (U_FAILURE(err))
+    size_t retval = minipal_convert_utf8_to_utf16(str, length, (CHAR16_T*)buffer, bufferLength, 0);
+    if (retval >= 0)
     {
-        if (err != U_BUFFER_OVERFLOW_ERROR)
-            return E_FAIL;
-
-        if (bufferLength != 0)
-        {
-            if (writtenOrNeeded != nullptr)
-                *writtenOrNeeded = (uint32_t)length + 1; // Add null terminator
-            return E_NOT_SUFFICIENT_BUFFER;
-        }
+        *writtenOrNeeded = retval;
+        return S_OK;
     }
-    if (buffer != nullptr)
-        buffer[length] = W('\0');
-    length += 1; // Add null terminator
-#else
-#error Missing implementation
-#endif // !BUILD_WINDOWS
-
-    if (writtenOrNeeded != nullptr)
-        *writtenOrNeeded = (uint32_t)length;
-    return S_OK;
+    return E_FAIL;
 }
 
 template<>

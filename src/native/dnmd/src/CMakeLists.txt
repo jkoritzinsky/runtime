@@ -4,9 +4,10 @@ include(../configure.cmake)
 include_directories(BEFORE ./inc)
 
 add_subdirectory(dnmd)
-add_subdirectory(interfaces)
 
-option(DNMD_BUILD_TOOLS "Build tools for dnmd" ON)
+if (DNMD_BUILD_INTERFACES)
+  add_subdirectory(interfaces)
+endif()
 
 if (DNMD_BUILD_TOOLS)
   add_subdirectory(mddump)
