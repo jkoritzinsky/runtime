@@ -28,7 +28,7 @@ HRESULT pal::ConvertUtf16ToUtf8(
     assert(str != nullptr);
     size_t length = PAL_wcslen(str) + 1;
 
-    size_t requiredBufferLength = minipal_get_length_utf16_to_utf8((CHAR16_T*)str, length, 0) + 1;
+    size_t requiredBufferLength = minipal_get_length_utf16_to_utf8((CHAR16_T*)str, length, 0);
 
     if (requiredBufferLength > bufferLength)
     {
@@ -36,13 +36,17 @@ HRESULT pal::ConvertUtf16ToUtf8(
         {
             *writtenOrNeeded = requiredBufferLength;
         }
+        if (bufferLength == 0)
+        {
+            return S_OK;
+        }
         return E_NOT_SUFFICIENT_BUFFER;
     }
 
-    size_t retval = minipal_convert_utf16_to_utf8((CHAR16_T*)str, length, buffer, bufferLength, 0);
-    if (retval >= 0)
+    size_t written = minipal_convert_utf16_to_utf8((CHAR16_T*)str, length, buffer, bufferLength, 0);
+    if (written >= 0)
     {
-        *writtenOrNeeded = retval;
+        *writtenOrNeeded = written;
         return S_OK;
     }
     return E_FAIL;
@@ -57,7 +61,7 @@ HRESULT pal::ConvertUtf8ToUtf16(
     assert(str != nullptr);
     size_t length = strlen(str) + 1;
 
-    size_t requiredBufferLength = minipal_get_length_utf8_to_utf16(str, length, 0) + 1;
+    size_t requiredBufferLength = minipal_get_length_utf8_to_utf16(str, length, 0);
 
     if (requiredBufferLength > bufferLength)
     {
@@ -65,13 +69,17 @@ HRESULT pal::ConvertUtf8ToUtf16(
         {
             *writtenOrNeeded = requiredBufferLength;
         }
+        if (bufferLength == 0)
+        {
+            return S_OK;
+        }
         return E_NOT_SUFFICIENT_BUFFER;
     }
 
-    size_t retval = minipal_convert_utf8_to_utf16(str, length, (CHAR16_T*)buffer, bufferLength, 0);
-    if (retval >= 0)
+    size_t written = minipal_convert_utf8_to_utf16(str, length, (CHAR16_T*)buffer, bufferLength, 0);
+    if (written >= 0)
     {
-        *writtenOrNeeded = retval;
+        *writtenOrNeeded = written;
         return S_OK;
     }
     return E_FAIL;
