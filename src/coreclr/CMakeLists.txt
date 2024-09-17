@@ -132,20 +132,7 @@ add_subdirectory(${CLR_SRC_NATIVE_DIR}/containers containers)
 add_subdirectory(${CLR_SRC_NATIVE_DIR}/eventpipe eventpipe)
 add_subdirectory(${CLR_SRC_NATIVE_DIR}/minipal shared_minipal)
 
-include(FetchContent)
-FetchContent_Declare(
-  dnmd
-  SOURCE_DIR "${CLR_SRC_NATIVE_DIR}/dnmd"
-)
-
-set(DNMD_BUILD_TESTS OFF)
-set(DNMD_INSTALL OFF)
-FetchContent_MakeAvailable(dnmd)
-
-install_static_library(dnmd cdac cdac)
-install_static_library(dnmd_interfaces_static cdac cdac)
-install(TARGETS dnmd_interfaces DESTINATION cdac COMPONENT cdac)
-add_dependencies(cdac dnmd_interfaces)
+include(dnmd.cmake)
 
 if(NOT CLR_CMAKE_HOST_MACCATALYST AND NOT CLR_CMAKE_HOST_IOS AND NOT CLR_CMAKE_HOST_TVOS)
   add_subdirectory(debug/debug-pal)
