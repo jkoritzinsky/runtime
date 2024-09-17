@@ -26,7 +26,7 @@
 
 #define _HRESULT_TYPEDEF_(_sc) ((HRESULT)_sc)
 
-#include <dncp.h>
+#include <minipal_com.h>
 #include <cor.h>
 #include <dnmd.hpp>
 

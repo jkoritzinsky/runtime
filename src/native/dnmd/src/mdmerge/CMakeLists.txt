@@ -8,7 +8,7 @@ add_executable(mdmerge
 
 target_link_libraries(mdmerge
   dnmd::dnmd
-  dncp::dncp)
+  minipal_com)
 
 if(NOT MSVC)
   target_link_libraries(mdmerge minipal_comhdrs)

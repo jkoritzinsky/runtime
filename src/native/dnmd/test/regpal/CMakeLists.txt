@@ -4,7 +4,7 @@ set(SOURCES
 
 add_library(regpal STATIC ${SOURCES})
 
-target_link_libraries(regpal PUBLIC nethost dncp::dncp)
+target_link_libraries(regpal PUBLIC nethost minipal_com)
 
 if (NOT WIN32)
     target_link_libraries(regpal PUBLIC minipal_comhdrs)

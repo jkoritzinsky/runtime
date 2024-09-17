@@ -49,7 +49,7 @@ class ThreadSafeImportEmit : public TearOffBase<IMetaDataImport2, IMetaDataEmit2
 {
     pal::ReadWriteLock _lock;
     // owning reference to the thread-unsafe object that provides the underlying implementation.
-    dncp::com_ptr<ControllingIUnknown> _threadUnsafe;
+    minipal::com_ptr<ControllingIUnknown> _threadUnsafe;
     // non-owning reference to the concrete non-locking implementations
     TImport* _import;
     TEmit* _emit;
@@ -82,7 +82,7 @@ protected:
     }
 
 public:
-    ThreadSafeImportEmit(IUnknown* controllingUnknown, dncp::com_ptr<ControllingIUnknown>&& threadUnsafe, TImport* import, TEmit* emit)
+    ThreadSafeImportEmit(IUnknown* controllingUnknown, minipal::com_ptr<ControllingIUnknown>&& threadUnsafe, TImport* import, TEmit* emit)
         : TearOffBase(controllingUnknown)
         , _lock { }
         , _threadUnsafe{ std::move(threadUnsafe) }

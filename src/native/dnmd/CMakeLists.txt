@@ -12,7 +12,6 @@ if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
   add_compile_options(-Wno-error=unknown-pragmas)
 endif()
 
-add_subdirectory(../dncp dncp)
 add_subdirectory(../minipal minipal)
 
 add_subdirectory(src/)

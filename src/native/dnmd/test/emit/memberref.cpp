@@ -5,7 +5,7 @@
 
 TEST(MemberRef, Define)
 {
-    dncp::com_ptr<IMetaDataEmit> emit;
+    minipal::com_ptr<IMetaDataEmit> emit;
     ASSERT_NO_FATAL_FAILURE(CreateEmit(emit));
     mdMemberRef memberRef;
     std::array<uint8_t, 3> signature = {0x01, 0x02, 0x03};
@@ -13,7 +13,7 @@ TEST(MemberRef, Define)
     ASSERT_EQ(1, RidFromToken(memberRef));
     ASSERT_EQ(mdtMemberRef, TypeFromToken(memberRef));
 
-    dncp::com_ptr<IMetaDataImport> import;
+    minipal::com_ptr<IMetaDataImport> import;
     ASSERT_EQ(S_OK, emit->QueryInterface(IID_IMetaDataImport, (void**)&import));
 
     mdTypeDef type;
@@ -30,7 +30,7 @@ TEST(MemberRef, Define)
 
 TEST(MemberRef, SetParent)
 {
-    dncp::com_ptr<IMetaDataEmit> emit;
+    minipal::com_ptr<IMetaDataEmit> emit;
     ASSERT_NO_FATAL_FAILURE(CreateEmit(emit));
     mdMemberRef memberRef;
     std::array<uint8_t, 3> signature = {0x01, 0x02, 0x03};
@@ -38,7 +38,7 @@ TEST(MemberRef, SetParent)
     ASSERT_EQ(1, RidFromToken(memberRef));
     ASSERT_EQ(mdtMemberRef, TypeFromToken(memberRef));
 
-    dncp::com_ptr<IMetaDataImport> import;
+    minipal::com_ptr<IMetaDataImport> import;
     ASSERT_EQ(S_OK, emit->QueryInterface(IID_IMetaDataImport, (void**)&import));
 
     mdToken parent;

@@ -56,12 +56,12 @@ namespace
     malloc_span<uint8_t> CreateImageWithIndirectionTables()
     {
         std::cout << "Creating image with indirection tables" << std::endl;
-        dncp::com_ptr<IMetaDataEmit> image;
+        minipal::com_ptr<IMetaDataEmit> image;
         THROW_IF_FAILED(TestBaseline::DeltaMetadataBuilder->DefineScope(CLSID_CorMetaDataRuntime, 0, IID_IMetaDataEmit, (IUnknown**)&image));
 
         THROW_IF_FAILED(image->SetModuleProps(W("IndirectionTables.dll")));
 
-        dncp::com_ptr<IMetaDataAssemblyEmit> assemblyEmit;
+        minipal::com_ptr<IMetaDataAssemblyEmit> assemblyEmit;
         THROW_IF_FAILED(image->QueryInterface(IID_IMetaDataAssemblyEmit, (void**)&assemblyEmit));
 
         ASSEMBLYMETADATA assemblyMetadata = { 0 };

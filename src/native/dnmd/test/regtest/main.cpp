@@ -6,9 +6,9 @@
 
 namespace TestBaseline
 {
-    dncp::com_ptr<IMetaDataDispenser> Metadata = nullptr;
-    dncp::com_ptr<IMetaDataDispenserEx> DeltaMetadataBuilder = nullptr;
-    dncp::com_ptr<ISymUnmanagedBinder> Symbol = nullptr;
+    minipal::com_ptr<IMetaDataDispenser> Metadata = nullptr;
+    minipal::com_ptr<IMetaDataDispenserEx> DeltaMetadataBuilder = nullptr;
+    minipal::com_ptr<ISymUnmanagedBinder> Symbol = nullptr;
 }
 
 #define RETURN_IF_FAILED(x) { auto hr = x; if (FAILED(hr)) return hr; }
@@ -28,7 +28,7 @@ int main(int argc, char** argv)
 {
     RETURN_IF_FAILED(pal::GetBaselineMetadataDispenser(&TestBaseline::Metadata));
 
-    dncp::com_ptr<IMetaDataDispenser> deltaBuilder;
+    minipal::com_ptr<IMetaDataDispenser> deltaBuilder;
     RETURN_IF_FAILED(pal::GetBaselineMetadataDispenser(&deltaBuilder));
     RETURN_IF_FAILED(deltaBuilder->QueryInterface(IID_IMetaDataDispenserEx, (void**)&TestBaseline::DeltaMetadataBuilder));
 

@@ -8,7 +8,7 @@ add_executable(regperf
 
 target_link_libraries(regperf
   dnmd::interfaces
-  dncp::dncp
+  minipal_com
   regpal)
 
 if(NOT MSVC)

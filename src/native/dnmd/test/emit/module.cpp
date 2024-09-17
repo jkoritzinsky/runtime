@@ -3,11 +3,11 @@
 TEST(Module, ModuleNameExcludesDirectoryWin32Paths)
 {
     WSTR_string moduleName = W("C:\\foo\\bar\\baz.dll");
-    dncp::com_ptr<IMetaDataEmit> emit;
+    minipal::com_ptr<IMetaDataEmit> emit;
     ASSERT_NO_FATAL_FAILURE(CreateEmit(emit));
     ASSERT_EQ(S_OK, emit->SetModuleProps(moduleName.c_str()));
 
-    dncp::com_ptr<IMetaDataImport> import;
+    minipal::com_ptr<IMetaDataImport> import;
     ASSERT_EQ(S_OK, emit->QueryInterface(IID_IMetaDataImport, (void**)&import));
 
     WSTR_string readModuleName;
@@ -23,11 +23,11 @@ TEST(Module, ModuleNameExcludesDirectoryWin32Paths)
 TEST(Module, ModuleNameExcludesDirectoryUnixPaths)
 {
     WSTR_string moduleName = W("/home/foo/bar/baz.dll");
-    dncp::com_ptr<IMetaDataEmit> emit;
+    minipal::com_ptr<IMetaDataEmit> emit;
     ASSERT_NO_FATAL_FAILURE(CreateEmit(emit));
     ASSERT_EQ(S_OK, emit->SetModuleProps(moduleName.c_str()));
 
-    dncp::com_ptr<IMetaDataImport> import;
+    minipal::com_ptr<IMetaDataImport> import;
     ASSERT_EQ(S_OK, emit->QueryInterface(IID_IMetaDataImport, (void**)&import));
 
     WSTR_string readModuleName;
@@ -43,11 +43,11 @@ TEST(Module, ModuleNameExcludesDirectoryUnixPaths)
 TEST(Module, ModuleNameWithoutDirectory)
 {
     WSTR_string moduleName = W("baz.dll");
-    dncp::com_ptr<IMetaDataEmit> emit;
+    minipal::com_ptr<IMetaDataEmit> emit;
     ASSERT_NO_FATAL_FAILURE(CreateEmit(emit));
     ASSERT_EQ(S_OK, emit->SetModuleProps(moduleName.c_str()));
 
-    dncp::com_ptr<IMetaDataImport> import;
+    minipal::com_ptr<IMetaDataImport> import;
     ASSERT_EQ(S_OK, emit->QueryInterface(IID_IMetaDataImport, (void**)&import));
 
     WSTR_string readModuleName;
@@ -63,11 +63,11 @@ TEST(Module, ModuleNameWithoutDirectory)
 
 TEST(Module, EmptyName)
 {
-    dncp::com_ptr<IMetaDataEmit> emit;
+    minipal::com_ptr<IMetaDataEmit> emit;
     ASSERT_NO_FATAL_FAILURE(CreateEmit(emit));
     ASSERT_EQ(S_OK, emit->SetModuleProps(W("")));
 
-    dncp::com_ptr<IMetaDataImport> import;
+    minipal::com_ptr<IMetaDataImport> import;
     ASSERT_EQ(S_OK, emit->QueryInterface(IID_IMetaDataImport, (void**)&import));
 
     std::array<WCHAR, 10> readModuleName;
@@ -82,7 +82,7 @@ TEST(Module, EmptyName)
 
 TEST(Module, NullName)
 {
-    dncp::com_ptr<IMetaDataEmit> emit;
+    minipal::com_ptr<IMetaDataEmit> emit;
     ASSERT_NO_FATAL_FAILURE(CreateEmit(emit));
     ASSERT_EQ(S_OK, emit->SetModuleProps(nullptr));
 }

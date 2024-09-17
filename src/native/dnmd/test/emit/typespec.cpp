@@ -5,7 +5,7 @@
 
 TEST(TypeSpec, Define)
 {
-    dncp::com_ptr<IMetaDataEmit> emit;
+    minipal::com_ptr<IMetaDataEmit> emit;
     ASSERT_NO_FATAL_FAILURE(CreateEmit(emit));
     mdTypeSpec spec;
     std::array<uint8_t, 3> signature = {0x01, 0x02, 0x03};
@@ -13,7 +13,7 @@ TEST(TypeSpec, Define)
     ASSERT_EQ(1, RidFromToken(spec));
     ASSERT_EQ(mdtTypeSpec, TypeFromToken(spec));
 
-    dncp::com_ptr<IMetaDataImport> import;
+    minipal::com_ptr<IMetaDataImport> import;
     ASSERT_EQ(S_OK, emit->QueryInterface(IID_IMetaDataImport, (void**)&import));
 
     PCCOR_SIGNATURE sigBlob;

@@ -21,7 +21,7 @@ namespace
     {
         bool _threadSafe;
     private:
-        dncp::com_ptr<ControllingIUnknown> CreateExposedObject(dncp::com_ptr<ControllingIUnknown> unknown, DNMDOwner* owner)
+        minipal::com_ptr<ControllingIUnknown> CreateExposedObject(minipal::com_ptr<ControllingIUnknown> unknown, DNMDOwner* owner)
         {
             mdhandle_view handle_view{ owner };
             MetadataEmit* emit = unknown->CreateAndAddTearOff<MetadataEmit>(handle_view);
@@ -30,7 +30,7 @@ namespace
             {
                 return unknown;
             }
-            dncp::com_ptr<ControllingIUnknown> threadSafeUnknown;
+            minipal::com_ptr<ControllingIUnknown> threadSafeUnknown;
             threadSafeUnknown.Attach(new ControllingIUnknown());
             
             // Define an IDNMDOwner* tear-off here so the thread-safe object can be identified as a DNMD object.
@@ -88,7 +88,7 @@ namespace
             if (1 != md_set_column_value_as_guid(moduleCursor, mdtModule_Mvid, 1, &mvid))
                 return E_OUTOFMEMORY;
             
-            dncp::com_ptr<ControllingIUnknown> obj;
+            minipal::com_ptr<ControllingIUnknown> obj;
             obj.Attach(new (std::nothrow) ControllingIUnknown());
             if (obj == nullptr)
                 return E_OUTOFMEMORY;
@@ -127,7 +127,7 @@ namespace
             if (ppIUnk == nullptr)
                 return E_INVALIDARG;
 
-            dncp::cotaskmem_ptr<void> nowOwned;
+            minipal::cotaskmem_ptr<void> nowOwned;
             if (dwOpenFlags & ofTakeOwnership)
                 nowOwned.reset((void*)pData);
 
@@ -148,7 +148,7 @@ namespace
 
             mdhandle_ptr md_ptr{ mdhandle };
 
-            dncp::com_ptr<ControllingIUnknown> obj;
+            minipal::com_ptr<ControllingIUnknown> obj;
             obj.Attach(new (std::nothrow) ControllingIUnknown());
             if (obj == nullptr)
                 return E_OUTOFMEMORY;
@@ -284,7 +284,7 @@ HRESULT GetDispenser(
 
     try
     {
-        dncp::com_ptr<ControllingIUnknown> obj;
+        minipal::com_ptr<ControllingIUnknown> obj;
         obj.Attach(new ControllingIUnknown());
         (void)obj->CreateAndAddTearOff<MDDispenser>();
         return obj->QueryInterface(riid, (void**)ppObj);

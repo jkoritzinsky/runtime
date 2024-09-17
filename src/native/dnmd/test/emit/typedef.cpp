@@ -3,7 +3,7 @@
 TEST(TypeDef, Define)
 {
     WSTR_string name = W("Foo");
-    dncp::com_ptr<IMetaDataEmit> emit;
+    minipal::com_ptr<IMetaDataEmit> emit;
     ASSERT_NO_FATAL_FAILURE(CreateEmit(emit));
     mdTypeDef typeDef;
     mdToken implements = mdTokenNil;
@@ -15,7 +15,7 @@ TEST(TypeDef, Define)
     ASSERT_EQ(2, RidFromToken(typeDef));
     ASSERT_EQ(mdtTypeDef, TypeFromToken(typeDef));
 
-    dncp::com_ptr<IMetaDataImport> import;
+    minipal::com_ptr<IMetaDataImport> import;
     ASSERT_EQ(S_OK, emit->QueryInterface(IID_IMetaDataImport, (void**)&import));
 
     WSTR_string readName;
@@ -43,7 +43,7 @@ TEST(TypeDef, Define)
 TEST(TypeDef, DefineWithInterfaces)
 {
     WSTR_string name = W("Foo");
-    dncp::com_ptr<IMetaDataEmit> emit;
+    minipal::com_ptr<IMetaDataEmit> emit;
     ASSERT_NO_FATAL_FAILURE(CreateEmit(emit));
     mdTypeDef typeDef;
     mdToken implements[] = { TokenFromRid(1, mdtTypeRef),  mdTokenNil };
@@ -55,7 +55,7 @@ TEST(TypeDef, DefineWithInterfaces)
     ASSERT_EQ(2, RidFromToken(typeDef));
     ASSERT_EQ(mdtTypeDef, TypeFromToken(typeDef));
 
-    dncp::com_ptr<IMetaDataImport> import;
+    minipal::com_ptr<IMetaDataImport> import;
     ASSERT_EQ(S_OK, emit->QueryInterface(IID_IMetaDataImport, (void**)&import));
 
     HCORENUM hEnum = nullptr;
@@ -78,7 +78,7 @@ TEST(TypeDef, DefineWithInterfaces)
 TEST(TypeDef, DefineWithBase)
 {
     WSTR_string name = W("Foo");
-    dncp::com_ptr<IMetaDataEmit> emit;
+    minipal::com_ptr<IMetaDataEmit> emit;
     ASSERT_NO_FATAL_FAILURE(CreateEmit(emit));
     mdTypeDef typeDef;
     mdToken base = TokenFromRid(1, mdtTypeRef);
@@ -91,7 +91,7 @@ TEST(TypeDef, DefineWithBase)
     ASSERT_EQ(2, RidFromToken(typeDef));
     ASSERT_EQ(mdtTypeDef, TypeFromToken(typeDef));
 
-    dncp::com_ptr<IMetaDataImport> import;
+    minipal::com_ptr<IMetaDataImport> import;
     ASSERT_EQ(S_OK, emit->QueryInterface(IID_IMetaDataImport, (void**)&import));
 
     WSTR_string readName;
@@ -108,7 +108,7 @@ TEST(TypeDef, DefineWithBase)
 TEST(TypeDef, NestedDefine)
 {
     WSTR_string name = W("Foo");
-    dncp::com_ptr<IMetaDataEmit> emit;
+    minipal::com_ptr<IMetaDataEmit> emit;
     ASSERT_NO_FATAL_FAILURE(CreateEmit(emit));
     mdTypeDef outerTypeDef, typeDef;
     mdToken base = TokenFromRid(1, mdtTypeRef);
@@ -124,7 +124,7 @@ TEST(TypeDef, NestedDefine)
     ASSERT_EQ(3, RidFromToken(typeDef));
     ASSERT_EQ(mdtTypeDef, TypeFromToken(typeDef));
 
-    dncp::com_ptr<IMetaDataImport> import;
+    minipal::com_ptr<IMetaDataImport> import;
     ASSERT_EQ(S_OK, emit->QueryInterface(IID_IMetaDataImport, (void**)&import));
 
     WSTR_string readName;
@@ -160,7 +160,7 @@ TEST(TypeDef, NestedDefine)
 TEST(TypeDef, SetProps)
 {
     WSTR_string name = W("Foo");
-    dncp::com_ptr<IMetaDataEmit> emit;
+    minipal::com_ptr<IMetaDataEmit> emit;
     ASSERT_NO_FATAL_FAILURE(CreateEmit(emit));
     mdTypeDef typeDef;
     mdToken initialImplements[] = { TokenFromRid(2, mdtTypeSpec), mdTokenNil };
@@ -171,7 +171,7 @@ TEST(TypeDef, SetProps)
     mdToken implements[] = { TokenFromRid(4, mdtTypeRef),  mdTokenNil };
     ASSERT_EQ(S_OK, emit->SetTypeDefProps(typeDef, tdAbstract, extends, implements));
 
-    dncp::com_ptr<IMetaDataImport> import;
+    minipal::com_ptr<IMetaDataImport> import;
     ASSERT_EQ(S_OK, emit->QueryInterface(IID_IMetaDataImport, (void**)&import));
 
     WSTR_string readName;

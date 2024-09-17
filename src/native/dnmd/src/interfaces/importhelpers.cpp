@@ -1793,7 +1793,7 @@ HRESULT DefineImportMember(
     // Define ModuleRef for imported Member functions
 
     // Check if the Member being imported is a global function.
-    dncp::com_ptr<IMetaDataImport> pEmitImport;
+    minipal::com_ptr<IMetaDataImport> pEmitImport;
     RETURN_IF_FAILED(emit->QueryInterface(IID_IMetaDataImport, (void**)&pEmitImport));
     RETURN_IF_FAILED(pEmitImport->GetScopeProps(nullptr, 0, nullptr, &mvidEmit));
 

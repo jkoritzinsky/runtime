@@ -1,3 +1,12 @@
 add_library(minipal_comhdrs INTERFACE)
-target_include_directories(minipal_comhdrs INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
-target_compile_definitions(minipal_comhdrs INTERFACE DNCP_TYPEDEFS DNCP_WINHDRS)
+target_include_directories(minipal_comhdrs INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/winhdrs)
+target_compile_definitions(minipal_comhdrs INTERFACE MINIPAL_COM_TYPEDEFS MINIPAL_COM_WINHDRS)
+
+add_library(minipal_com STATIC
+    guid.c
+    memory.c
+    strings.c
+    interfaces.c)
+
+target_link_libraries(minipal_com PUBLIC minipal_comhdrs minipal)
+target_include_directories(minipal_com PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})

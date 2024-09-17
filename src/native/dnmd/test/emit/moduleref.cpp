@@ -3,7 +3,7 @@
 TEST(ModuleRef, Define)
 {
     WSTR_string name = W("Foo");
-    dncp::com_ptr<IMetaDataEmit> emit;
+    minipal::com_ptr<IMetaDataEmit> emit;
     ASSERT_NO_FATAL_FAILURE(CreateEmit(emit));
     mdModuleRef moduleRef;
 
@@ -12,7 +12,7 @@ TEST(ModuleRef, Define)
     ASSERT_EQ(1, RidFromToken(moduleRef));
     ASSERT_EQ(mdtModuleRef, TypeFromToken(moduleRef));
 
-    dncp::com_ptr<IMetaDataImport> import;
+    minipal::com_ptr<IMetaDataImport> import;
     ASSERT_EQ(S_OK, emit->QueryInterface(IID_IMetaDataImport, (void**)&import));
 
     WSTR_string readName;

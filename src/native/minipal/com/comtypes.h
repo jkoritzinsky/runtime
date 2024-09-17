@@ -17,8 +17,8 @@
 // OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 // SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-#ifndef _SRC_INC_DNCP_H_
-#define _SRC_INC_DNCP_H_
+#ifndef MINIPAL_COM_COMTYPES_H
+#define MINIPAL_COM_COMTYPES_H
 
 // Perform platform check
 #ifdef _MSC_VER
@@ -26,7 +26,7 @@
 #endif
 
 // Typedefs typically provided by Windows' headers
-#ifdef DNCP_TYPEDEFS
+#ifdef MINIPAL_COM_TYPEDEFS
     typedef void* PVOID;
     typedef void* LPVOID;
     typedef void const* LPCVOID;
@@ -120,61 +120,13 @@
         } u;
         ULONGLONG QuadPart;
     } ULARGE_INTEGER;
-#endif // DNCP_TYPEDEFS
-
-#ifdef __cplusplus
-    extern "C"
-    {
-#endif // __cplusplus
-
-//
-// Memory allocators
-//
-LPVOID PAL_CoTaskMemAlloc(SIZE_T);
-void PAL_CoTaskMemFree(LPVOID);
-
-//
-// Strings
-//
-
-// This macro is used to standardize wide character string literals used in .NET.
-#ifdef DNCP_WINDOWS
-    #define W(str)  L ## str
-#else
-    #define W(str)  u ## str
-#endif
-
-size_t PAL_wcslen(WCHAR const*);
-int PAL_wcscmp(WCHAR const*, WCHAR const*);
-WCHAR* PAL_wcsstr(WCHAR const*, WCHAR const*);
-
-// BSTR
-BSTR PAL_SysAllocString(LPCOLESTR);
-BSTR PAL_SysAllocStringLen(LPCOLESTR, UINT);
-BSTR PAL_SysAllocStringByteLen(char const*, UINT);
-void PAL_SysFreeString(BSTR);
-UINT PAL_SysStringLen(BSTR);
-UINT PAL_SysStringByteLen(BSTR);
-
-//
-// GUIDs
-//
-
-HRESULT PAL_CoCreateGuid(GUID*);
-BOOL PAL_IsEqualGUID(GUID const*, GUID const*);
-
-int32_t PAL_StringFromGUID2(GUID const*, LPOLESTR, int32_t);
-HRESULT PAL_IIDFromString(LPCOLESTR, IID*);
-
-#ifdef __cplusplus
-    }
-#endif // __cplusplus
+#endif // MINIPAL_COM_TYPEDEFS
 
 //
 // Windows headers
 //
 
-#ifdef DNCP_WINHDRS
+#ifdef MINIPAL_COM_WINHDRS
     #include <winerror.h>
 
     #if defined(__cplusplus)
@@ -196,16 +148,6 @@ HRESULT PAL_IIDFromString(LPCOLESTR, IID*);
             #define EXTERN_GUID(itf,l1,s1,s2,c1,c2,c3,c4,c5,c6,c7,c8) \
                 EXTERN_C const IID itf
         #endif // !DNCP_DEFINE_GUID
-
-        inline bool operator==(REFGUID a, REFGUID b)
-        {
-            return FALSE != PAL_IsEqualGUID(&a, &b);
-        }
-
-        inline bool operator!=(REFGUID a, REFGUID b)
-        {
-            return !(a == b);
-        }
 
         // sal
         #define _In_
@@ -490,89 +432,4 @@ HRESULT PAL_IIDFromString(LPCOLESTR, IID*);
     #endif // __cplusplus
 #endif // DNCP_INTERFACES
 
-#ifdef __cplusplus
-    #include <memory>
-    #include <type_traits>
-    namespace dncp
-    {
-        // Smart pointer for use with IUnknown based interfaces.
-        // It is based off of ATL::CComPtr<T> so adoption is easier.
-        template<typename T>
-        class com_ptr
-        {
-        public:
-            T* p;
-
-        public:
-            com_ptr() : p{} {}
-
-            com_ptr(T* t)
-                : p{ t }
-            {
-                if (p != nullptr)
-                    (void)p->AddRef();
-            }
-
-            com_ptr(com_ptr const&) = delete;
-
-            com_ptr(com_ptr&& other)
-                : p{ other.Detach() }
-            { }
-
-            ~com_ptr() { Release(); }
-
-            com_ptr& operator=(com_ptr const&) = delete;
-
-            com_ptr& operator=(com_ptr&& other)
-            {
-                Attach(other.Detach());
-                return (*this);
-            }
-
-            operator T*() { return p; }
-
-            T** operator&() { return &p; }
-
-            T* operator->() { return p; }
-
-            void Attach(T* t) noexcept
-            {
-                Release();
-                p = t;
-            }
-
-            T* Detach() noexcept
-            {
-                T* tmp = p;
-                p = nullptr;
-                return tmp;
-            }
-
-            void Release() noexcept
-            {
-                if (p != nullptr)
-                {
-                    (void)p->Release();
-                    p = nullptr;
-                }
-            }
-        };
-
-        // Smart pointer for CoTaskMem*
-        struct cotaskmem_deleter
-        {
-            void operator()(LPVOID p) { PAL_CoTaskMemFree(p); }
-        };
-        template<typename T>
-        using cotaskmem_ptr = std::unique_ptr<T, cotaskmem_deleter>;
-
-        // Smart pointer for BSTR
-        struct bstr_deleter
-        {
-            void operator()(BSTR b) { PAL_SysFreeString(b); }
-        };
-        using bstr_ptr = std::unique_ptr<std::remove_pointer<BSTR>::type, bstr_deleter>;
-    }
-#endif // __cplusplus
-
-#endif // _SRC_INC_DNCP_H_
+#endif // MINIPAL_COM_COMTYPES_H
