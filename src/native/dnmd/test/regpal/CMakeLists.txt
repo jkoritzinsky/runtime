@@ -7,7 +7,7 @@ add_library(regpal STATIC ${SOURCES})
 target_link_libraries(regpal PUBLIC nethost dncp::dncp)
 
 if (NOT WIN32)
-    target_link_libraries(regpal PUBLIC dncp::winhdrs)
+    target_link_libraries(regpal PUBLIC minipal_comhdrs)
 endif()
 
 if (NOT WIN32 AND NOT APPLE)

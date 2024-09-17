@@ -16,7 +16,7 @@ set_target_properties(regtest PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED O
 target_compile_definitions(regtest PRIVATE COM_NO_WINDOWS_H)
 
 if (NOT WIN32)
-    target_link_libraries(regtest PRIVATE dncp::winhdrs)
+    target_link_libraries(regtest PRIVATE minipal_comhdrs)
 endif()
 
 if (WIN32)

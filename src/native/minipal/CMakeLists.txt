@@ -8,7 +8,7 @@ add_library(minipal_objects OBJECT
     unicodedata.c
     utf8.c)
 
-target_include_directories(minipal_objects PRIVATE ${CLR_SRC_NATIVE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
+target_include_directories(minipal_objects PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../ ${CMAKE_CURRENT_BINARY_DIR})
 
 # Provide a static library for our shared library and executable scenarios
 # for easier usability.
@@ -17,3 +17,5 @@ target_link_libraries(minipal PRIVATE minipal_objects)
 
 add_library(minipal_sanitizer_support OBJECT
     sansupport.c)
+
+add_subdirectory(com)

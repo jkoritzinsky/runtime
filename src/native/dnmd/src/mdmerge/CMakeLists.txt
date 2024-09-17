@@ -11,7 +11,7 @@ target_link_libraries(mdmerge
   dncp::dncp)
 
 if(NOT MSVC)
-  target_link_libraries(mdmerge dncp::winhdrs)
+  target_link_libraries(mdmerge minipal_comhdrs)
 endif()
 
 if (DNMD_INSTALL)

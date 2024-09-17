@@ -1,0 +1,3 @@
+add_library(minipal_comhdrs INTERFACE)
+target_include_directories(minipal_comhdrs INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
+target_compile_definitions(minipal_comhdrs INTERFACE DNCP_TYPEDEFS DNCP_WINHDRS)

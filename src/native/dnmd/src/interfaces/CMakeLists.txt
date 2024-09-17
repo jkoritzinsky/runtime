@@ -70,8 +70,8 @@ target_link_libraries(dnmd_interfaces
   dnmd::dnmd)
 
 if(NOT MSVC)
-  target_link_libraries(dnmd_interfaces_static PUBLIC dncp::winhdrs)
-  target_link_libraries(dnmd_interfaces PRIVATE dncp::winhdrs)
+  target_link_libraries(dnmd_interfaces_static PUBLIC minipal_comhdrs)
+  target_link_libraries(dnmd_interfaces PRIVATE minipal_comhdrs)
 endif()
 
 if (NOT WIN32)
@@ -114,7 +114,7 @@ set_target_properties(dnmd_interfaces PROPERTIES
   INTERPROCEDURAL_OPTIMIZATION $<$<NOT:$<CONFIG:DEBUG>>:TRUE>)
 
 if (DNMD_INSTALL)
-  install(TARGETS dnmd_interfaces dnmd_interfaces_static EXPORT interfaces
+  install(TARGETS dnmd_interfaces dnmd_interfaces_static minipal_comhdrs EXPORT interfaces
     PUBLIC_HEADER DESTINATION include
     ARCHIVE DESTINATION lib
     LIBRARY DESTINATION lib

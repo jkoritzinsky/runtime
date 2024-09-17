@@ -12,7 +12,7 @@ target_link_libraries(regperf
   regpal)
 
 if(NOT MSVC)
-  target_link_libraries(regperf dncp::winhdrs)
+  target_link_libraries(regperf minipal_comhdrs)
 endif()
 
 

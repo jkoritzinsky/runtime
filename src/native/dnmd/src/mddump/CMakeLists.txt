@@ -11,7 +11,7 @@ target_link_libraries(mddump
   dncp::dncp)
 
 if(NOT MSVC)
-  target_link_libraries(mddump dncp::winhdrs)
+  target_link_libraries(mddump minipal_comhdrs)
 endif()
 
 if (DNMD_INSTALL)

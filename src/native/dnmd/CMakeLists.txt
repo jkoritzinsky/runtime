@@ -13,6 +13,7 @@ if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
 endif()
 
 add_subdirectory(../dncp dncp)
+add_subdirectory(../minipal minipal)
 
 add_subdirectory(src/)
 
