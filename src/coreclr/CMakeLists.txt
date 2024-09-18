@@ -132,7 +132,9 @@ add_subdirectory(${CLR_SRC_NATIVE_DIR}/containers containers)
 add_subdirectory(${CLR_SRC_NATIVE_DIR}/eventpipe eventpipe)
 add_subdirectory(${CLR_SRC_NATIVE_DIR}/minipal shared_minipal)
 
-include(dnmd.cmake)
+if (NOT CLR_CROSS_COMPONENTS_BUILD)
+  include(dnmd.cmake)
+endif()
 
 if(NOT CLR_CMAKE_HOST_MACCATALYST AND NOT CLR_CMAKE_HOST_IOS AND NOT CLR_CMAKE_HOST_TVOS)
   add_subdirectory(debug/debug-pal)
