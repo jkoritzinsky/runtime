@@ -23,7 +23,7 @@ TEST(TypeDef, Define)
     ULONG readNameLength;
     DWORD typeDefFlags;
     mdToken extends;
-    ASSERT_EQ(S_OK, import->GetTypeDefProps(typeDef, readName.data(), (ULONG)readName.capacity(), &readNameLength, &typeDefFlags, &extends));
+    ASSERT_EQ(S_OK, import->GetTypeDefProps(typeDef, &readName[0], (ULONG)readName.capacity(), &readNameLength, &typeDefFlags, &extends));
     EXPECT_EQ(name, readName.substr(0, readNameLength - 1));
     EXPECT_EQ(0, typeDefFlags);
     EXPECT_EQ(mdTypeRefNil, extends);
@@ -99,7 +99,7 @@ TEST(TypeDef, DefineWithBase)
     ULONG readNameLength;
     DWORD typeDefFlags;
     mdToken extends;
-    ASSERT_EQ(S_OK, import->GetTypeDefProps(typeDef, readName.data(), (ULONG)readName.capacity(), &readNameLength, &typeDefFlags, &extends));
+    ASSERT_EQ(S_OK, import->GetTypeDefProps(typeDef, &readName[0], (ULONG)readName.capacity(), &readNameLength, &typeDefFlags, &extends));
     EXPECT_EQ(name, readName.substr(0, readNameLength - 1));
     EXPECT_EQ(0, typeDefFlags);
     EXPECT_EQ(base, extends);
@@ -132,7 +132,7 @@ TEST(TypeDef, NestedDefine)
     ULONG readNameLength;
     DWORD typeDefFlags;
     mdToken extends;
-    ASSERT_EQ(S_OK, import->GetTypeDefProps(typeDef, readName.data(), (ULONG)readName.capacity(), &readNameLength, &typeDefFlags, &extends));
+    ASSERT_EQ(S_OK, import->GetTypeDefProps(typeDef, &readName[0], (ULONG)readName.capacity(), &readNameLength, &typeDefFlags, &extends));
     EXPECT_EQ(name, readName.substr(0, readNameLength - 1));
     EXPECT_EQ(0, typeDefFlags);
     EXPECT_EQ(base, extends);
@@ -179,7 +179,7 @@ TEST(TypeDef, SetProps)
     ULONG readNameLength;
     DWORD typeDefFlags;
     mdToken readExtends;
-    ASSERT_EQ(S_OK, import->GetTypeDefProps(typeDef, readName.data(), (ULONG)readName.capacity(), &readNameLength, &typeDefFlags, &readExtends));
+    ASSERT_EQ(S_OK, import->GetTypeDefProps(typeDef, &readName[0], (ULONG)readName.capacity(), &readNameLength, &typeDefFlags, &readExtends));
     EXPECT_EQ(name, readName.substr(0, readNameLength - 1));
     EXPECT_EQ(tdAbstract, typeDefFlags);
     EXPECT_EQ(extends, readExtends);

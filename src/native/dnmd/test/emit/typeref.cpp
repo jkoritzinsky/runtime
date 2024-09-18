@@ -16,7 +16,7 @@ TEST(TypeRef, ValidScopeAndDottedName)
     WSTR_string readName;
     readName.resize(name.capacity() + 1);
     ULONG readNameLength;
-    ASSERT_EQ(S_OK, import->GetTypeRefProps(typeRef, &resolutionScope, readName.data(), (ULONG) readName.size(), &readNameLength));
+    ASSERT_EQ(S_OK, import->GetTypeRefProps(typeRef, &resolutionScope, &readName[0], (ULONG) readName.size(), &readNameLength));
     EXPECT_EQ(TokenFromRid(1, mdtModule), resolutionScope);
     EXPECT_EQ(readNameLength, name.size() + 1);
     EXPECT_EQ(name, readName.substr(0, readNameLength - 1));
@@ -46,7 +46,7 @@ TEST(TypeRef, ValidScopeAndNonDottedName)
     WSTR_string readName;
     readName.resize(name.capacity() + 1);
     ULONG readNameLength;
-    ASSERT_EQ(S_OK, import->GetTypeRefProps(typeRef, &resolutionScope, readName.data(), (ULONG) readName.size(), &readNameLength));
+    ASSERT_EQ(S_OK, import->GetTypeRefProps(typeRef, &resolutionScope, &readName[0], (ULONG) readName.size(), &readNameLength));
     EXPECT_EQ(TokenFromRid(1, mdtModule), resolutionScope);
     EXPECT_EQ(readNameLength, name.size() + 1);
     EXPECT_EQ(name, readName.substr(0, readNameLength - 1));

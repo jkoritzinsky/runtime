@@ -39,15 +39,15 @@ int main(int argc, char** argv)
         return hr;
 
     auto coreClrPath = pal::GetCoreClrPath();
-    std::cout << "Loaded metadata baseline module: " << coreClrPath.generic_string() << std::endl;
+    std::cout << "Loaded metadata baseline module: " << coreClrPath << std::endl;
     SetBaselineModulePath(std::move(coreClrPath));
 
-    std::filesystem::path regressionAssemblyPath = argv[0];
-    regressionAssemblyPath = regressionAssemblyPath.parent_path() / "Regression.TargetAssembly.dll";
+    std::string regressionAssemblyPath = argv[0];
+    regressionAssemblyPath.erase(regressionAssemblyPath.find_last_of('/') + 1).append("Regression.TargetAssembly.dll");
 
-    SetRegressionAssemblyPath(regressionAssemblyPath.generic_string());
+    SetRegressionAssemblyPath(regressionAssemblyPath);
 
-    std::cout << "Regression assembly path: " << regressionAssemblyPath.generic_string() << std::endl;
+    std::cout << "Regression assembly path: " << regressionAssemblyPath << std::endl;
 
     ::testing::InitGoogleTest(&argc, argv);
     testing::UnitTest::GetInstance()->listeners().Append(new ThrowListener);

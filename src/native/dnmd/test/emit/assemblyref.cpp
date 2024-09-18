@@ -33,7 +33,7 @@ TEST(AssemblyRef, DefineNoPublicKey)
     ULONG publicKeyLength;
     void const* hash;
     ULONG hashLength;
-    ASSERT_EQ(S_OK, import->GetAssemblyRefProps(assembly, &publicKey, &publicKeyLength, assemblyName.data(), (ULONG)assemblyName.capacity(), &assemblyNameLen, &metadata, &hash, &hashLength, &assemblyFlags));
+    ASSERT_EQ(S_OK, import->GetAssemblyRefProps(assembly, &publicKey, &publicKeyLength, &assemblyName[0], (ULONG)assemblyName.capacity(), &assemblyNameLen, &metadata, &hash, &hashLength, &assemblyFlags));
     EXPECT_EQ(0, assemblyFlags);
     EXPECT_EQ(nullptr, hash);
     EXPECT_EQ(0, hashLength);

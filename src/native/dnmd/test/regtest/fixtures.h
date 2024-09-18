@@ -6,8 +6,8 @@
 #include <internal/dnmd_platform.hpp>
 
 #include <vector>
-#include <filesystem>
 #include <internal/span.hpp>
+#include "pal.hpp"
 
 struct MetadataFile final
 {
@@ -33,7 +33,7 @@ inline static std::string IndirectionTablesKey = "IndirectionTables";
 
 std::string PrintName(testing::TestParamInfo<MetadataFile> info);
 
-std::vector<MetadataFile> MetadataFilesInDirectory(std::string directory);
+std::vector<MetadataFile> MetadataFilesInDirectory(pal::path directory);
 
 std::vector<MetadataFile> CoreLibFiles();
 
@@ -43,9 +43,9 @@ malloc_span<uint8_t> GetRegressionAssemblyMetadata();
 
 std::string FindFrameworkInstall(std::string version);
 
-std::string GetBaselineDirectory();
+pal::path GetBaselineDirectory();
 
-void SetBaselineModulePath(std::filesystem::path path);
+void SetBaselineModulePath(pal::path path);
 
 void SetRegressionAssemblyPath(std::string path);
 

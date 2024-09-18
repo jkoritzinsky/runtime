@@ -18,6 +18,6 @@ TEST(ModuleRef, Define)
     WSTR_string readName;
     readName.resize(name.capacity() + 1);
     ULONG readNameLength;
-    ASSERT_EQ(S_OK, import->GetModuleRefProps(moduleRef, readName.data(), (ULONG)readName.capacity(), &readNameLength));
+    ASSERT_EQ(S_OK, import->GetModuleRefProps(moduleRef, &readName[0], (ULONG)readName.capacity(), &readNameLength));
     EXPECT_EQ(name, readName.substr(0, readNameLength - 1));
 }

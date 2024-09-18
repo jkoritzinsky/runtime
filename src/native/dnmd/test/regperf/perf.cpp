@@ -10,7 +10,6 @@
 #include <cstring>
 #include <cassert>
 #include <iostream>
-#include <filesystem>
 
 #ifdef _MSC_VER
 #define EXPORT extern "C" __declspec(dllexport)
@@ -189,8 +188,8 @@ int main(int argc, char** argv)
         return -1;
     }
 
-    std::filesystem::path dataImagePath = std::move(coreClrPath);
-    dataImagePath.replace_filename("System.Private.CoreLib.dll");
+    pal::path dataImagePath = std::move(coreClrPath);
+    dataImagePath.substr(0, dataImagePath.find_last_of(W('/'))) + W("/") + W("System.Private.CoreLib.dll");
 
     std::cerr << "Loading System.Private.CoreLib from: " << dataImagePath << std::endl;
     

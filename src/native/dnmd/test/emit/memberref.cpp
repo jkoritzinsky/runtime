@@ -22,10 +22,10 @@ TEST(MemberRef, Define)
     ULONG readNameLength;
     PCCOR_SIGNATURE sigBlob;
     ULONG sigBlobLength;
-    ASSERT_EQ(S_OK, import->GetMemberRefProps(memberRef, &type, readName.data(), (ULONG)readName.capacity(), &readNameLength, &sigBlob, &sigBlobLength));
+    ASSERT_EQ(S_OK, import->GetMemberRefProps(memberRef, &type, &readName[0], (ULONG)readName.capacity(), &readNameLength, &sigBlob, &sigBlobLength));
     EXPECT_EQ(W("Foo"), readName.substr(0, readNameLength - 1));
     EXPECT_EQ(TokenFromRid(1, mdtTypeDef), type);
-    EXPECT_THAT(std::vector(sigBlob, sigBlob + sigBlobLength), testing::ContainerEq(std::vector(signature.begin(), signature.end())));
+    EXPECT_THAT(std::vector<uint8_t>(sigBlob, sigBlob + sigBlobLength), testing::ContainerEq(std::vector<uint8_t>(signature.begin(), signature.end())));
 }
 
 TEST(MemberRef, SetParent)
@@ -47,16 +47,16 @@ TEST(MemberRef, SetParent)
     ULONG readNameLength;
     PCCOR_SIGNATURE sigBlob;
     ULONG sigBlobLength;
-    ASSERT_EQ(S_OK, import->GetMemberRefProps(memberRef, &parent, readName.data(), (ULONG)readName.capacity(), &readNameLength, &sigBlob, &sigBlobLength));
+    ASSERT_EQ(S_OK, import->GetMemberRefProps(memberRef, &parent, &readName[0], (ULONG)readName.capacity(), &readNameLength, &sigBlob, &sigBlobLength));
     EXPECT_EQ(W("Foo"), readName.substr(0, readNameLength - 1));
     EXPECT_EQ(TokenFromRid(1, mdtTypeDef), parent);
-    EXPECT_THAT(std::vector(sigBlob, sigBlob + sigBlobLength), testing::ContainerEq(std::vector(signature.begin(), signature.end())));
+    EXPECT_THAT(std::vector<uint8_t>(sigBlob, sigBlob + sigBlobLength), testing::ContainerEq(std::vector<uint8_t>(signature.begin(), signature.end())));
 
     ASSERT_EQ(S_OK, emit->SetParent(memberRef, TokenFromRid(2, mdtTypeRef)));
           
     readName.resize(3);
-    ASSERT_EQ(S_OK, import->GetMemberRefProps(memberRef, &parent, readName.data(), (ULONG)readName.capacity(), &readNameLength, &sigBlob, &sigBlobLength));
+    ASSERT_EQ(S_OK, import->GetMemberRefProps(memberRef, &parent, &readName[0], (ULONG)readName.capacity(), &readNameLength, &sigBlob, &sigBlobLength));
     EXPECT_EQ(W("Foo"), readName.substr(0, readNameLength - 1));
     EXPECT_EQ(TokenFromRid(2, mdtTypeRef), parent);
-    EXPECT_THAT(std::vector(sigBlob, sigBlob + sigBlobLength), testing::ContainerEq(std::vector(signature.begin(), signature.end())));
+    EXPECT_THAT(std::vector<uint8_t>(sigBlob, sigBlob + sigBlobLength), testing::ContainerEq(std::vector<uint8_t>(signature.begin(), signature.end())));
 }

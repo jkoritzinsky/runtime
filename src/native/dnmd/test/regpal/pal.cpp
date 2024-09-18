@@ -4,26 +4,25 @@
 #include <nethost.h>
 #include <hostfxr.h>
 
-#ifndef BUILD_WINDOWS
+#ifdef BUILD_WINDOWS
+#include <windows.h>
+#else
 #include <dlfcn.h>
+#include <unistd.h>
 #endif
 
 #include <iostream>
 #include <fstream>
-#include <filesystem>
-#include <string_view>
-
-using std::filesystem::path;
 
 #ifdef BUILD_WINDOWS
-#define W_StringView(str) std::wstring_view{L##str}
+#define W_StdString(str) std::wstring{L##str}
 #else
-#define W_StringView(str) std::string_view{str}
+#define W_StdString(str) std::string{str}
 #endif
 
 namespace
 {
-    void* LoadModule(path path)
+    void* LoadModule(pal::path path)
     {
 #ifdef BUILD_WINDOWS
         return ::LoadLibraryW(path.c_str());  
@@ -105,24 +104,42 @@ HRESULT pal::GetBaselineMetadataDispenser(IMetaDataDispenser** dispenser)
     return GetDispenser(CLSID_CorMetaDataDispenser, IID_IMetaDataDispenser, (void**)dispenser);
 }
 
-bool pal::ReadFile(path path, malloc_span<uint8_t>& b)
+bool pal::ReadFile(pal::path path, malloc_span<uint8_t>& b)
 {
-    // Read in the entire file
-    std::ifstream fd{ path, std::ios::binary | std::ios::in };
-    if (!fd)
+#ifdef BUILD_WINDOWS
+    wil::unique_Handle file{ CreateFileW(path.c_str(), GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr) };
+    if (!file)
         return false;
 
-    size_t size = std::filesystem::file_size(path);
-    if (size == 0)
+    DWORD size = GetFileSize(file.get(), nullptr);
+    if (size == INVALID_FILE_SIZE)
         return false;
 
     b = { (uint8_t*)std::malloc(size), size };
 
-    fd.read((char*)(uint8_t*)b, b.size());
+    DWORD bytesRead;
+    if (!ReadFile(file.get(), b.data(), b.size(), &bytesRead, nullptr))
+        return false;
+
+    return bytesRead == b.size();
+#else
+    struct stat st;
+    if (stat(path.c_str(), &st) != 0)
+        return false;
+    b = { (uint8_t*)std::malloc((size_t)st.st_size), (size_t)st.st_size };
+
+    std::ifstream file{ path, std::ios::binary };
+
+    if (!file)
+        return false;
+
+    file.read((char*)(uint8_t*)b, b.size());
+
     return true;
+#endif
 }
 
-path pal::GetCoreClrPath()
+pal::path pal::GetCoreClrPath()
 {
     int result = 0;
     size_t bufferSize = 4096;
@@ -133,7 +150,7 @@ path pal::GetCoreClrPath()
         result = get_hostfxr_path(hostfxr_path.get(), &bufferSize, nullptr);
     } while (result != 0);
 
-    path hostFxrPath = hostfxr_path.get();
+    pal::path hostFxrPath = hostfxr_path.get();
     void* hostfxrModule = LoadModule(hostfxr_path.get());
     if (hostfxrModule == nullptr)
     {
@@ -147,9 +164,9 @@ path pal::GetCoreClrPath()
     // We need to do this because hostfxr_get_dotnet_environment_info only returns information
     // for a globally-installed dotnet if we don't pass a path to the dotnet root.
     // The macOS machines on GitHub Actions don't have dotnet globally installed.
-    path dotnetRoot = hostFxrPath.parent_path().parent_path().parent_path().parent_path();
+    pal::path dotnetRoot = hostFxrPath.substr(0, hostFxrPath.find(X("host/fxr"), 0));
 
-    path coreClrPath = {};
+    pal::path coreClrPath = {};
     auto getDotnetEnvironmentInfo = (hostfxr_get_dotnet_environment_info_fn)GetSymbol(hostfxrModule, "hostfxr_get_dotnet_environment_info");
     if (getDotnetEnvironmentInfo(
             dotnetRoot.c_str(),
@@ -159,16 +176,18 @@ path pal::GetCoreClrPath()
                 path& coreClrPath = *(path*)result_context;
                 for (size_t i = 0; i < info->framework_count; ++i)
                 {
-                    if (info->frameworks[i].name == W_StringView("Microsoft.NETCore.App"))
+                    if (info->frameworks[i].name == W_StdString("Microsoft.NETCore.App"))
                     {
                         coreClrPath = info->frameworks[i].path;
-                        coreClrPath /= info->frameworks[i].version;
+                        coreClrPath += X('/');
+                        coreClrPath += info->frameworks[i].version;
+                        coreClrPath += X('/');
 #ifdef BUILD_WINDOWS
-                        coreClrPath /= "coreclr.dll";
+                        coreClrPath += X("coreclr.dll");
 #elif BUILD_MACOS
-                        coreClrPath /= "libcoreclr.dylib";
+                        coreClrPath += X("libcoreclr.dylib");
 #elif BUILD_UNIX
-                        coreClrPath /= "libcoreclr.so";
+                        coreClrPath += X("libcoreclr.so");
 #else
 #error "Unknown platform, cannot determine name for CoreCLR executable"
 #endif
@@ -184,3 +203,24 @@ path pal::GetCoreClrPath()
 
     return coreClrPath;
 }
+
+bool pal::FileExists(pal::path path)
+{
+#ifdef BUILD_WINDOWS
+    return PathFileExistsW(path.c_str());
+#else
+    return access(path.c_str(), F_OK) != -1;
+#endif
+}
+
+#ifdef BUILD_WINDOWS
+std::wostream& pal::cout()
+{
+    return std::wcout;
+}
+#else
+std::ostream& pal::cout()
+{
+    return std::cout;
+}
+#endif

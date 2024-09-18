@@ -19,5 +19,5 @@ TEST(TypeSpec, Define)
     PCCOR_SIGNATURE sigBlob;
     ULONG sigBlobLength;
     ASSERT_EQ(S_OK, import->GetTypeSpecFromToken(spec, &sigBlob, &sigBlobLength));
-    EXPECT_THAT(std::vector(sigBlob, sigBlob + sigBlobLength), testing::ContainerEq(std::vector(signature.begin(), signature.end())));
+    EXPECT_THAT(std::vector<uint8_t>(sigBlob, sigBlob + sigBlobLength), testing::ContainerEq(std::vector<uint8_t>(signature.begin(), signature.end())));
 }

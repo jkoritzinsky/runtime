@@ -33,7 +33,7 @@ TEST(Assembly, DefineNoPublicKey)
     ULONG assemblyNameLen;
     void const* publicKey;
     ULONG publicKeyLength;
-    ASSERT_EQ(S_OK, import->GetAssemblyProps(assembly, &publicKey, &publicKeyLength, &importHashAlgId, assemblyName.data(), (ULONG)assemblyName.capacity(), &assemblyNameLen, &metadata, & assemblyFlags));
+    ASSERT_EQ(S_OK, import->GetAssemblyProps(assembly, &publicKey, &publicKeyLength, &importHashAlgId, &assemblyName[0], (ULONG)assemblyName.capacity(), &assemblyNameLen, &metadata, & assemblyFlags));
     EXPECT_EQ(0, assemblyFlags);
     EXPECT_EQ(W("AssemblyName"), assemblyName.substr(0, assemblyNameLen - 1));
     EXPECT_EQ(1, metadata.usMajorVersion);

@@ -5,14 +5,29 @@
 #include <cstddef>
 
 #include <internal/dnmd_platform.hpp>
-#include <filesystem>
+#include <string>
 #include <internal/span.hpp>
+
+#ifdef BUILD_WINDOWS
+#define X(str) W(str)
+#else
+#define X(str) str
+#endif
 
 namespace pal
 {
-    std::filesystem::path GetCoreClrPath();
+#ifdef BUILD_WINDOWS
+    using path = std::wstring;
+    std::wostream& cout();
+#else
+    using path = std::string;
+    std::ostream& cout();
+#endif
+    path GetCoreClrPath();
     HRESULT GetBaselineMetadataDispenser(IMetaDataDispenser** dispenser);
-    bool ReadFile(std::filesystem::path path, malloc_span<uint8_t>& b);
+    bool ReadFile(path path, malloc_span<uint8_t>& b);
+
+    bool FileExists(path path);
 }
 
 #endif // !_TEST_REGPAL_PAL_H_

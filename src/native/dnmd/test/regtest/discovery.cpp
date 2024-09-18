@@ -1,7 +1,6 @@
 #include "fixtures.h"
 #include "baseline.h"
 #include <pal.hpp>
-#include <filesystem>
 #include <algorithm>
 #include <unordered_map>
 
@@ -19,7 +18,7 @@
 
 namespace
 {
-    std::filesystem::path baselinePath;
+    pal::path baselinePath;
     std::string regressionAssemblyPath;
 
     template<typename T>
@@ -38,7 +37,7 @@ namespace
         return { callback };
     }
 
-    malloc_span<uint8_t> ReadMetadataFromFile(std::filesystem::path path)
+    malloc_span<uint8_t> ReadMetadataFromFile(pal::path path)
     {
         malloc_span<uint8_t> b;
         if (!pal::ReadFile(path, b)
@@ -163,59 +162,82 @@ namespace
     }
 }
 
-std::vector<MetadataFile> MetadataFilesInDirectory(std::string directory)
+std::vector<MetadataFile> MetadataFilesInDirectory(pal::path directory)
 {
     std::cout << "Discovering metadata files in directory: " << directory << std::endl;
     std::vector<MetadataFile> scenarios;
 
-    if (!std::filesystem::exists(directory))
+    if (!pal::FileExists(directory))
     {
         std::cout << "Directory '" << directory << "' does not exist" << std::endl;
         return scenarios;
     }
-
-    for (auto& entry : std::filesystem::directory_iterator(directory))
-    {
-        if (entry.is_regular_file())
-        {
-            auto path = entry.path();
-            auto ext = path.extension();
-            if (ext == ".dll")
-            {
-                // Some of the DLLs in our search paths are native,
-                // so we need to filter to the managed ones.
-                // We could try opening them and skip them if they don't have any metadata,
-                // but that is slow and we don't want to do that for test discovery.
-                // Instead, we'll use the following heuristic to determine if the DLL is managed:
-                // - If the file name contains '.Native.', then it's not managed
-                // - If the file name contains '.Thunk.', then it's not managed
-                // - If the file name starts with 'System.' or 'Microsoft.', then it's managed
-
-                auto fileName = path.filename().generic_string();
-
-                if (fileName.find(".Native.") != std::string::npos
-                    || fileName.find(".Thunk.") != std::string::npos)
-                {
-                    continue;
-                }
-
-                if (fileName.find("System.") != 0
-                    && fileName.find("Microsoft.") != 0)
-                {
-                    continue;
-                }
-
 #ifdef BUILD_WINDOWS
-                std::wcout << "Found file: " << entry.path().filename() << std::endl;
-#else
-                std::cout << "Found file: " << entry.path().filename() << std::endl;
-#endif
-
-                scenarios.emplace_back(MetadataFile::Kind::OnDisk, path.generic_string());
-            }
-        }
+    pal::string pattern = directory + "\\*.dll";
+    WIN32_FIND_DATAW findData;
+    auto findHandle = FindFirstFileW(pattern.c_str(), &findData);
+    if (findHandle == INVALID_HANDLE_VALUE)
+    {
+        return scenarios;
     }
 
+    do
+    {
+        if (findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+        {
+            continue;
+        }
+
+        auto fileName = findData.cFileName;
+        if (wcsstr(fileName, L".Native.") != nullptr
+            || wcsstr(fileName, L".Thunk.") != nullptr)
+        {
+            continue;
+        }
+
+        if (wcsstr(fileName, L"System.") != fileName
+            && wcsstr(fileName, L"Microsoft.") != fileName)
+        {
+            continue;
+        }
+
+        std::wcout << "Found file: " << fileName << std::endl;
+        scenarios.emplace_back(MetadataFile::Kind::OnDisk, directory + X("/") + fileName);
+    } while (FindNextFileW(findHandle, &findData));
+#else
+    pal::string pattern = directory + "/*.dll";
+    DIR* directory;
+    dirent *file;
+    if ((directory = opendir(pattern.c_str())) == nullptr)
+    {
+        return scenarios;
+    }
+
+    while ((file = readdir(directory)) != nullptr)
+    {
+        if (file->d_type != DT_REG)
+        {
+            continue;
+        }
+
+        auto fileName = file->d_name;
+        if (strstr(fileName, ".Native.") != nullptr
+            || strstr(fileName, ".Thunk.") != nullptr)
+        {
+            continue;
+        }
+
+        if (strstr(fileName, "System.") != fileName
+            && strstr(fileName, "Microsoft.") != fileName)
+        {
+            continue;
+        }
+
+        std::cout << "Found file: " << fileName << std::endl;
+        scenarios.emplace_back(MetadataFile::Kind::OnDisk, directory + "/" + fileName);
+    }
+
+#endif
     return scenarios;
 }
 
@@ -227,10 +249,10 @@ std::vector<MetadataFile> CoreLibFiles()
     scenarios.emplace_back(MetadataFile::Kind::OnDisk, (baselinePath.parent_path() / "System.Private.CoreLib.dll").generic_string(), "System_Private_CoreLib");
 
 #ifdef BUILD_WINDOWS
-    scenarios.emplace_back(MetadataFile::Kind::OnDisk, (std::filesystem::path(FindFrameworkInstall("v4.0.30319")) / "mscorlib.dll").generic_string(), "4_0_mscorlib");
+    scenarios.emplace_back(MetadataFile::Kind::OnDisk, FindFrameworkInstall("v4.0.30319").append("\\mscorlib.dll"), "4_0_mscorlib");
 
-    auto fx2mscorlib = std::filesystem::path(FindFrameworkInstall("v2.0.50727")) / "mscorlib.dll";
-    if (std::filesystem::exists(fx2mscorlib))
+    auto fx2mscorlib = FindFrameworkInstall("v2.0.50727").append("\\mscorlib.dll");
+    if (pal::FileExists(fx2mscorlib))
     {
         scenarios.emplace_back(MetadataFile::Kind::OnDisk, fx2mscorlib.generic_string(), "2_0_mscorlib");
     }
@@ -265,7 +287,8 @@ span<uint8_t> GetMetadataForFile(MetadataFile file)
     malloc_span<uint8_t> b;
     if (file.kind == MetadataFile::Kind::OnDisk)
     {
-        auto path = baselinePath.parent_path() / file.pathOrKey;
+        auto path = baselinePath.substr(0, baselinePath.find_last_of('/'));
+        auto path = baselinePath + "/" + file.pathOrKey;
         b = ReadMetadataFromFile(path);
     }
     else
@@ -294,8 +317,8 @@ std::string PrintName(testing::TestParamInfo<MetadataFile> info)
     std::string name;
     if (info.param.kind == MetadataFile::Kind::OnDisk)
     {
-        name = std::filesystem::path(info.param.pathOrKey).stem().generic_string();
-        std::replace(name.begin(), name.end(), '.', '_');
+        name = pal::path(info.param.pathOrKey).substr(0, info.param.pathOrKey.find_last_of(X('.')));
+        std::replace(name.begin(), name.end(), X('.'), X('_'));
     }
     else
     {
@@ -304,12 +327,12 @@ std::string PrintName(testing::TestParamInfo<MetadataFile> info)
     return name;
 }
 
-std::string GetBaselineDirectory()
+pal::path GetBaselineDirectory()
 {
-    return baselinePath.parent_path().string();
+    return baselinePath.substr(0, baselinePath.find_last_of(X('/')));
 }
 
-void SetBaselineModulePath(std::filesystem::path path)
+void SetBaselineModulePath(pal::path path)
 {
     baselinePath = std::move(path);
 }
@@ -329,8 +352,8 @@ std::string FindFrameworkInstall(std::string version)
     std::cout << "Discovering framework install for version: " << version << std::endl;
 #ifdef BUILD_WINDOWS
     auto key = wil::reg::create_unique_key(HKEY_LOCAL_MACHINE, L"SOFTWARE\\Microsoft\\.NETFramework");
-    std::filesystem::path installPath{ wil::reg::get_value_string(key.get(), L"InstallRoot") };
-    return (installPath / version).generic_string();
+    pal::path installPath{ wil::reg::get_value_string(key.get(), L"InstallRoot") };
+    return installPath.append(version);
 #else
     return {};
 #endif

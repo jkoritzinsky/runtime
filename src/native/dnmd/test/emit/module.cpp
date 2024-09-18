@@ -15,7 +15,7 @@ TEST(Module, ModuleNameExcludesDirectoryWin32Paths)
     ULONG readModuleNameLength;
 
     GUID mvid;
-    ASSERT_EQ(S_OK, import->GetScopeProps(readModuleName.data(), (ULONG)readModuleName.capacity(), &readModuleNameLength, & mvid));
+    ASSERT_EQ(S_OK, import->GetScopeProps(&readModuleName[0], (ULONG)readModuleName.capacity(), &readModuleNameLength, & mvid));
 
     EXPECT_EQ(W("baz.dll"), readModuleName.substr(0, readModuleNameLength - 1));
 }
@@ -35,7 +35,7 @@ TEST(Module, ModuleNameExcludesDirectoryUnixPaths)
     ULONG readModuleNameLength;
 
     GUID mvid;
-    ASSERT_EQ(S_OK, import->GetScopeProps(readModuleName.data(), (ULONG)readModuleName.capacity(), &readModuleNameLength, & mvid));
+    ASSERT_EQ(S_OK, import->GetScopeProps(&readModuleName[0], (ULONG)readModuleName.capacity(), &readModuleNameLength, & mvid));
 
     EXPECT_EQ(W("baz.dll"), readModuleName.substr(0, readModuleNameLength - 1));
 }
@@ -55,7 +55,7 @@ TEST(Module, ModuleNameWithoutDirectory)
     ULONG readModuleNameLength;
 
     GUID mvid;
-    ASSERT_EQ(S_OK, import->GetScopeProps(readModuleName.data(), (ULONG)readModuleName.capacity(), &readModuleNameLength, & mvid));
+    ASSERT_EQ(S_OK, import->GetScopeProps(&readModuleName[0], (ULONG)readModuleName.capacity(), &readModuleNameLength, & mvid));
 
     EXPECT_EQ(moduleName.length(), readModuleNameLength - 1);
     EXPECT_EQ(moduleName, readModuleName.substr(0, readModuleNameLength - 1));
@@ -74,7 +74,7 @@ TEST(Module, EmptyName)
     ULONG readModuleNameLength;
 
     GUID mvid;
-    ASSERT_EQ(S_OK, import->GetScopeProps(readModuleName.data(), (ULONG)readModuleName.size(), & readModuleNameLength, & mvid));
+    ASSERT_EQ(S_OK, import->GetScopeProps(&readModuleName[0], (ULONG)readModuleName.size(), & readModuleNameLength, & mvid));
 
     EXPECT_EQ(0, readModuleNameLength);
     EXPECT_EQ('\0', readModuleName[0]);

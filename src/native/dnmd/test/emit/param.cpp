@@ -25,7 +25,7 @@ TEST(Param, Define)
     DWORD paramConstType;
     UVCP_CONSTANT constValue;
     ULONG constValueLength;
-    ASSERT_EQ(S_OK, import->GetParamProps(param, & readMethod, & sequence, readName.data(), (ULONG)readName.capacity(), & readNameLength, & flags, & paramConstType, & constValue, & constValueLength));
+    ASSERT_EQ(S_OK, import->GetParamProps(param, & readMethod, & sequence, &readName[0], (ULONG)readName.capacity(), & readNameLength, & flags, & paramConstType, & constValue, & constValueLength));
 
     EXPECT_EQ(paramName, readName.substr(0, readNameLength - 1));
     EXPECT_EQ(method, readMethod);
@@ -63,7 +63,7 @@ TEST(Param, DefineWithConstant)
     DWORD paramConstType;
     UVCP_CONSTANT constValue;
     ULONG constValueLength;
-    ASSERT_EQ(S_OK, import->GetParamProps(param, & readMethod, & sequence, readName.data(), (ULONG)readName.capacity(), & readNameLength, & flags, & paramConstType, & constValue, & constValueLength));
+    ASSERT_EQ(S_OK, import->GetParamProps(param, & readMethod, & sequence, &readName[0], (ULONG)readName.capacity(), & readNameLength, & flags, & paramConstType, & constValue, & constValueLength));
 
     EXPECT_EQ(paramName, readName.substr(0, readNameLength - 1));
     EXPECT_EQ(method, readMethod);
@@ -106,7 +106,7 @@ TEST(Param, DefineWithConstantString)
     DWORD paramConstType;
     UVCP_CONSTANT constValue;
     ULONG constValueLength;
-    ASSERT_EQ(S_OK, import->GetParamProps(param, &readMethod, &sequence, readName.data(), (ULONG)readName.capacity(), &readNameLength, &flags, &paramConstType, &constValue, &constValueLength));
+    ASSERT_EQ(S_OK, import->GetParamProps(param, &readMethod, &sequence, &readName[0], (ULONG)readName.capacity(), &readNameLength, &flags, &paramConstType, &constValue, &constValueLength));
 
     EXPECT_EQ(paramName, readName.substr(0, readNameLength - 1));
     EXPECT_EQ(method, readMethod);
