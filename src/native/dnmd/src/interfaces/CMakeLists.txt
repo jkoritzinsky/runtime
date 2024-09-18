@@ -77,10 +77,6 @@ endif()
 if (WIN32)
   target_link_libraries(dnmd_interfaces_static PUBLIC bcrypt)
   target_link_libraries(dnmd_interfaces PRIVATE bcrypt)
-elseif(UNIX)
-  include(FindOpenSSL)
-  target_link_libraries(dnmd_interfaces_static PUBLIC OpenSSL::Crypto)
-  target_link_libraries(dnmd_interfaces PRIVATE OpenSSL::Crypto)
 elseif(APPLE)
   find_library(SECURITY_LIBRARY Security REQUIRED)
   target_link_libraries(dnmd_interfaces_static PUBLIC ${SECURITY_LIBRARY})
@@ -91,11 +87,14 @@ elseif(APPLE)
   if (NOT HAVE_COMMON_DIGEST_H)
     message(FATAL_ERROR "CommonCrypto/CommonDigest.h not found")
   endif()
+elseif(UNIX)
+  find_package(OpenSSL REQUIRED COMPONENTS Crypto)
+  target_link_libraries(dnmd_interfaces_static PUBLIC OpenSSL::Crypto)
+  target_link_libraries(dnmd_interfaces PRIVATE OpenSSL::Crypto)
 endif()
 
 set_target_properties(dnmd_interfaces PROPERTIES
-  PUBLIC_HEADER ${CMAKE_CURRENT_SOURCE_DIR}/../inc/dnmd_interfaces.hpp
-  INTERPROCEDURAL_OPTIMIZATION $<$<NOT:$<CONFIG:DEBUG>>:TRUE>)
+  PUBLIC_HEADER ${CMAKE_CURRENT_SOURCE_DIR}/../inc/dnmd_interfaces.hpp)
 
 if (DNMD_INSTALL)
   install(TARGETS dnmd_interfaces EXPORT interfaces

@@ -1,19 +1,24 @@
 <Project Sdk="Microsoft.Build.NoTargets">
   <PropertyGroup>
-    <CMakeConfiguration>$(Configuration)</CMakeConfiguration>
-    <CMakeConfiguration Condition="'$(Configuration)' == 'Checked'">Debug</CMakeConfiguration>
     <IsUnitTestProject>true</IsUnitTestProject>
+    <DnmdBuildArtifactsDir>$(IntermediateOutputPath)/$(TargetOS).$(TargetArchitecture).$(Configuration)</DnmdBuildArtifactsDir>
   </PropertyGroup>
 
   <Target Name="BuildNative" BeforeTargets="Build">
-    <Exec Command="cmake -S $(MSBuildThisFileDirectory) -B $(IntermediateOutputPath) -DCMAKE_BUILD_TYPE=$(CMakeConfiguration)" />
-    <Exec Command="cmake --build $(IntermediateOutputPath)" />
+    <PropertyGroup>
+      <CrossArg Condition="'$(CrossBuild)' == 'true'">-cross</CrossArg>
+      <NinjaArg Condition="'$(Ninja)' == 'true' and !$([MSBuild]::IsOsPlatform(Windows))">-ninja</NinjaArg>
+      <NinjaArg Condition="'$(Ninja)' != 'true' and $([MSBuild]::IsOsPlatform(Windows))">-msbuild</NinjaArg>
+      <ScriptName>./build-native.sh</ScriptName>
+      <ScriptName Condition="$([MSBuild]::IsOsPlatform(Windows))">./build-native.cmd</ScriptName>
+    </PropertyGroup>
+    <Exec Command="$(ScriptName) -$(Configuration.ToLower()) -$(TargetArchitecture) -os $(TargetOS) $(CrossArg) $(Compiler) $(NinjaArg)" />
   </Target>
 
   <Target Name="RunTests" BeforeTargets="VSTest">
-    <Exec Command="ctest --test-dir $(IntermediateOutputPath) -T Test"/>
+    <Exec Command="ctest --test-dir $(DnmdBuildArtifactsDir) -T Test"/>
     <ItemGroup>
-      <CTestResults Include="$(IntermediateOutputPath)\Testing\**\Test.xml">
+      <CTestResults Include="$(DnmdBuildArtifactsDir)\Testing\**\Test.xml">
         <TargetFileName>dnmd-$([System.String]::new('%(RecursiveDir)').TrimEnd('\\')).ctestxml</TargetFileName>
       </CTestResults>
     </ItemGroup>
