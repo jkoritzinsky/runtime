@@ -89,8 +89,15 @@ elseif(APPLE)
   endif()
 elseif(UNIX)
   find_package(OpenSSL REQUIRED COMPONENTS Crypto)
-  target_link_libraries(dnmd_interfaces_static PUBLIC OpenSSL::Crypto)
-  target_link_libraries(dnmd_interfaces PRIVATE OpenSSL::Crypto)
+  if (FEATURE_DISTRO_AGNOSTIC_SSL)
+    # When we're building against a distro-agnostic SSL, we need to dynamically load OpenSSL
+    add_compile_definitions(FEATURE_DISTRO_AGNOSTIC_SSL)
+    target_link_libraries(dnmd_interfaces_static PUBLIC ${CMAKE_DL_LIBS})
+    target_link_libraries(dnmd_interfaces PRIVATE ${CMAKE_DL_LIBS})
+  else()
+    target_link_libraries(dnmd_interfaces_static PUBLIC OpenSSL::Crypto)
+    target_link_libraries(dnmd_interfaces PRIVATE OpenSSL::Crypto)
+  endif()
 endif()
 
 set_target_properties(dnmd_interfaces PROPERTIES

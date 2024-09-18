@@ -8,6 +8,7 @@
 #include <wil/registry.h>
 #else
 #define THROW_IF_FAILED(x) do { HRESULT hr = (x); if (FAILED(hr)) { throw std::runtime_error("Failed HR when running '" #x "'"); } } while (false)
+#include <dirent.h>
 #endif
 
 #include <internal/dnmd_tools_platform.hpp>
@@ -80,7 +81,7 @@ namespace
 
         // Define a signature that has two parameters and a return type.
         // This will provide us with enough structure to define out-of-order Param rows.
-        std::array signature = { (uint8_t)IMAGE_CEE_CS_CALLCONV_DEFAULT, (uint8_t)0x02, (uint8_t)ELEMENT_TYPE_I4, (uint8_t)ELEMENT_TYPE_I2, (uint8_t)ELEMENT_TYPE_I8};
+        std::array<uint8_t, 5> signature = { (uint8_t)IMAGE_CEE_CS_CALLCONV_DEFAULT, (uint8_t)0x02, (uint8_t)ELEMENT_TYPE_I4, (uint8_t)ELEMENT_TYPE_I2, (uint8_t)ELEMENT_TYPE_I8};
 
         mdMethodDef method1;
         THROW_IF_FAILED(image->DefineMethod(type1, W("Method1"), 0, signature.data(), (ULONG)signature.size(), 0, 0, &method1));
@@ -99,7 +100,7 @@ namespace
         mdMethodDef methodOutOfOrder;
         THROW_IF_FAILED(image->DefineMethod(type1, W("MethodOutOfOrder"), 0, signature.data(), (ULONG)signature.size(), 0, 0, &methodOutOfOrder));
 
-        std::array fieldSignature = { (uint8_t)IMAGE_CEE_CS_CALLCONV_FIELD, (uint8_t)ELEMENT_TYPE_I4 };
+        std::array<uint8_t, 2> fieldSignature = { (uint8_t)IMAGE_CEE_CS_CALLCONV_FIELD, (uint8_t)ELEMENT_TYPE_I4 };
 
         mdFieldDef field1;
         THROW_IF_FAILED(image->DefineField(type1, W("Field1"), 0, fieldSignature.data(), (ULONG)fieldSignature.size(), 0, nullptr, 0, &field1));
@@ -111,8 +112,8 @@ namespace
         mdFieldDef fieldOutOfOrder;
         THROW_IF_FAILED(image->DefineField(type1, W("FieldOutOfOrder"), 0, fieldSignature.data(), (ULONG)fieldSignature.size(), 0, nullptr, 0, &fieldOutOfOrder));
 
-        std::array propertySignature = { (uint8_t)IMAGE_CEE_CS_CALLCONV_PROPERTY, (uint8_t)ELEMENT_TYPE_I4 };
-        std::array getterSignature = { (uint8_t)IMAGE_CEE_CS_CALLCONV_DEFAULT, (uint8_t)0x00, (uint8_t)ELEMENT_TYPE_I4 };
+        std::array<uint8_t, 2> propertySignature = { (uint8_t)IMAGE_CEE_CS_CALLCONV_PROPERTY, (uint8_t)ELEMENT_TYPE_I4 };
+        std::array<uint8_t, 3> getterSignature = { (uint8_t)IMAGE_CEE_CS_CALLCONV_DEFAULT, (uint8_t)0x00, (uint8_t)ELEMENT_TYPE_I4 };
         
         mdMethodDef getter1;
         THROW_IF_FAILED(image->DefineMethod(type1, W("get_Property1"), 0, getterSignature.data(), (ULONG)getterSignature.size(), 0, 0, &getter1));
@@ -202,18 +203,17 @@ std::vector<MetadataFile> MetadataFilesInDirectory(pal::path directory)
         }
 
         std::wcout << "Found file: " << fileName << std::endl;
-        scenarios.emplace_back(MetadataFile::Kind::OnDisk, directory + X("/") + fileName);
+        scenarios.emplace_back(MetadataFile::Kind::OnDisk, fileName);
     } while (FindNextFileW(findHandle, &findData));
 #else
-    pal::string pattern = directory + "/*.dll";
-    DIR* directory;
+    DIR* dirInfo;
     dirent *file;
-    if ((directory = opendir(pattern.c_str())) == nullptr)
+    if ((dirInfo = opendir(directory.c_str())) == nullptr)
     {
         return scenarios;
     }
 
-    while ((file = readdir(directory)) != nullptr)
+    while ((file = readdir(dirInfo)) != nullptr)
     {
         if (file->d_type != DT_REG)
         {
@@ -233,8 +233,13 @@ std::vector<MetadataFile> MetadataFilesInDirectory(pal::path directory)
             continue;
         }
 
+        if (strstr(fileName, ".dll") == nullptr)
+        {
+            continue;
+        }
+
         std::cout << "Found file: " << fileName << std::endl;
-        scenarios.emplace_back(MetadataFile::Kind::OnDisk, directory + "/" + fileName);
+        scenarios.emplace_back(MetadataFile::Kind::OnDisk, fileName);
     }
 
 #endif
@@ -246,7 +251,7 @@ std::vector<MetadataFile> CoreLibFiles()
     std::cout << "Discovering CoreLib files" << std::endl;
     std::vector<MetadataFile> scenarios;
 
-    scenarios.emplace_back(MetadataFile::Kind::OnDisk, (baselinePath.parent_path() / "System.Private.CoreLib.dll").generic_string(), "System_Private_CoreLib");
+    scenarios.emplace_back(MetadataFile::Kind::OnDisk, (GetBaselineDirectory() + "/System.Private.CoreLib.dll"), "System_Private_CoreLib");
 
 #ifdef BUILD_WINDOWS
     scenarios.emplace_back(MetadataFile::Kind::OnDisk, FindFrameworkInstall("v4.0.30319").append("\\mscorlib.dll"), "4_0_mscorlib");
@@ -254,7 +259,7 @@ std::vector<MetadataFile> CoreLibFiles()
     auto fx2mscorlib = FindFrameworkInstall("v2.0.50727").append("\\mscorlib.dll");
     if (pal::FileExists(fx2mscorlib))
     {
-        scenarios.emplace_back(MetadataFile::Kind::OnDisk, fx2mscorlib.generic_string(), "2_0_mscorlib");
+        scenarios.emplace_back(MetadataFile::Kind::OnDisk, fx2mscorlib, "2_0_mscorlib");
     }
 #endif
     return scenarios;
@@ -287,8 +292,15 @@ span<uint8_t> GetMetadataForFile(MetadataFile file)
     malloc_span<uint8_t> b;
     if (file.kind == MetadataFile::Kind::OnDisk)
     {
-        auto path = baselinePath.substr(0, baselinePath.find_last_of('/'));
-        auto path = baselinePath + "/" + file.pathOrKey;
+        pal::path path;
+        if (file.pathOrKey[0] == X('/'))
+        {
+            path = file.pathOrKey;
+        }
+        else
+        {
+            path = baselinePath.substr(0, baselinePath.find_last_of('/')) + "/" + file.pathOrKey;
+        }
         b = ReadMetadataFromFile(path);
     }
     else

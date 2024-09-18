@@ -8,8 +8,10 @@
 #include <bcrypt.h>
 #elif defined(BUILD_MACOS)
 #include <CommonCrypto/CommonDigest.h>
-#elif defined(BUILD_UNIX)
+#elif defined(BUILD_UNIX) && !defined(FEATURE_DISTRO_AGNOSTIC_SSL)
 #include <openssl/sha.h>
+#elif defined(BUILD_UNIX) && defined(FEATURE_DISTRO_AGNOSTIC_SSL)
+#include <dlfcn.h>
 #endif
 
 #if defined(BUILD_WINDOWS)
@@ -163,12 +165,51 @@ bool pal::ComputeSha1Hash(span<const uint8_t> data, std::array<uint8_t, SHA1_HAS
     return true;
 }
 
-#elif defined(BUILD_UNIX)
+#elif defined(BUILD_UNIX) && !defined(FEATURE_DISTRO_AGNOSTIC_SSL)
 #include <openssl/sha.h>
 bool pal::ComputeSha1Hash(span<const uint8_t> data, std::array<uint8_t, SHA1_HASH_SIZE>& hashDestination)
 {
     static_assert(SHA_DIGEST_LENGTH == SHA1_HASH_SIZE, "SHA1 hash size mismatch");
     SHA1(data, data.size(), hashDestination.data());
+    return true;
+}
+#elif defined(BUILD_UNIX) && defined(FEATURE_DISTRO_AGNOSTIC_SSL)
+namespace
+{
+    struct sha1_func
+    {
+        void (*func)(const uint8_t*, size_t, uint8_t*);
+        sha1_func()
+        {
+            void* img_handle = dlopen("libcrypto.so", RTLD_LAZY);
+            if (img_handle == nullptr)
+            {
+                img_handle = dlopen("libcrypto.so.3", RTLD_LAZY);
+            }
+            if (img_handle == nullptr)
+            {
+                img_handle = dlopen("libcrypto.so.1.1", RTLD_LAZY);
+            }
+            if (img_handle == nullptr)
+            {
+                img_handle = dlopen("libcrypto.so.1.0.0", RTLD_LAZY);
+            }
+
+            void* func_ptr = dlsym(img_handle, "SHA1");
+            func = reinterpret_cast<void (*)(const uint8_t*, size_t, uint8_t*)>(func_ptr);
+        }
+
+        void operator()(const uint8_t* data, size_t len, uint8_t* hash)
+        {
+            func(data, len, hash);
+        }
+    };
+}
+
+bool pal::ComputeSha1Hash(span<const uint8_t> data, std::array<uint8_t, SHA1_HASH_SIZE>& hashDestination)
+{
+    static sha1_func sha1;
+    sha1(data, data.size(), hashDestination.data());
     return true;
 }
 

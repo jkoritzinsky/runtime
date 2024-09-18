@@ -7,6 +7,7 @@ __TargetOS=
 __Compiler=clang
 __UseNinja=0
 __SkipConfigure=0
+__PortableBuild=1
 
 source "$__RepoRootDir"/eng/native/build-commons.sh
 
