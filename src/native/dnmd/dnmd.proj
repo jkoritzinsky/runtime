@@ -15,6 +15,6 @@
     <ItemGroup>
       <CTestResults Include="$(IntermediateOutputPath)\Testing\**\Test.xml" />
     </ItemGroup>
-    <Copy SourceFiles="@(CTestResults)" DestinationFiles="@(CTestResults->'$(ArtifactsTestResultsDir)/dnmd/%(RecursiveDir)/Test.ctestxml')" />
+    <Copy SourceFiles="@(CTestResults)" DestinationFiles="@(CTestResults->'$(ArtifactsTestResultsDir)/dnmd.ctestxml')" />
   </Target>
 </Project>
