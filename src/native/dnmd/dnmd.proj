@@ -13,8 +13,10 @@
   <Target Name="RunTests" BeforeTargets="VSTest">
     <Exec Command="ctest --test-dir $(IntermediateOutputPath) -T Test"/>
     <ItemGroup>
-      <CTestResults Include="$(IntermediateOutputPath)\Testing\**\Test.xml" />
+      <CTestResults Include="$(IntermediateOutputPath)\Testing\**\Test.xml">
+        <TargetFileName>dnmd-$([System.String]::new('%(RecursiveDir)').TrimEnd('\\')).ctestxml</TargetFileName>
+      </CTestResults>
     </ItemGroup>
-    <Copy SourceFiles="@(CTestResults)" DestinationFiles="@(CTestResults->'$(ArtifactsTestResultsDir)/dnmd.ctestxml')" />
+    <Copy SourceFiles="@(CTestResults)" DestinationFiles="@(CTestResults->'$(ArtifactsTestResultsDir)/%(TargetFileName)')" />
   </Target>
 </Project>
