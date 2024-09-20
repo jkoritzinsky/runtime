@@ -139,6 +139,8 @@ bool pal::ReadFile(pal::path path, malloc_span<uint8_t>& b)
 #endif
 }
 
+constexpr int NetHostBufferTooSmall = 0x80008098;
+
 pal::path pal::GetCoreClrPath()
 {
     int result = 0;
@@ -148,7 +150,13 @@ pal::path pal::GetCoreClrPath()
     {
         hostfxr_path.reset(new char_t[bufferSize]);
         result = get_hostfxr_path(hostfxr_path.get(), &bufferSize, nullptr);
-    } while (result != 0);
+    } while (result == NetHostBufferTooSmall);
+
+    if (result != 0)
+    {
+        std::cerr << "Failed to get hostfxr path. Error code: " << std::hex << result << std::dec << std::endl;
+        return {};
+    }
 
     pal::path hostFxrPath = hostfxr_path.get();
     void* hostfxrModule = LoadModule(hostfxr_path.get());
