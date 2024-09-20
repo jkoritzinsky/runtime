@@ -21,7 +21,9 @@
     <Exec Command="ctest --test-dir $(DnmdBuildArtifactsDir) -T Test"
           EnvironmentVariables="DOTNET_ROOT=$(DotNetRoot)" />
     <ItemGroup>
-      <CTestResults Include="$(DnmdBuildArtifactsDir)\Testing\**\Test.xml">
+      <CTestResults Include="$(DnmdBuildArtifactsDir)\Testing\**\Test.xml" />
+      <!-- Add metadata afterwards to ensure that built-in metadata is already available. -->
+      <CTestResults>
         <TargetFileName>dnmd-$([System.String]::new('%(RecursiveDir)').TrimEnd('\\')).ctestxml</TargetFileName>
       </CTestResults>
     </ItemGroup>
