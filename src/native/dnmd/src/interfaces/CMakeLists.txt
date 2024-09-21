@@ -7,6 +7,7 @@ set(SOURCES
   ./pal.cpp
   ./signatures.cpp
   ./importhelpers.cpp
+  ./internal/metadataimport.cpp
 )
 
 set(HEADERS
@@ -21,6 +22,7 @@ set(HEADERS
   ./dnmdowner.hpp
   ./signatures.hpp
   ./importhelpers.hpp
+  ./internal/metadataimport.hpp
 )
 
 if(NOT MSVC)

@@ -230,18 +230,6 @@ HRESULT MDInternalRO::EnumMethodImplInit( // return hresult
 } // MDInternalRO::EnumMethodImplInit
 
 //*****************************************************************************
-// get the number of MethodImpls in a scope
-//*****************************************************************************
-ULONG MDInternalRO::EnumMethodImplGetCount(
-    HENUMInternal   *phEnumBody,        // [IN] MethodBody enumerator.
-    HENUMInternal   *phEnumDecl)        // [IN] MethodDecl enumerator.
-{
-    _ASSERTE(phEnumBody && ((phEnumBody->m_tkKind >> 24) == TBL_MethodImpl));
-    return phEnumBody->m_ulCount;
-} // MDInternalRO::EnumMethodImplGetCount
-
-
-//*****************************************************************************
 // enumerator for MethodImpl.
 //*****************************************************************************
 __checkReturn

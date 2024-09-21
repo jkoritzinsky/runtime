@@ -2,6 +2,8 @@
 #include <cassert>
 #include <cstring>
 
+#include "hcorenum.hpp"
+
 #define RETURN_IF_FAILED(exp) \
 { \
     hr = (exp); \
@@ -23,27 +25,31 @@ HRESULT HCORENUMImpl::CreateTableEnum(_In_ uint32_t count, _Out_ HCORENUMImpl** 
     // Immediately set the return.
     *impl = enumImpl;
 
-    enumImpl->_type = HCORENUMType::Table;
-    enumImpl->_entrySpan = 1;
-    enumImpl->_curr = &enumImpl->_data;
-    enumImpl->_last = enumImpl->_curr;
+    CreateTableEnumInAllocatedMemory(count, *impl);
+    return S_OK;
+}
+
+void HCORENUMImpl::CreateTableEnumInAllocatedMemory(_In_ uint32_t count, _Inout_ HCORENUMImpl* impl) noexcept
+{
+    impl->_type = HCORENUMType::Table;
+    impl->_entrySpan = 1;
+    impl->_curr = &impl->_data;
+    impl->_last = impl->_curr;
 
     // Initialize the linked list of EnumData.
-    EnumData* currInit = enumImpl->_curr;
+    EnumData* currInit = impl->_curr;
     currInit->Next = nullptr;
 
     // -1 because the initial impl contains one.
-    EnumData* nextMaybe = (EnumData*)&enumImpl[1];
+    EnumData* nextMaybe = (EnumData*)&impl[1];
     for (size_t i = 0; i < (count - 1); ++i)
     {
         currInit->Next = nextMaybe;
         currInit = nextMaybe;
         currInit->Next = nullptr;
-        enumImpl->_last = currInit;
+        impl->_last = currInit;
         nextMaybe = nextMaybe + 1;
     }
-
-    return S_OK;
 }
 
 void HCORENUMImpl::InitTableEnum(_Inout_ HCORENUMImpl& impl, _In_ uint32_t index, _In_ mdcursor_t cursor, _In_ uint32_t rows) noexcept
@@ -77,14 +83,19 @@ HRESULT HCORENUMImpl::CreateDynamicEnum(_Out_ HCORENUMImpl** impl, _In_ uint32_t
     // Immediately set the return.
     *impl = enumImpl;
 
-    enumImpl->_type = HCORENUMType::Dynamic;
-    // The page must be a multiple of the entrySpan for reading to be efficient.
-    assert(ARRAY_SIZE(enumImpl->_data.Dynamic.Page) % entrySpan == 0);
-    enumImpl->_entrySpan = entrySpan;
-    ::memset(&enumImpl->_data, 0, sizeof(enumImpl->_data));
-    enumImpl->_curr = &enumImpl->_data;
-    enumImpl->_last = enumImpl->_curr;
+    CreateDynamicEnumInAllocatedMemory(*impl, entrySpan);
     return S_OK;
+}
+
+void HCORENUMImpl::CreateDynamicEnumInAllocatedMemory(_Inout_ HCORENUMImpl* impl, _In_ uint32_t entrySpan) noexcept
+{
+    impl->_type = HCORENUMType::Dynamic;
+    // The page must be a multiple of the entrySpan for reading to be efficient.
+    assert(ARRAY_SIZE(impl->_data.Dynamic.Page) % entrySpan == 0);
+    impl->_entrySpan = entrySpan;
+    ::memset(&impl->_data, 0, sizeof(impl->_data));
+    impl->_curr = &impl->_data;
+    impl->_last = impl->_curr;
 }
 
 HRESULT HCORENUMImpl::AddToDynamicEnum(_Inout_ HCORENUMImpl& impl, uint32_t value) noexcept
@@ -110,7 +121,7 @@ HRESULT HCORENUMImpl::AddToDynamicEnum(_Inout_ HCORENUMImpl& impl, uint32_t valu
     return S_OK;
 }
 
-void HCORENUMImpl::Destroy(_In_ HCORENUMImpl* impl) noexcept
+void HCORENUMImpl::DestroyInAllocatedMemory(_In_ HCORENUMImpl* impl) noexcept
 {
     assert(impl != nullptr);
     if (impl->_type == HCORENUMType::Dynamic)
@@ -125,6 +136,12 @@ void HCORENUMImpl::Destroy(_In_ HCORENUMImpl* impl) noexcept
             toDelete = tmp;
         }
     }
+}
+
+void HCORENUMImpl::Destroy(_In_ HCORENUMImpl* impl) noexcept
+{
+    assert(impl != nullptr);
+    DestroyInAllocatedMemory(impl);
 
     ::free(impl);
 }
@@ -226,8 +243,13 @@ HRESULT HCORENUMImpl::ReadOneToken(mdToken& rToken, uint32_t& count) noexcept
 
     if (_type == HCORENUMType::Table)
     {
-        if (!md_cursor_to_token(currData->Table.Current, &rToken))
+        mdcursor_t current;
+        if (!md_resolve_indirect_cursor(currData->Table.Current, &current))
+            return CLDB_E_FILE_CORRUPT;
+
+        if (!md_cursor_to_token(current, &rToken))
             return S_FALSE;
+
         (void)md_cursor_next(&currData->Table.Current);
     }
     else

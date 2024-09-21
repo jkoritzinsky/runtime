@@ -12,6 +12,7 @@
 #include "metadataimportro.hpp"
 #include "metadataemit.hpp"
 #include "threadsafe.hpp"
+#include "internal/metadataimport.hpp"
 
 #include <cstring>
 
@@ -28,6 +29,7 @@ namespace
             MetadataImportRO* import = unknown->CreateAndAddTearOff<MetadataImportRO>(std::move(handle_view));
             if (!_threadSafe)
             {
+                (void)unknown->CreateAndAddTearOff<InternalMetadataImportRO>(handle_view);
                 return unknown;
             }
             minipal::com_ptr<ControllingIUnknown> threadSafeUnknown;
@@ -36,6 +38,8 @@ namespace
             // Define an IDNMDOwner* tear-off here so the thread-safe object can be identified as a DNMD object.
             (void)threadSafeUnknown->CreateAndAddTearOff<DelegatingDNMDOwner>(handle_view);
             (void)threadSafeUnknown->CreateAndAddTearOff<ThreadSafeImportEmit<MetadataImportRO, MetadataEmit>>(std::move(unknown), import, emit);
+            // TODO: Make thread-safe internal import implementation.
+            (void)threadSafeUnknown->CreateAndAddTearOff<InternalMetadataImportRO>(handle_view);
             // ThreadSafeImportEmit took ownership of owner through unknown.
             return threadSafeUnknown;
         }
@@ -162,6 +166,7 @@ namespace
                 {
                     // If we're read-only, then we don't need to deal with thread safety.
                     (void)obj->CreateAndAddTearOff<MetadataImportRO>(std::move(handle_view));
+                    (void)obj->CreateAndAddTearOff<InternalMetadataImportRO>(handle_view);
                     return obj->QueryInterface(riid, (void**)ppIUnk);
                 }
                 

@@ -1,5 +1,10 @@
-#ifndef _SRC_INTERFACES_HCORENUM_HPP_
-#define _SRC_INTERFACES_HCORENUM_HPP_
+#ifndef _SRC_HCORENUM_HPP
+#define _SRC_HCORENUM_HPP
+
+#include <cstddef>
+#include <cstdint>
+#include <cstring>
+#include <atomic>
 
 #include <internal/dnmd_platform.hpp>
 
@@ -44,14 +49,18 @@ class HCORENUMImpl final
 public: // static
     // Lifetime operations
     static HRESULT CreateTableEnum(_In_ uint32_t count, _Out_ HCORENUMImpl** impl) noexcept;
+    static void CreateTableEnumInAllocatedMemory(_In_ uint32_t count, _Inout_ HCORENUMImpl* impl) noexcept;
     static void InitTableEnum(_Inout_ HCORENUMImpl& impl, _In_ uint32_t index, _In_ mdcursor_t cursor, _In_ uint32_t rows) noexcept;
 
     // If multiple values represent a single entry, the "entrySpan" argument
     // can be used to indicate the count for a single entry.
     static HRESULT CreateDynamicEnum(_Out_ HCORENUMImpl** impl, _In_ uint32_t entrySpan = 1) noexcept;
+    static void CreateDynamicEnumInAllocatedMemory(_Inout_ HCORENUMImpl* impl, _In_ uint32_t entrySpan = 1) noexcept;
     static HRESULT AddToDynamicEnum(_Inout_ HCORENUMImpl& impl, uint32_t value) noexcept;
 
     static void Destroy(_In_ HCORENUMImpl* impl) noexcept;
+
+    static void DestroyInAllocatedMemory(_In_ HCORENUMImpl* impl) noexcept;
 
 public: // instance
     // Get the total items for this enumeration
@@ -87,7 +96,7 @@ private:
     HRESULT ResetDynamicEnum(_In_ uint32_t position) noexcept;
 };
 
-struct HCORENUMImplDeleter final
+struct HCORENUMImplDeleter
 {
     using pointer = HCORENUMImpl*;
     void operator()(HCORENUMImpl* mem)
@@ -99,4 +108,4 @@ struct HCORENUMImplDeleter final
 // C++ lifetime wrapper for HCORENUMImpl memory
 using HCORENUMImpl_ptr = std::unique_ptr<HCORENUMImpl, HCORENUMImplDeleter>;
 
-#endif // _SRC_INTERFACES_HCORENUM_HPP_
+#endif // _SRC_HCORENUM_HPP

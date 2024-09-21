@@ -7,6 +7,7 @@ set(SOURCES
     ./main.cpp
     ./discovery.cpp
     ./metadata.cpp
+    ./internalmetadata.cpp
 )
 
 add_executable(regtest ${SOURCES} ${HEADERS})

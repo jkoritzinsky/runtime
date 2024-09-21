@@ -14,6 +14,7 @@
 #include "shimload.h"
 #include "metadataexports.h"
 #include "ex.h"
+#include <dnmd_interfaces.hpp>
 
 #include <dbgenginemetrics.h>
 
@@ -92,6 +93,13 @@ STDAPI DLLEXPORT GetMetaDataInternalInterface(
         PRECONDITION(CheckPointer(pData));
         PRECONDITION(CheckPointer(ppv));
     } CONTRACTL_END;
+
+    if (riid == IID_IMDInternalImport)
+    {
+        ReleaseHolder<IMetaDataDispenser> pDispenser;
+        GetDispenser(IID_IMetaDataDispenser, (void**)&pDispenser);
+        return pDispenser->OpenScopeOnMemory(pData, cbData, flags, IID_IMDInternalImport, (IUnknown**)ppv);
+    }
 
     return GetMDInternalInterface(pData, cbData, flags, riid, ppv);
 }

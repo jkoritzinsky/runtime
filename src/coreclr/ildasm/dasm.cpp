@@ -4186,7 +4186,7 @@ BOOL DumpEvent(mdToken FuncToken, const char *pszClassName, DWORD dwClassAttrs, 
         return FALSE;
     }
 
-    if ((nAssoc = hAssoc.m_ulCount))
+    if ((nAssoc = g_pImport->EnumGetCount(&hAssoc)))
     {
         memset(rAssoc,0,sizeof(rAssoc));
         if (FAILED(g_pImport->GetAllAssociates(&hAssoc,rAssoc,nAssoc)))
@@ -4340,7 +4340,7 @@ BOOL DumpProp(mdToken FuncToken, const char *pszClassName, DWORD dwClassAttrs, v
         printError(GUICookie, sz);
         return FALSE;
     }
-    if ((nAssoc = hAssoc.m_ulCount) != 0)
+    if ((nAssoc = g_pImport->EnumGetCount(&hAssoc)) != 0)
     {
         memset(rAssoc,0,sizeof(rAssoc));
         if (FAILED(g_pImport->GetAllAssociates(&hAssoc,rAssoc,nAssoc)))

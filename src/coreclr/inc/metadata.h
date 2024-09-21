@@ -105,6 +105,8 @@ struct HENUMInternal
         char        m_cursor[32];               // cursor holding query result for read/write mode
     };
 
+    char m_buffer[48]; // Pad to the size of the DNMD enum implementation.
+
     // TOKENLIST    daTKList;               // dynamic arrays of token list
     HENUMInternal() : m_EnumType(MDSimpleEnum) { LIMITED_METHOD_DAC_CONTRACT; }
 
@@ -136,7 +138,7 @@ struct HENUMInternal
 
         // TODO: remove this when we remove m_cursor from the HENUMInternal structure
         _ASSERTE(IS_ALIGNED(pEnum->m_cursor, sizeof(DWORD)));
-        _ASSERTE((sizeof(HENUMInternal) - offsetof(HENUMInternal, m_cursor)) == (8 * sizeof(DWORD)));
+        _ASSERTE((sizeof(HENUMInternal) - offsetof(HENUMInternal, m_cursor)) >= (8 * sizeof(DWORD)));
 
         DWORD* pBuffer = (DWORD*)pEnum->m_cursor;
         pBuffer[0] = 0;
@@ -213,6 +215,7 @@ struct HENUMInternal
 
 };
 
+static_assert(sizeof(HENUMInternal) >= 104); // Ensure the size of HENUMInternal is large enough for DNMD's implementation.
 
 
 //*****************************************
@@ -317,7 +320,7 @@ DECLARE_INTERFACE_(IMDInternalImport, IUnknown)
         HENUMInternal   *phEnumBody,        // [OUT] buffer to fill for enumerator data for MethodBody tokens.
         HENUMInternal   *phEnumDecl) PURE;  // [OUT] buffer to fill for enumerator data for MethodDecl tokens.
 
-    ULONG EnumMethodImplGetCount(
+    STDMETHOD_(ULONG, EnumMethodImplGetCount)(
         HENUMInternal   *phEnumBody,        // [IN] MethodBody enumerator.
         HENUMInternal   *phEnumDecl)        // [IN] MethodDecl enumerator.
     {
@@ -363,53 +366,18 @@ DECLARE_INTERFACE_(IMDInternalImport, IUnknown)
         DWORD       tkKind,                 // [IN] which table to work on
         HENUMInternal *phEnum) PURE;        // [OUT] the enumerator to fill
 
-    bool EnumNext(
+    STDMETHOD_(bool, EnumNext)(
         HENUMInternal *phEnum,              // [IN] the enumerator to retrieve information
-        mdToken     *ptk)                   // [OUT] token to scope the search
-    {
-        _ASSERTE(phEnum && ptk);
-        if (phEnum->u.m_ulCur >= phEnum->u.m_ulEnd)
-            return false;
+        mdToken     *ptk) PURE;             // [OUT] token to scope the search
 
-        if ( phEnum->m_EnumType == MDSimpleEnum )
-        {
-            *ptk = phEnum->u.m_ulCur | phEnum->m_tkKind;
-            phEnum->u.m_ulCur++;
-        }
-        else
-        {
-            TOKENLIST       *pdalist = (TOKENLIST *)&(phEnum->m_cursor);
+    STDMETHOD_(ULONG, EnumGetCount)(
+        HENUMInternal *phEnum) PURE;        // [IN] the enumerator to retrieve information
 
-            _ASSERTE( phEnum->m_EnumType == MDDynamicArrayEnum );
-            *ptk = *( pdalist->Get(phEnum->u.m_ulCur++) );
-        }
-        return true;
-    }
+    STDMETHOD_(void, EnumReset)(
+        HENUMInternal *phEnum) PURE;        // [IN] the enumerator to be reset
 
-    ULONG EnumGetCount(
-        HENUMInternal *phEnum)        // [IN] the enumerator to retrieve information
-    {
-        _ASSERTE(phEnum);
-        return phEnum->m_ulCount;
-    }
-
-    void EnumReset(
-        HENUMInternal *phEnum)        // [IN] the enumerator to be reset
-    {
-        _ASSERTE(phEnum);
-        _ASSERTE( phEnum->m_EnumType == MDSimpleEnum || phEnum->m_EnumType == MDDynamicArrayEnum);
-
-        phEnum->u.m_ulCur = phEnum->u.m_ulStart;
-    } // MDInternalRW::EnumReset
-
-    void EnumClose(
-        HENUMInternal *phEnum)        // [IN] the enumerator to be closed
-    {
-        _ASSERTE( phEnum->m_EnumType == MDSimpleEnum ||
-            phEnum->m_EnumType == MDDynamicArrayEnum);
-        if (phEnum->m_EnumType == MDDynamicArrayEnum)
-            HENUMInternal::ClearEnum(phEnum);
-    }
+    STDMETHOD_(void, EnumClose)(
+        HENUMInternal *phEnum);        // [IN] the enumerator to be closed
 
     //*****************************************
     // Enumerator helpers for CustomAttribute

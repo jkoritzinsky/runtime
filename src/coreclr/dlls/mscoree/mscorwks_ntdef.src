@@ -31,3 +31,6 @@ EXPORTS
 
         ; cDAC contract descriptor
         DotNetRuntimeContractDescriptor
+
+        ; Used by DNMD testing
+        GetMetaDataInternalInterface
