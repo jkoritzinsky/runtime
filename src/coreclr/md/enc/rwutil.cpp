@@ -10,6 +10,7 @@
 //*****************************************************************************
 #include "stdafx.h"
 #include "metadata.h"
+#include "enumcommon.h"
 #include "rwutil.h"
 #include "utsem.h"
 #include "../inc/mdlog.h"

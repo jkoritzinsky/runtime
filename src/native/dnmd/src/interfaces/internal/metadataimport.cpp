@@ -69,7 +69,7 @@ namespace
 
         return S_OK;
     }
-    
+
 
     HRESULT CreateEnumTokenRangeForSortedTableKey(
         mdhandle_t mdhandle,
@@ -228,7 +228,7 @@ STDMETHODIMP InternalMetadataImportRO::EnumMethodImplNext(
 
     if (1 != md_get_column_value_as_token(c, mdtMethodImpl_MethodBody, 1, ptkBody))
         return CLDB_E_FILE_CORRUPT;
-    
+
     if (1 != md_get_column_value_as_token(c, mdtMethodImpl_MethodDeclaration, 1, ptkDecl))
         return CLDB_E_FILE_CORRUPT;
     return S_OK;
@@ -345,7 +345,7 @@ STDMETHODIMP InternalMetadataImportRO::EnumInit(
                 HCORENUMImpl::InitTableEnum(*impl, 0, cursor, 0);
                 return S_OK;
             }
-            
+
             mdcursor_t props;
             uint32_t numProps;
             if (!md_get_column_value_as_range(propertyMap, mdtPropertyMap_PropertyList, &props, &numProps))
@@ -493,7 +493,7 @@ STDMETHODIMP InternalMetadataImportRO::EnumCustomAttributeByNameInit(
         mdToken caToken;
         if (!md_cursor_to_token(attributes, &caToken))
             return CLDB_E_FILE_CORRUPT;
-        
+
         if (checkParent)
         {
             mdToken parent;
@@ -526,7 +526,7 @@ STDMETHODIMP InternalMetadataImportRO::GetParentToken(
     mdcursor_t cursor;
     if (!md_token_to_cursor(m_handle.get(), tkChild, &cursor))
         return CLDB_E_FILE_CORRUPT;
-    
+
     switch (TypeFromToken(tkChild))
     {
     case mdtTypeDef:
@@ -540,7 +540,7 @@ STDMETHODIMP InternalMetadataImportRO::GetParentToken(
                 return S_OK;
             if (1 != md_get_column_value_as_token(nestedclass, mdtNestedClass_EnclosingClass, 1, ptkParent))
                 return CLDB_E_FILE_CORRUPT;
-            
+
             return S_OK;
         }
     case mdtMethodSpec:
@@ -565,7 +565,7 @@ STDMETHODIMP InternalMetadataImportRO::GetParentToken(
         if (1 != md_get_column_value_as_token(cursor, mdtCustomAttribute_Parent, 1, ptkParent))
             return CLDB_E_FILE_CORRUPT;
         return S_OK;
-    }    
+    }
     return S_OK;
 }
 
@@ -577,7 +577,7 @@ STDMETHODIMP InternalMetadataImportRO::GetCustomAttributeProps(
     mdcursor_t cursor;
     if (!md_token_to_cursor(m_handle.get(), at, &cursor))
         return CLDB_E_FILE_CORRUPT;
-    
+
     if (1 != md_get_column_value_as_token(cursor, mdtCustomAttribute_Type, 1, ptkType))
         return CLDB_E_FILE_CORRUPT;
 
@@ -610,15 +610,15 @@ STDMETHODIMP InternalMetadataImportRO::GetScopeProps(
     mdcursor_t c;
     if (!md_token_to_cursor(m_handle.get(), MD_MODULE_TOKEN, &c))
         return CLDB_E_FILE_CORRUPT;
-    
+
     if (pszName != nullptr
         && 1 != md_get_column_value_as_utf8(c, mdtModule_Name, 1, pszName))
         return CLDB_E_FILE_CORRUPT;
-    
+
     if (pmvid != nullptr
         && 1 != md_get_column_value_as_guid(c, mdtModule_Mvid, 1, (mdguid_t*)pmvid))
         return CLDB_E_FILE_CORRUPT;
-    
+
     return S_OK;
 }
 
@@ -630,7 +630,7 @@ STDMETHODIMP InternalMetadataImportRO::FindParamOfMethod(
     mdcursor_t method;
     if (!md_token_to_cursor(m_handle.get(), md, &method))
         return CLDB_E_FILE_CORRUPT;
-    
+
     mdcursor_t paramList;
     uint32_t count;
     if (!md_get_column_value_as_range(method, mdtMethodDef_ParamList, &paramList, &count))
@@ -644,7 +644,7 @@ STDMETHODIMP InternalMetadataImportRO::FindParamOfMethod(
         uint32_t seq;
         if (1 != md_get_column_value_as_constant(param, mdtParam_Sequence, 1, &seq))
             return CLDB_E_FILE_CORRUPT;
-        
+
         if (seq == iSeq)
         {
             if (!md_cursor_to_token(param, pparamdef))
@@ -667,11 +667,11 @@ STDMETHODIMP InternalMetadataImportRO::GetNameOfTypeDef(
     if (pszname != nullptr
         && 1 != md_get_column_value_as_utf8(c, mdtTypeDef_TypeName, 1, pszname))
         return CLDB_E_FILE_CORRUPT;
-    
+
     if (psznamespace != nullptr
         && 1 != md_get_column_value_as_utf8(c, mdtTypeDef_TypeNamespace, 1, psznamespace))
         return CLDB_E_FILE_CORRUPT;
-    
+
     return S_OK;
 }
 STDMETHODIMP InternalMetadataImportRO::GetIsDualOfTypeDef(
@@ -715,10 +715,10 @@ STDMETHODIMP InternalMetadataImportRO::GetNameOfMethodDef(
     mdcursor_t c;
     if (!md_token_to_cursor(m_handle.get(), md, &c))
         return CLDB_E_FILE_CORRUPT;
-    
+
     if (1 != md_get_column_value_as_utf8(c, mdtMethodDef_Name, 1, pszName))
         return CLDB_E_FILE_CORRUPT;
-    
+
     return S_OK;
 }
 STDMETHODIMP InternalMetadataImportRO::GetNameAndSigOfMethodDef(
@@ -730,10 +730,10 @@ STDMETHODIMP InternalMetadataImportRO::GetNameAndSigOfMethodDef(
     mdcursor_t c;
     if (!md_token_to_cursor(m_handle.get(), methoddef, &c))
         return CLDB_E_FILE_CORRUPT;
-    
+
     if (1 != md_get_column_value_as_utf8(c, mdtMethodDef_Name, 1, pszName))
         return CLDB_E_FILE_CORRUPT;
-    
+
     uint8_t const* blob;
     uint32_t size;
     if (1 != md_get_column_value_as_blob(c, mdtMethodDef_Signature, 1, &blob, &size))
@@ -752,10 +752,10 @@ STDMETHODIMP InternalMetadataImportRO::GetNameOfFieldDef(
     mdcursor_t c;
     if (!md_token_to_cursor(m_handle.get(), fd, &c))
         return CLDB_E_FILE_CORRUPT;
-    
+
     if (1 != md_get_column_value_as_utf8(c, mdtField_Name, 1, pszName))
         return CLDB_E_FILE_CORRUPT;
-    
+
     return S_OK;
 }
 
@@ -770,10 +770,10 @@ STDMETHODIMP InternalMetadataImportRO::GetNameOfTypeRef(
 
     if (1 != md_get_column_value_as_utf8(c, mdtTypeRef_TypeName, 1, pszname))
         return CLDB_E_FILE_CORRUPT;
-    
+
     if (1 != md_get_column_value_as_utf8(c, mdtTypeRef_TypeNamespace, 1, psznamespace))
         return CLDB_E_FILE_CORRUPT;
-    
+
     return S_OK;
 }
 
@@ -784,10 +784,10 @@ STDMETHODIMP InternalMetadataImportRO::GetResolutionScopeOfTypeRef(
     mdcursor_t c;
     if (!md_token_to_cursor(m_handle.get(), classref, &c))
         return CLDB_E_FILE_CORRUPT;
-    
+
     if (1 != md_get_column_value_as_token(c, mdtTypeRef_ResolutionScope, 1, ptkResolutionScope))
         return CLDB_E_FILE_CORRUPT;
-    
+
     return S_OK;
 }
 
@@ -845,20 +845,20 @@ STDMETHODIMP InternalMetadataImportRO::GetTypeDefProps(
     mdcursor_t c;
     if (!md_token_to_cursor(m_handle.get(), classdef, &c))
         return CLDB_E_FILE_CORRUPT;
-    
+
     if (pdwAttr != nullptr)
     {
         uint32_t attr;
         if (1 != md_get_column_value_as_constant(c, mdtTypeDef_Flags, 1, &attr))
             return CLDB_E_FILE_CORRUPT;
-        
+
         *pdwAttr = attr;
     }
 
     if (ptkExtends != nullptr
         && 1 != md_get_column_value_as_token(c, mdtTypeDef_Extends, 1, ptkExtends))
         return CLDB_E_FILE_CORRUPT;
-    
+
     return S_OK;
 }
 
@@ -947,11 +947,11 @@ STDMETHODIMP InternalMetadataImportRO::GetCountNestedClasses(
             mdToken enclosingClass;
             if (1 != md_get_column_value_as_token(cursor, mdtNestedClass_EnclosingClass, 1, &enclosingClass))
                 return CLDB_E_FILE_CORRUPT;
-            
+
             if (enclosingClass == tkEnclosingClass)
                 nestedClassRowCount++;
         }
-        
+
     }
 
     *pcNestedClassesCount = nestedClassRowCount;
@@ -989,12 +989,12 @@ STDMETHODIMP InternalMetadataImportRO::GetNestedClasses(
             mdToken enclosingClass;
             if (1 != md_get_column_value_as_token(cursor, mdtNestedClass_EnclosingClass, 1, &enclosingClass))
                 return CLDB_E_FILE_CORRUPT;
-            
+
             if (enclosingClass == tkEnclosingClass)
             {
                 if (1 != md_get_column_value_as_token(cursor, mdtNestedClass_NestedClass, 1, &rNestedClasses[nestedClassRowCount++]))
                     return CLDB_E_FILE_CORRUPT;
-                
+
                 if (nestedClassRowCount == ulNestedClasses)
                     break;
             }
@@ -1094,12 +1094,12 @@ STDMETHODIMP InternalMetadataImportRO::GetSigFromToken(
     mdcursor_t c;
     if (!md_token_to_cursor(m_handle.get(), tk, &c))
         return CLDB_E_FILE_CORRUPT;
-    
+
     uint8_t const* sig;
     uint32_t sigLength;
     if (1 != md_get_column_value_as_blob(c, targetColumn, 1, &sig, &sigLength))
         return CLDB_E_FILE_CORRUPT;
-    
+
     *ppSig = sig;
     *pcbSig = sigLength;
 
@@ -1329,12 +1329,12 @@ STDMETHODIMP InternalMetadataImportRO::GetDefaultValue(
     assert(pDefaultValue);
 
     HRESULT     hr;
-    
+
     mdcursor_t constantTable;
     uint32_t constantTableLength;
     if (!md_create_cursor(m_handle.get(), mdtid_Constant, &constantTable, &constantTableLength))
         return CLDB_E_FILE_CORRUPT;
-    
+
     mdcursor_t constant;
     if (!md_find_row_from_cursor(constantTable, mdtConstant_Parent, tk, &constant))
     {
@@ -1351,7 +1351,7 @@ STDMETHODIMP InternalMetadataImportRO::GetDefaultValue(
     uint32_t valueLength;
     if (!md_get_column_value_as_blob(constant, mdtConstant_Value, 1, &value, &valueLength))
         return CLDB_E_FILE_CORRUPT;
-    
+
     hr = FillMDDefaultValue((BYTE)type, value, valueLength, pDefaultValue);
     return hr;
 }
@@ -1387,10 +1387,10 @@ STDMETHODIMP InternalMetadataImportRO::GetTypeOfInterfaceImpl(
     mdcursor_t c;
     if (!md_token_to_cursor(m_handle.get(), iiImpl, &c))
         return CLDB_E_FILE_CORRUPT;
-    
+
     if (1 != md_get_column_value_as_token(c, mdtInterfaceImpl_Interface, 1, ptkType))
         return CLDB_E_FILE_CORRUPT;
-    
+
     return S_OK;
 }
 
@@ -1595,37 +1595,37 @@ STDMETHODIMP InternalMetadataImportRO::GetPropertyInfoForMethodDef(
     uint32_t count;
     if (!md_create_cursor(m_handle.get(), mdtid_MethodSemantics, &c, &count))
         return CLDB_E_FILE_CORRUPT;
-    
+
     mdcursor_t semantics;
     if (!md_find_row_from_cursor(c, mdtMethodSemantics_Method, RidFromToken(md), &semantics))
         return CLDB_E_FILE_CORRUPT;
-    
+
     mdToken association;
     if (1 != md_get_column_value_as_token(semantics, mdtMethodSemantics_Association, 1, &association))
         return CLDB_E_FILE_CORRUPT;
-    
+
     if (TypeFromToken(association) != mdtProperty)
         return S_FALSE;
-    
+
     if (ppd)
         *ppd = association;
-    
+
     mdcursor_t prop;
     if (!md_token_to_cursor(m_handle.get(), association, &prop))
         return CLDB_E_FILE_CORRUPT;
-    
+
     if (pName)
     {
         if (1 != md_get_column_value_as_utf8(prop, mdtProperty_Name, 1, pName))
             return CLDB_E_FILE_CORRUPT;
     }
-    
+
     if (pSemantic)
     {
         uint32_t flags;
         if (1 != md_get_column_value_as_constant(semantics, mdtMethodSemantics_Semantics, 1, &flags))
             return CLDB_E_FILE_CORRUPT;
-        
+
         *pSemantic = flags;
     }
 
@@ -1712,7 +1712,7 @@ STDMETHODIMP InternalMetadataImportRO::GetClassLayoutInit(
         pLayout->m_ridFieldEnd = fieldCount;
         return S_OK;
     }
-    
+
     pLayout->m_ridFieldCur = RidFromToken(firstField);
     pLayout->m_ridFieldEnd = pLayout->m_ridFieldCur + fieldListCount;
     return S_OK;
@@ -1736,7 +1736,7 @@ STDMETHODIMP InternalMetadataImportRO::GetClassLayoutNext(
         if (!md_token_to_cursor(m_handle.get(), TokenFromRid(pLayout->m_ridFieldCur, (mdtid_FieldPtr << 24)), &field)
             && !md_token_to_cursor(m_handle.get(), TokenFromRid(pLayout->m_ridFieldCur, mdtFieldDef), &field))
             return CLDB_E_FILE_CORRUPT;
-        
+
         if (!md_resolve_indirect_cursor(field, &field))
             return CLDB_E_FILE_CORRUPT;
 
@@ -1746,7 +1746,7 @@ STDMETHODIMP InternalMetadataImportRO::GetClassLayoutNext(
             if (1 != md_get_column_value_as_constant(fieldLayout, mdtFieldLayout_Offset, 1, &offset))
                 return CLDB_E_FILE_CORRUPT;
             *pulOffset = offset;
-            
+
             if (!md_cursor_to_token(field, pfd))
                 return CLDB_E_FILE_CORRUPT;
 
@@ -1768,16 +1768,16 @@ STDMETHODIMP InternalMetadataImportRO::GetFieldMarshal(
     uint32_t count;
     if (!md_create_cursor(m_handle.get(), mdtid_FieldMarshal, &c, &count))
         return CLDB_E_RECORD_NOTFOUND;
-    
+
     mdcursor_t field;
     if (!md_find_row_from_cursor(c, mdtFieldMarshal_Parent, fd, &field))
         return CLDB_E_RECORD_NOTFOUND;
-    
+
     uint8_t const* sig;
     uint32_t sigLength;
     if (1 != md_get_column_value_as_blob(field, mdtFieldMarshal_NativeType, 1, &sig, &sigLength))
         return CLDB_E_FILE_CORRUPT;
-    
+
     *pSigNativeType = sig;
     *pcbNativeType = sigLength;
 
@@ -1796,7 +1796,7 @@ STDMETHODIMP InternalMetadataImportRO::FindProperty(
 
     if (!md_find_row_from_cursor(propertyMap, mdtPropertyMap_Parent, RidFromToken(td), &propertyMap))
         return CLDB_E_FILE_CORRUPT;
-    
+
     mdcursor_t property;
     uint32_t numProperties;
     if (!md_get_column_value_as_range(propertyMap, mdtPropertyMap_PropertyList, &property, &numProperties))
@@ -1811,7 +1811,7 @@ STDMETHODIMP InternalMetadataImportRO::FindProperty(
         LPCSTR name;
         if (1 != md_get_column_value_as_utf8(prop, mdtProperty_Name, 1, &name))
             return CLDB_E_FILE_CORRUPT;
-        
+
         if (strcmp(name, szPropName) == 0)
         {
             if (!md_cursor_to_token(prop, pProp))
@@ -1833,14 +1833,14 @@ STDMETHODIMP InternalMetadataImportRO::GetPropertyProps(
     mdcursor_t c;
     if (!md_token_to_cursor(m_handle.get(), prop, &c))
         return CLDB_E_FILE_CORRUPT;
-    
+
     if (ppvSig != nullptr)
     {
         uint8_t const* sig;
         uint32_t sigLength;
         if (1 != md_get_column_value_as_blob(c, mdtProperty_Type, 1, &sig, &sigLength))
             return CLDB_E_FILE_CORRUPT;
-        
+
         *ppvSig = sig;
         if (pcbSig != nullptr)
             *pcbSig = sigLength;
@@ -1850,13 +1850,13 @@ STDMETHODIMP InternalMetadataImportRO::GetPropertyProps(
     if (szProperty != nullptr
         && 1 != md_get_column_value_as_utf8(c, mdtProperty_Name, 1, szProperty))
         return CLDB_E_FILE_CORRUPT;
-    
+
     if (pdwPropFlags != nullptr)
     {
         uint32_t flags;
         if (1 != md_get_column_value_as_constant(c, mdtProperty_Flags, 1, &flags))
             return CLDB_E_FILE_CORRUPT;
-        
+
         *pdwPropFlags = flags;
     }
 
@@ -1876,12 +1876,12 @@ STDMETHODIMP InternalMetadataImportRO::FindEvent(
 
     if (!md_find_row_from_cursor(eventMap, mdtEventMap_Parent, RidFromToken(td), &eventMap))
         return CLDB_E_FILE_CORRUPT;
-    
+
     mdcursor_t event;
     uint32_t numEvents;
     if (!md_get_column_value_as_range(eventMap, mdtEventMap_EventList, &event, &numEvents))
         return CLDB_E_FILE_CORRUPT;
-    
+
     for (uint32_t i = 0; i < numEvents; i++, md_cursor_next(&event))
     {
         mdcursor_t evt;
@@ -1891,7 +1891,7 @@ STDMETHODIMP InternalMetadataImportRO::FindEvent(
         LPCSTR name;
         if (1 != md_get_column_value_as_utf8(evt, mdtEvent_Name, 1, &name))
             return CLDB_E_FILE_CORRUPT;
-        
+
         if (strcmp(name, szEventName) == 0)
         {
             if (!md_cursor_to_token(evt, pEvent))
@@ -1912,13 +1912,13 @@ STDMETHODIMP InternalMetadataImportRO::GetEventProps(
     mdcursor_t c;
     if (!md_token_to_cursor(m_handle.get(), ev, &c))
         return CLDB_E_FILE_CORRUPT;
-    
+
     if (pdwEventFlags != nullptr)
     {
         uint32_t flags;
         if (1 != md_get_column_value_as_constant(c, mdtEvent_EventFlags, 1, &flags))
             return CLDB_E_FILE_CORRUPT;
-        
+
         *pdwEventFlags = flags;
     }
 
@@ -1941,7 +1941,7 @@ STDMETHODIMP InternalMetadataImportRO::FindAssociate(
     mdcursor_t c;
     if (!md_create_cursor(m_handle.get(), mdtid_MethodSemantics, &c, NULL))
         return CLDB_E_FILE_CORRUPT;
-    
+
     uint32_t numAssociatedMethods;
     md_range_result_t result = md_find_range_from_cursor(c, mdtMethodSemantics_Association, evprop, &c, &numAssociatedMethods);
     assert(result != MD_RANGE_NOT_SUPPORTED);
@@ -1949,7 +1949,7 @@ STDMETHODIMP InternalMetadataImportRO::FindAssociate(
         return CLDB_E_RECORD_NOTFOUND;
 
     bool checkParent = result == MD_RANGE_NOT_SUPPORTED;
-    
+
     for (uint32_t i = 0; i < numAssociatedMethods; i++, md_cursor_next(&c))
     {
         if (checkParent)
@@ -1957,7 +1957,7 @@ STDMETHODIMP InternalMetadataImportRO::FindAssociate(
             mdToken parent;
             if (1 != md_get_column_value_as_token(c, mdtMethodSemantics_Association, 1, &parent))
                 return CLDB_E_FILE_CORRUPT;
-            
+
             if (parent != evprop)
                 continue;
         }
@@ -1965,7 +1965,7 @@ STDMETHODIMP InternalMetadataImportRO::FindAssociate(
         uint32_t semantics;
         if (1 != md_get_column_value_as_constant(c, mdtMethodSemantics_Semantics, 1, &semantics))
             return CLDB_E_FILE_CORRUPT;
-        
+
         if (associate == semantics)
         {
             if (1 != md_get_column_value_as_token(c, mdtMethodSemantics_Method, 1, pmd))
@@ -1993,7 +1993,7 @@ STDMETHODIMP InternalMetadataImportRO::GetAllAssociates(
     uint32_t count = EnumGetCount(phEnum);
     if (count != cAssociateRec)
         return E_INVALIDARG;
-    
+
     HCORENUMImpl* impl = ToHCORENUMImpl(phEnum);
     for (uint32_t i = 0; i < cAssociateRec; i++)
     {
@@ -2002,17 +2002,17 @@ STDMETHODIMP InternalMetadataImportRO::GetAllAssociates(
         impl->ReadTokens(&tok, 1, &numRead);
         if (numRead != 1)
             return E_FAIL;
-        
+
         mdcursor_t c;
         if (!md_token_to_cursor(m_handle.get(), tok, &c))
             return CLDB_E_FILE_CORRUPT;
-        
+
         uint32_t semantics;
         if (1 != md_get_column_value_as_constant(c, mdtMethodSemantics_Semantics, 1, &semantics))
             return CLDB_E_FILE_CORRUPT;
-        
+
         pAssociateRec[i].m_dwSemantics = semantics;
-        
+
         if (1 != md_get_column_value_as_token(c, mdtMethodSemantics_Method, 1, &pAssociateRec[i].m_memberdef))
             return CLDB_E_FILE_CORRUPT;
     }
@@ -2029,18 +2029,18 @@ STDMETHODIMP InternalMetadataImportRO::GetPermissionSetProps(
     mdcursor_t c;
     if (!md_token_to_cursor(m_handle.get(), pm, &c))
         return CLDB_E_FILE_CORRUPT;
-    
+
     uint32_t action;
     if (1 != md_get_column_value_as_constant(c, mdtDeclSecurity_Action, 1, &action))
         return CLDB_E_FILE_CORRUPT;
-    
+
     *pdwAction = action;
 
     uint8_t const* permission;
     uint32_t permissionLength;
     if (1 != md_get_column_value_as_blob(c, mdtDeclSecurity_PermissionSet, 1, &permission, &permissionLength))
         return CLDB_E_FILE_CORRUPT;
-    
+
     *ppvPermission = permission;
     *pcbPermission = permissionLength;
 
@@ -2062,11 +2062,11 @@ STDMETHODIMP InternalMetadataImportRO::GetUserString(
     uint32_t offset;
     if (!md_walk_user_string_heap(m_handle.get(), &cursor, &string, &offset))
         return CLDB_E_INDEX_NOTFOUND;
-    
+
         // Strings in #US should have a trailing single byte.
     if (string.str_bytes % sizeof(WCHAR) == 0)
         return CLDB_E_FILE_CORRUPT;
-    
+
     *pchString = string.str_bytes / sizeof(WCHAR);
     *pwszUserString = (LPCWSTR)string.str;
     if (pbIs80Plus != nullptr)
@@ -2140,13 +2140,13 @@ STDMETHODIMP InternalMetadataImportRO::GetAssemblyProps(
     mdcursor_t c;
     if (!md_token_to_cursor(m_handle.get(), mda, &c))
         return CLDB_E_FILE_CORRUPT;
-    
+
     if (pulHashAlgId != nullptr)
     {
         uint32_t hashAlgId;
         if (1 != md_get_column_value_as_constant(c, mdtAssembly_HashAlgId, 1, &hashAlgId))
             return CLDB_E_FILE_CORRUPT;
-        
+
         *pulHashAlgId = hashAlgId;
     }
 
@@ -2155,7 +2155,7 @@ STDMETHODIMP InternalMetadataImportRO::GetAssemblyProps(
         uint32_t flags;
         if (1 != md_get_column_value_as_constant(c, mdtAssembly_Flags, 1, &flags))
             return CLDB_E_FILE_CORRUPT;
-        
+
         uint8_t const* publicKey;
         uint32_t publicKeyLength;
         if (1 != md_get_column_value_as_blob(c, mdtAssembly_PublicKey, 1, &publicKey, &publicKeyLength))
@@ -2173,7 +2173,7 @@ STDMETHODIMP InternalMetadataImportRO::GetAssemblyProps(
         uint32_t publicKeyLength;
         if (1 != md_get_column_value_as_blob(c, mdtAssembly_PublicKey, 1, &publicKey, &publicKeyLength))
             return CLDB_E_FILE_CORRUPT;
-        
+
         *ppbPublicKey = publicKey;
         *pcbPublicKey = publicKeyLength;
     }
@@ -2181,21 +2181,21 @@ STDMETHODIMP InternalMetadataImportRO::GetAssemblyProps(
     if (pszName != nullptr
         && 1 != md_get_column_value_as_utf8(c, mdtAssembly_Name, 1, pszName))
         return CLDB_E_FILE_CORRUPT;
-    
+
     if (pMetaData)
     {
         uint32_t majorVersion;
         if (1 != md_get_column_value_as_constant(c, mdtAssembly_MajorVersion, 1, &majorVersion))
             return CLDB_E_FILE_CORRUPT;
-        
+
         uint32_t minorVersion;
         if (1 != md_get_column_value_as_constant(c, mdtAssembly_MinorVersion, 1, &minorVersion))
             return CLDB_E_FILE_CORRUPT;
-        
+
         uint32_t buildNumber;
         if (1 != md_get_column_value_as_constant(c, mdtAssembly_BuildNumber, 1, &buildNumber))
             return CLDB_E_FILE_CORRUPT;
-        
+
         uint32_t revisionNumber;
         if (1 != md_get_column_value_as_constant(c, mdtAssembly_RevisionNumber, 1, &revisionNumber))
             return CLDB_E_FILE_CORRUPT;
@@ -2203,7 +2203,7 @@ STDMETHODIMP InternalMetadataImportRO::GetAssemblyProps(
         LPCSTR locale;
         if (1 != md_get_column_value_as_utf8(c, mdtAssembly_Culture, 1, &locale))
             return CLDB_E_FILE_CORRUPT;
-        
+
         pMetaData->usMajorVersion = (USHORT)majorVersion;
         pMetaData->usMinorVersion = (USHORT)minorVersion;
         pMetaData->usBuildNumber = (USHORT)buildNumber;
@@ -2234,7 +2234,7 @@ STDMETHODIMP InternalMetadataImportRO::GetAssemblyRefProps(
         uint32_t flags;
         if (1 != md_get_column_value_as_constant(c, mdtAssemblyRef_Flags, 1, &flags))
             return CLDB_E_FILE_CORRUPT;
-        
+
         *pdwAssemblyRefFlags = flags;
     }
 
@@ -2244,7 +2244,7 @@ STDMETHODIMP InternalMetadataImportRO::GetAssemblyRefProps(
         uint32_t publicKeyOrTokenLength;
         if (1 != md_get_column_value_as_blob(c, mdtAssemblyRef_PublicKeyOrToken, 1, &publicKeyOrToken, &publicKeyOrTokenLength))
             return CLDB_E_FILE_CORRUPT;
-        
+
         *ppbPublicKeyOrToken = publicKeyOrToken;
         *pcbPublicKeyOrToken = publicKeyOrTokenLength;
     }
@@ -2252,21 +2252,21 @@ STDMETHODIMP InternalMetadataImportRO::GetAssemblyRefProps(
     if (pszName != nullptr
         && 1 != md_get_column_value_as_utf8(c, mdtAssemblyRef_Name, 1, pszName))
         return CLDB_E_FILE_CORRUPT;
-    
+
     if (pMetaData)
     {
         uint32_t majorVersion;
         if (1 != md_get_column_value_as_constant(c, mdtAssemblyRef_MajorVersion, 1, &majorVersion))
             return CLDB_E_FILE_CORRUPT;
-        
+
         uint32_t minorVersion;
         if (1 != md_get_column_value_as_constant(c, mdtAssemblyRef_MinorVersion, 1, &minorVersion))
             return CLDB_E_FILE_CORRUPT;
-        
+
         uint32_t buildNumber;
         if (1 != md_get_column_value_as_constant(c, mdtAssemblyRef_BuildNumber, 1, &buildNumber))
             return CLDB_E_FILE_CORRUPT;
-        
+
         uint32_t revisionNumber;
         if (1 != md_get_column_value_as_constant(c, mdtAssemblyRef_RevisionNumber, 1, &revisionNumber))
             return CLDB_E_FILE_CORRUPT;
@@ -2274,7 +2274,7 @@ STDMETHODIMP InternalMetadataImportRO::GetAssemblyRefProps(
         LPCSTR locale;
         if (1 != md_get_column_value_as_utf8(c, mdtAssemblyRef_Culture, 1, &locale))
             return CLDB_E_FILE_CORRUPT;
-        
+
         pMetaData->usMajorVersion = (USHORT)majorVersion;
         pMetaData->usMinorVersion = (USHORT)minorVersion;
         pMetaData->usBuildNumber = (USHORT)buildNumber;
@@ -2288,7 +2288,7 @@ STDMETHODIMP InternalMetadataImportRO::GetAssemblyRefProps(
         uint32_t hashValueLength;
         if (1 != md_get_column_value_as_blob(c, mdtAssemblyRef_HashValue, 1, &hashValue, &hashValueLength))
             return CLDB_E_FILE_CORRUPT;
-        
+
         *ppbHashValue = hashValue;
         *pcbHashValue = hashValueLength;
     }
@@ -2313,21 +2313,21 @@ STDMETHODIMP InternalMetadataImportRO::GetFileProps(
         uint32_t flags;
         if (1 != md_get_column_value_as_constant(c, mdtFile_Flags, 1, &flags))
             return CLDB_E_FILE_CORRUPT;
-        
+
         *pdwFileFlags = flags;
     }
 
     if (pszName != nullptr
         && 1 != md_get_column_value_as_utf8(c, mdtFile_Name, 1, pszName))
         return CLDB_E_FILE_CORRUPT;
-    
+
     if (ppbHashValue != nullptr)
     {
         uint8_t const* hashValue;
         uint32_t hashValueLength;
         if (1 != md_get_column_value_as_blob(c, mdtFile_HashValue, 1, &hashValue, &hashValueLength))
             return CLDB_E_FILE_CORRUPT;
-        
+
         *ppbHashValue = hashValue;
         *pcbHashValue = hashValueLength;
     }
@@ -2347,20 +2347,20 @@ STDMETHODIMP InternalMetadataImportRO::GetExportedTypeProps(
     mdcursor_t c;
     if (!md_token_to_cursor(m_handle.get(), mdct, &c))
         return CLDB_E_FILE_CORRUPT;
-    
+
     if (pdwExportedTypeFlags != nullptr)
     {
         uint32_t flags;
         if (1 != md_get_column_value_as_constant(c, mdtExportedType_Flags, 1, &flags))
             return CLDB_E_FILE_CORRUPT;
-        
+
         *pdwExportedTypeFlags = flags;
     }
 
     if (pszNamespace != nullptr
         && 1 != md_get_column_value_as_utf8(c, mdtExportedType_TypeNamespace, 1, pszNamespace))
         return CLDB_E_FILE_CORRUPT;
-    
+
     if (pszName != nullptr
         && 1 != md_get_column_value_as_utf8(c, mdtExportedType_TypeName, 1, pszName))
         return CLDB_E_FILE_CORRUPT;
@@ -2374,7 +2374,7 @@ STDMETHODIMP InternalMetadataImportRO::GetExportedTypeProps(
         uint32_t typeDefId;
         if (1 != md_get_column_value_as_constant(c, mdtExportedType_TypeDefId, 1, &typeDefId))
             return CLDB_E_FILE_CORRUPT;
-        
+
         *ptkTypeDef = typeDefId;
     }
 
@@ -2392,20 +2392,20 @@ STDMETHODIMP InternalMetadataImportRO::GetManifestResourceProps(
     mdcursor_t c;
     if (!md_token_to_cursor(m_handle.get(), mdmr, &c))
         return CLDB_E_FILE_CORRUPT;
-    
+
     if (pdwResourceFlags != nullptr)
     {
         uint32_t flags;
         if (1 != md_get_column_value_as_constant(c, mdtManifestResource_Flags, 1, &flags))
             return CLDB_E_FILE_CORRUPT;
-        
+
         *pdwResourceFlags = flags;
     }
 
     if (pszName != nullptr
         && 1 != md_get_column_value_as_utf8(c, mdtManifestResource_Name, 1, pszName))
         return CLDB_E_FILE_CORRUPT;
-    
+
     if (ptkImplementation != nullptr
         && 1 != md_get_column_value_as_token(c, mdtManifestResource_Implementation, 1, ptkImplementation))
         return CLDB_E_FILE_CORRUPT;
@@ -2415,7 +2415,7 @@ STDMETHODIMP InternalMetadataImportRO::GetManifestResourceProps(
         uint32_t offset;
         if (1 != md_get_column_value_as_constant(c, mdtManifestResource_Offset, 1, &offset))
             return CLDB_E_FILE_CORRUPT;
-        
+
         *pdwOffset = offset;
     }
 
@@ -2643,7 +2643,7 @@ STDMETHODIMP InternalMetadataImportRO::GetCustomAttributeByName(
             mdToken parent;
             if (1 != md_get_column_value_as_token(custAttrCurr, mdtCustomAttribute_Parent, 1, &parent))
                 return CLDB_E_FILE_CORRUPT;
-            
+
             if (parent != tkObj)
                 continue;
         }
@@ -2749,7 +2749,7 @@ STDMETHODIMP InternalMetadataImportRO::TranslateSigWithScope(
     ULONG       cbSigBlob,
     IMetaDataAssemblyEmit *pAssemEmit,
     IMetaDataEmit *emit,
-    BYTE *pqkSigEmit,
+    CQuickBytes *pqkSigEmit,
     ULONG       *pcbSig)
 {
     UNREFERENCED_PARAMETER(pAssemImport);
@@ -2903,7 +2903,7 @@ STDMETHODIMP InternalMetadataImportRO::GetFieldOffset(
     mdcursor_t field;
     if (!md_token_to_cursor(m_handle.get(), fd, &field))
         return CLDB_E_FILE_CORRUPT;
-    
+
     if (!md_find_row_from_cursor(fieldLayout, mdtFieldLayout_Field, RidFromToken(fd), &fieldLayout))
         return S_FALSE;
 
@@ -2933,7 +2933,7 @@ STDMETHODIMP InternalMetadataImportRO::GetMethodSpecProps(
 
     if (1 != md_get_column_value_as_blob(c, mdtMethodSpec_Instantiation, 1, &sig, &sigLength))
         return CLDB_E_FILE_CORRUPT;
-    
+
     *ppvSigBlob = sig;
     *pcbSigBlob = sigLength;
 
@@ -3002,7 +3002,7 @@ STDMETHODIMP InternalMetadataImportRO::GetGenericParamProps(
     if (szName != nullptr
         && 1 != md_get_column_value_as_utf8(c, mdtGenericParam_Name, 1, szName))
         return CLDB_E_FILE_CORRUPT;
-    
+
     return S_OK;
 }
 STDMETHODIMP InternalMetadataImportRO::GetGenericParamConstraintProps(
@@ -3018,7 +3018,7 @@ STDMETHODIMP InternalMetadataImportRO::GetGenericParamConstraintProps(
     if (ptGenericParam != nullptr
         && 1 != md_get_column_value_as_token(c, mdtGenericParamConstraint_Owner, 1, ptGenericParam))
         return CLDB_E_FILE_CORRUPT;
-    
+
     if (ptkConstraintType != nullptr
         && 1 != md_get_column_value_as_token(c, mdtGenericParamConstraint_Constraint, 1, ptkConstraintType))
         return CLDB_E_FILE_CORRUPT;
@@ -3034,7 +3034,7 @@ STDMETHODIMP InternalMetadataImportRO::GetVersionString(
     char const* versionString = md_get_version_string(m_handle.get());
     if (versionString == nullptr)
         versionString = "";
-    
+
     *pVer = versionString;
     return S_OK;
 }
@@ -3071,15 +3071,15 @@ STDMETHODIMP InternalMetadataImportRO::GetNameOfCustomAttribute(
     mdcursor_t c;
     if (!md_token_to_cursor(m_handle.get(), mdAttribute, &c))
         return CLDB_E_FILE_CORRUPT;
-    
+
     mdcursor_t attrConstructor;
     if (1 != md_get_column_value_as_cursor(c, mdtCustomAttribute_Type, 1, &attrConstructor))
         return CLDB_E_FILE_CORRUPT;
-    
+
     mdToken ctorToken;
     if (!md_cursor_to_token(attrConstructor, &ctorToken))
         return CLDB_E_FILE_CORRUPT;
-    
+
     mdcursor_t type;
     switch (TypeFromToken(ctorToken))
     {
@@ -3094,7 +3094,7 @@ STDMETHODIMP InternalMetadataImportRO::GetNameOfCustomAttribute(
         default:
             return COR_E_BADIMAGEFORMAT;
     }
-    
+
     return ResolveTypeDefRefSpecToName(type, pszNamespace, pszName);
 }
 STDMETHODIMP InternalMetadataImportRO::SetOptimizeAccessForSpeed(

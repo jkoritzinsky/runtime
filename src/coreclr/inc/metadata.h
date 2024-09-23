@@ -13,7 +13,7 @@
 #ifndef _METADATA_H_
 #define _METADATA_H_
 
-#include "ex.h"
+#include "cor.h"
 
 class IMetaModelCommon;
 class MDInternalRW;
@@ -21,8 +21,6 @@ class UTSemReadWrite;
 
 inline int IsGlobalMethodParentTk(mdTypeDef td)
 {
-    LIMITED_METHOD_CONTRACT;
-
     return (td == mdTypeDefNil || td == mdTokenNil);
 }
 
@@ -67,11 +65,6 @@ enum CorClassIfaceAttr
 #define HANDLE_UNCOMPRESSED(func) (E_FAIL)
 #define HANDLE_UNCOMPRESSED_BOOL(func) (false)
 
-class TOKENLIST : public CDynArray<mdToken>
-{
-};
-
-
 typedef enum tagEnumType
 {
     MDSimpleEnum        = 0x0,                  // simple enumerator that doesn't allocate memory
@@ -108,7 +101,7 @@ struct HENUMInternal
     char m_buffer[48]; // Pad to the size of the DNMD enum implementation.
 
     // TOKENLIST    daTKList;               // dynamic arrays of token list
-    HENUMInternal() : m_EnumType(MDSimpleEnum) { LIMITED_METHOD_DAC_CONTRACT; }
+    HENUMInternal() : m_EnumType(MDSimpleEnum) {}
 
     // in-place initialization
     static void InitDynamicArrayEnum(
@@ -137,7 +130,6 @@ struct HENUMInternal
         pEnum->u.m_ulCur = 0;
 
         // TODO: remove this when we remove m_cursor from the HENUMInternal structure
-        _ASSERTE(IS_ALIGNED(pEnum->m_cursor, sizeof(DWORD)));
         _ASSERTE((sizeof(HENUMInternal) - offsetof(HENUMInternal, m_cursor)) >= (8 * sizeof(DWORD)));
 
         DWORD* pBuffer = (DWORD*)pEnum->m_cursor;
@@ -377,7 +369,7 @@ DECLARE_INTERFACE_(IMDInternalImport, IUnknown)
         HENUMInternal *phEnum) PURE;        // [IN] the enumerator to be reset
 
     STDMETHOD_(void, EnumClose)(
-        HENUMInternal *phEnum);        // [IN] the enumerator to be closed
+        HENUMInternal *phEnum) PURE;        // [IN] the enumerator to be closed
 
     //*****************************************
     // Enumerator helpers for CustomAttribute
@@ -806,7 +798,7 @@ DECLARE_INTERFACE_(IMDInternalImport, IUnknown)
     STDMETHOD(ConvertTextSigToComSig)(      // Return hresult.
         BOOL        fCreateTrIfNotFound,    // [IN] create typeref if not found
         LPCSTR      pSignature,             // [IN] class file format signature
-        CQuickBytes *pqbNewSig,             // [OUT] place holder for CLR signature
+        BYTE        *pqbNewSig,             // [OUT] place holder for CLR signature
         ULONG       *pcbCount) PURE;        // [OUT] the result size of signature
 
     //*****************************************************************************

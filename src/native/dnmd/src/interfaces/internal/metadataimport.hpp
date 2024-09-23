@@ -6,9 +6,13 @@
 #include <cstring>
 #include <atomic>
 
+typedef char* LPUTF8;
+typedef char const* LPCUTF8;
+class CQuickBytes;
+class IMetaModelCommon;
+
 #include <internal/dnmd_platform.hpp>
 #include <metadata.h>
-#include <metamodel.h>
 #include "tearoffbase.hpp"
 #include "dnmdowner.hpp"
 
@@ -59,7 +63,7 @@ public: // IMDInternalImport
         mdTypeDef       td,                 // [IN] TypeDef over which to scope the enumeration.
         HENUMInternal   *phEnumBody,        // [OUT] buffer to fill for enumerator data for MethodBody tokens.
         HENUMInternal   *phEnumDecl) override;  // [OUT] buffer to fill for enumerator data for MethodDecl tokens.
-   
+
     __checkReturn
     STDMETHOD_(ULONG, EnumMethodImplGetCount)(
         HENUMInternal   *phEnumBody,        // [IN] MethodBody enumerator.
@@ -652,7 +656,7 @@ public: // IMDInternalImport
         ULONG       cbSigBlob,              // [IN] count of bytes of signature
         IMetaDataAssemblyEmit *pAssemEmit,  // [IN] assembly emit scope.
         IMetaDataEmit *emit,                // [IN] emit interface
-        BYTE *pqkSigEmit,            // [OUT] buffer to hold translated signature
+        CQuickBytes *pqkSigEmit,            // [OUT] buffer to hold translated signature
         ULONG       *pcbSig) override;          // [OUT] count of bytes in the translated signature
 
     STDMETHOD_(IMetaModelCommon*, GetMetaModelCommon)(  // Return MetaModelCommon interface.

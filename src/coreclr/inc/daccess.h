@@ -575,7 +575,9 @@
 #include <type_traits>
 #include "crosscomp.h"
 
+#ifdef DACCESS_COMPILE
 #include <dn-u16.h>
+#endif
 
 // Information stored in the DAC table of interest to the DAC implementation
 // Note that this information is shared between all instantiations of ClrDataAccess, so initialize

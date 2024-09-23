@@ -3053,7 +3053,7 @@ __checkReturn
 HRESULT MDInternalRO::ConvertTextSigToComSig(// Return hresult.
     BOOL        fCreateTrIfNotFound,    // create typeref if not found or not
     LPCSTR      pSignature,             // class file format signature
-    CQuickBytes *pqbNewSig,             // [OUT] place holder for COM+ signature
+    BYTE        *pqbNewSig,             // [OUT] place holder for COM+ signature
     ULONG       *pcbCount)              // [OUT] the result size of signature
 {
     return E_NOTIMPL;

@@ -25,6 +25,8 @@ set(HEADERS
   ./internal/metadataimport.hpp
 )
 
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
+
 if(NOT MSVC)
   # Adds global GUID constants.
   list(APPEND SOURCES ./iids.cpp ./options.cpp)

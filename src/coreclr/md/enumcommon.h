@@ -2,6 +2,10 @@
 #define MD_ENUMCOMMON_H
 #include "metadata.h"
 
+class TOKENLIST : public CDynArray<mdToken>
+{
+};
+
 class HENUMInternalManipulator
 {
 public:

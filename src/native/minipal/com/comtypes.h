@@ -53,7 +53,7 @@
     typedef int32_t SCODE;
     typedef int32_t DATE;
 
-#ifdef DNCP_WINDOWS
+#ifdef HOST_WINDOWS
     typedef wchar_t WCHAR;
 #elif defined(__cplusplus)
     typedef char16_t WCHAR;
