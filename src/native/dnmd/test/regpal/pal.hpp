@@ -18,16 +18,22 @@ namespace pal
 {
 #ifdef BUILD_WINDOWS
     using path = std::wstring;
-    std::wostream& cout();
 #else
     using path = std::string;
-    std::ostream& cout();
 #endif
     path GetCoreClrPath();
     HRESULT GetBaselineMetadataDispenser(IMetaDataDispenser** dispenser);
     bool ReadFile(path path, malloc_span<uint8_t>& b);
 
     bool FileExists(path path);
+
+#ifdef BUILD_WINDOWS
+    std::wostream& cout();
+    std::wostream& cerr();
+#else
+    std::ostream& cout();
+    std::ostream& cerr();
+#endif
 }
 
 #endif // !_TEST_REGPAL_PAL_H_

@@ -5,7 +5,9 @@
 #include <unordered_map>
 
 #ifdef BUILD_WINDOWS
+#include <wil/stl.h>
 #include <wil/registry.h>
+#include <wil/win32_helpers.h>
 #else
 #define THROW_IF_FAILED(x) do { HRESULT hr = (x); if (FAILED(hr)) { throw std::runtime_error("Failed HR when running '" #x "'"); } } while (false)
 #include <dirent.h>
@@ -20,7 +22,7 @@
 namespace
 {
     pal::path baselinePath;
-    std::string regressionAssemblyPath;
+    pal::path regressionAssemblyPath;
 
     template<typename T>
     struct OnExit
@@ -71,7 +73,7 @@ namespace
 
         mdTypeRef systemObject;
         THROW_IF_FAILED(image->DefineTypeRefByName(systemRuntimeRef, W("System.Object"), &systemObject));
-        
+
         // Define two types so we can define out-of-order rows.
         mdTypeDef type1;
         THROW_IF_FAILED(image->DefineTypeDef(W("Type1"), tdSealed, systemObject, nullptr, &type1));
@@ -95,7 +97,7 @@ namespace
 
         mdMethodDef method2;
         THROW_IF_FAILED(image->DefineMethod(type2, W("Method2"), 0, signature.data(), (ULONG)signature.size(), 0, 0, &method2));
-        
+
         // Define a method on the first type after we've already defined a method on the second type.
         mdMethodDef methodOutOfOrder;
         THROW_IF_FAILED(image->DefineMethod(type1, W("MethodOutOfOrder"), 0, signature.data(), (ULONG)signature.size(), 0, 0, &methodOutOfOrder));
@@ -114,7 +116,7 @@ namespace
 
         std::array<uint8_t, 2> propertySignature = { (uint8_t)IMAGE_CEE_CS_CALLCONV_PROPERTY, (uint8_t)ELEMENT_TYPE_I4 };
         std::array<uint8_t, 3> getterSignature = { (uint8_t)IMAGE_CEE_CS_CALLCONV_DEFAULT, (uint8_t)0x00, (uint8_t)ELEMENT_TYPE_I4 };
-        
+
         mdMethodDef getter1;
         THROW_IF_FAILED(image->DefineMethod(type1, W("get_Property1"), 0, getterSignature.data(), (ULONG)getterSignature.size(), 0, 0, &getter1));
 
@@ -133,7 +135,7 @@ namespace
 
         mdTypeRef eventHandlerRef;
         THROW_IF_FAILED(image->DefineTypeRefByName(systemRuntimeRef, W("System.EventHandler"), &eventHandlerRef));
-        
+
         mdEvent event1;
         THROW_IF_FAILED(image->DefineEvent(type1, W("Event1"), 0, eventHandlerRef, mdMethodDefNil, mdMethodDefNil, mdMethodDefNil, nullptr, &event1));
 
@@ -165,16 +167,16 @@ namespace
 
 std::vector<MetadataFile> MetadataFilesInDirectory(pal::path directory)
 {
-    std::cout << "Discovering metadata files in directory: " << directory << std::endl;
+    pal::cout() << X("Discovering metadata files in directory: ") << directory << std::endl;
     std::vector<MetadataFile> scenarios;
 
     if (!pal::FileExists(directory))
     {
-        std::cout << "Directory '" << directory << "' does not exist" << std::endl;
+        pal::cout() << X("Directory '") << directory << X("' does not exist") << std::endl;
         return scenarios;
     }
 #ifdef BUILD_WINDOWS
-    pal::string pattern = directory + "\\*.dll";
+    pal::path pattern = directory + X("\\*.dll");
     WIN32_FIND_DATAW findData;
     auto findHandle = FindFirstFileW(pattern.c_str(), &findData);
     if (findHandle == INVALID_HANDLE_VALUE)
@@ -251,12 +253,12 @@ std::vector<MetadataFile> CoreLibFiles()
     std::cout << "Discovering CoreLib files" << std::endl;
     std::vector<MetadataFile> scenarios;
 
-    scenarios.emplace_back(MetadataFile::Kind::OnDisk, (GetBaselineDirectory() + "/System.Private.CoreLib.dll"), "System_Private_CoreLib");
+    scenarios.emplace_back(MetadataFile::Kind::OnDisk, (GetBaselineDirectory() + X("/System.Private.CoreLib.dll")), "System_Private_CoreLib");
 
 #ifdef BUILD_WINDOWS
-    scenarios.emplace_back(MetadataFile::Kind::OnDisk, FindFrameworkInstall("v4.0.30319").append("\\mscorlib.dll"), "4_0_mscorlib");
+    scenarios.emplace_back(MetadataFile::Kind::OnDisk, FindFrameworkInstall(X("v4.0.30319")).append(X("\\mscorlib.dll")), "4_0_mscorlib");
 
-    auto fx2mscorlib = FindFrameworkInstall("v2.0.50727").append("\\mscorlib.dll");
+    auto fx2mscorlib = FindFrameworkInstall(X("v2.0.50727")).append(X("\\mscorlib.dll"));
     if (pal::FileExists(fx2mscorlib))
     {
         scenarios.emplace_back(MetadataFile::Kind::OnDisk, fx2mscorlib, "2_0_mscorlib");
@@ -292,14 +294,30 @@ span<uint8_t> GetMetadataForFile(MetadataFile file)
     malloc_span<uint8_t> b;
     if (file.kind == MetadataFile::Kind::OnDisk)
     {
+        pal::path pathOrKey;
+
+#ifdef BUILD_WINDOWS
+            wil::AdaptFixedSizeToAllocatedResult(pathOrKey, [&](LPWSTR value, size_t valueLength, size_t* valueLengthNeededWithNul)
+            {
+                *valueLengthNeededWithNul = ::MultiByteToWideChar(CP_UTF8, 0, file.pathOrKey.c_str(), (int)file.pathOrKey.size(), value, (int)valueLength) + 1;
+                if (*valueLengthNeededWithNul == 0)
+                {
+                    return HRESULT_FROM_WIN32(GetLastError());
+                }
+                return S_OK;
+            });
+#else
+            pathOrKey = file.pathOrKey;
+#endif
+
         pal::path path;
-        if (file.pathOrKey[0] == X('/'))
+        if (pathOrKey[0] == X('/'))
         {
-            path = file.pathOrKey;
+            path = pathOrKey;
         }
         else
         {
-            path = baselinePath.substr(0, baselinePath.find_last_of('/')) + "/" + file.pathOrKey;
+            path = baselinePath.substr(0, baselinePath.find_last_of('/')) + X("/") + pathOrKey;
         }
         b = ReadMetadataFromFile(path);
     }
@@ -329,8 +347,8 @@ std::string PrintName(testing::TestParamInfo<MetadataFile> info)
     std::string name;
     if (info.param.kind == MetadataFile::Kind::OnDisk)
     {
-        name = pal::path(info.param.pathOrKey).substr(0, info.param.pathOrKey.find_last_of(X('.')));
-        std::replace(name.begin(), name.end(), X('.'), X('_'));
+        name = info.param.pathOrKey.substr(0, info.param.pathOrKey.find_last_of('.'));
+        std::replace(name.begin(), name.end(), '.', '_');
     }
     else
     {
@@ -349,7 +367,7 @@ void SetBaselineModulePath(pal::path path)
     baselinePath = std::move(path);
 }
 
-void SetRegressionAssemblyPath(std::string path)
+void SetRegressionAssemblyPath(pal::path path)
 {
     regressionAssemblyPath = path;
 }
@@ -359,9 +377,9 @@ malloc_span<uint8_t> GetRegressionAssemblyMetadata()
     return ReadMetadataFromFile(regressionAssemblyPath);
 }
 
-std::string FindFrameworkInstall(std::string version)
+pal::path FindFrameworkInstall(pal::path version)
 {
-    std::cout << "Discovering framework install for version: " << version << std::endl;
+    pal::cout() << X("Discovering framework install for version: ") << version << std::endl;
 #ifdef BUILD_WINDOWS
     auto key = wil::reg::create_unique_key(HKEY_LOCAL_MACHINE, L"SOFTWARE\\Microsoft\\.NETFramework");
     pal::path installPath{ wil::reg::get_value_string(key.get(), L"InstallRoot") };

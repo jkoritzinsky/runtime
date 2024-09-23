@@ -189,10 +189,10 @@ int main(int argc, char** argv)
     }
 
     pal::path dataImagePath = std::move(coreClrPath);
-    dataImagePath.substr(0, dataImagePath.find_last_of(X('/'))) + X("/") + X("System.Private.CoreLib.dll");
+    dataImagePath = dataImagePath.substr(0, dataImagePath.find_last_of(X('/'))) + X("/") + X("System.Private.CoreLib.dll");
 
-    std::cerr << "Loading System.Private.CoreLib from: " << dataImagePath << std::endl;
-    
+    pal::cerr() << X("Loading System.Private.CoreLib from: ") << dataImagePath << std::endl;
+
     malloc_span<uint8_t> dataImage;
     if (!pal::ReadFile(dataImagePath, dataImage))
     {

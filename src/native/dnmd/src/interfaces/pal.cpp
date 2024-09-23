@@ -2,6 +2,7 @@
 #include <cstring>
 #include <cassert>
 #include <functional>
+#include <limits>
 #include <minipal/utf8.h>
 
 #if defined(BUILD_WINDOWS)
@@ -32,11 +33,16 @@ HRESULT pal::ConvertUtf16ToUtf8(
 
     size_t requiredBufferLength = minipal_get_length_utf16_to_utf8((CHAR16_T*)str, length, 0);
 
+    if (requiredBufferLength > std::numeric_limits<int>::max())
+    {
+        return E_FAIL;
+    }
+
     if (requiredBufferLength > bufferLength)
     {
         if (writtenOrNeeded != nullptr)
         {
-            *writtenOrNeeded = requiredBufferLength;
+            *writtenOrNeeded = (uint32_t)requiredBufferLength;
         }
         if (bufferLength == 0)
         {
@@ -48,7 +54,7 @@ HRESULT pal::ConvertUtf16ToUtf8(
     size_t written = minipal_convert_utf16_to_utf8((CHAR16_T*)str, length, buffer, bufferLength, 0);
     if (written >= 0)
     {
-        *writtenOrNeeded = written;
+        *writtenOrNeeded = (uint32_t)written;
         return S_OK;
     }
     return E_FAIL;
@@ -65,11 +71,16 @@ HRESULT pal::ConvertUtf8ToUtf16(
 
     size_t requiredBufferLength = minipal_get_length_utf8_to_utf16(str, length, 0);
 
+    if (requiredBufferLength > std::numeric_limits<int>::max())
+    {
+        return E_FAIL;
+    }
+
     if (requiredBufferLength > bufferLength)
     {
         if (writtenOrNeeded != nullptr)
         {
-            *writtenOrNeeded = requiredBufferLength;
+            *writtenOrNeeded = (uint32_t)requiredBufferLength;
         }
         if (bufferLength == 0)
         {
@@ -81,7 +92,7 @@ HRESULT pal::ConvertUtf8ToUtf16(
     size_t written = minipal_convert_utf8_to_utf16(str, length, (CHAR16_T*)buffer, bufferLength, 0);
     if (written >= 0)
     {
-        *writtenOrNeeded = written;
+        *writtenOrNeeded = (uint32_t)written;
         return S_OK;
     }
     return E_FAIL;
