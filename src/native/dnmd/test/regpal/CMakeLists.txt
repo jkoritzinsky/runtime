@@ -8,6 +8,8 @@ target_link_libraries(regpal PUBLIC nethost minipal_com)
 
 if (NOT WIN32)
     target_link_libraries(regpal PUBLIC minipal_comhdrs)
+else()
+    target_link_libraries(regpal PUBLIC WIL Shlwapi)
 endif()
 
 if (NOT WIN32 AND NOT APPLE)

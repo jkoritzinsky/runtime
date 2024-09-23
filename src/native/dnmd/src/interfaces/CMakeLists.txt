@@ -63,11 +63,13 @@ target_compile_definitions(dnmd_interfaces PRIVATE DNMD_BUILD_SHARED COM_NO_WIND
 
 target_link_libraries(dnmd_interfaces_static
   PUBLIC
+  minipal
   minipal_com
   dnmd::dnmd)
 
 target_link_libraries(dnmd_interfaces
   PRIVATE
+  minipal
   minipal_com
   dnmd::dnmd)
 

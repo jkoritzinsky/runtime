@@ -1773,7 +1773,7 @@ TEST_P(MetadataImportTest, ImportAPIs)
     // Load metadata
     minipal::com_ptr<IMetaDataImport2> baselineImport;
     ASSERT_HRESULT_SUCCEEDED(CreateImport(TestBaseline::Metadata, data, dataLen, &baselineImport));
-    
+
     minipal::com_ptr<IMetaDataDispenser> dispenser;
     ASSERT_HRESULT_SUCCEEDED(GetDispenser(IID_IMetaDataDispenser, (void**)&dispenser));
     minipal::com_ptr<IMetaDataImport2> currentImport;
@@ -1991,8 +1991,8 @@ TEST_P(MetadataImportTest, ImportAPIs)
 
 INSTANTIATE_TEST_SUITE_P(MetaDataImportTestCore, MetadataImportTest, testing::ValuesIn(MetadataFilesInDirectory(GetBaselineDirectory())), PrintName);
 
-INSTANTIATE_TEST_SUITE_P(MetaDataImportTestFx4_0, MetadataImportTest, testing::ValuesIn(MetadataFilesInDirectory(FindFrameworkInstall("v4.0.30319"))), PrintName);
-INSTANTIATE_TEST_SUITE_P(MetaDataImportTestFx2_0, MetadataImportTest, testing::ValuesIn(MetadataFilesInDirectory(FindFrameworkInstall("v2.0.50727"))), PrintName);
+INSTANTIATE_TEST_SUITE_P(MetaDataImportTestFx4_0, MetadataImportTest, testing::ValuesIn(MetadataFilesInDirectory(FindFrameworkInstall(X("v4.0.30319")))), PrintName);
+INSTANTIATE_TEST_SUITE_P(MetaDataImportTestFx2_0, MetadataImportTest, testing::ValuesIn(MetadataFilesInDirectory(FindFrameworkInstall(X("v2.0.50727")))), PrintName);
 
 INSTANTIATE_TEST_SUITE_P(MetaDataImportTest_IndirectionTables, MetadataImportTest, testing::Values(MetadataFile{ MetadataFile::Kind::Generated, IndirectionTablesKey }), PrintName);
 

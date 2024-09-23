@@ -6,7 +6,7 @@ setlocal
 set "__sourceRootDir=%~dp0"
 :: remove trailing slash
 if %__sourceRootDir:~-1%==\ set "__sourceRootDir=%__sourceRootDir:~0,-1%"
-set "__repoRoot=%__sourceRootDir%\..\..\..\.."
+set "__repoRoot=%__sourceRootDir%\..\..\.."
 :: normalize
 for %%i in ("%__repoRoot%") do set "__repoRoot=%%~fi"
 set "__engNativeDir=%__repoRoot%\eng\native"
@@ -66,6 +66,10 @@ if %__Ninja% == 0 (
     set "__IntermediatesDir=%__IntermediatesDir%\ide"
 )
 set "__IntermediatesDir=%__IntermediatesDir:\=/%"
+
+if %__CMakeBinDir% == "" (
+    set "__CMakeBinDir=%__artifactsDir%\bin\dnmd\%__outConfig%"
+)
 
 :: Check that the intermediate directory exists so we can place our cmake build tree there
 if not exist "%__IntermediatesDir%" md "%__IntermediatesDir%"

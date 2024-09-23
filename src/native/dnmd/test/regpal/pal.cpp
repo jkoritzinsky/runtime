@@ -6,6 +6,8 @@
 
 #ifdef BUILD_WINDOWS
 #include <windows.h>
+#include <wil/resource.h>
+#include <shlwapi.h>
 #else
 #include <dlfcn.h>
 #include <unistd.h>
@@ -20,36 +22,56 @@
 #define W_StdString(str) std::string{str}
 #endif
 
+#ifdef BUILD_WINDOWS
+std::wostream& pal::cout()
+{
+    return std::wcout;
+}
+std::wostream& pal::cerr()
+{
+    return std::wcerr;
+}
+#else
+std::ostream& pal::cout()
+{
+    return std::cout;
+}
+std::ostream& pal::cerr()
+{
+    return std::cerr;
+}
+#endif
+
 namespace
 {
     void* LoadModule(pal::path path)
     {
 #ifdef BUILD_WINDOWS
-        return ::LoadLibraryW(path.c_str());  
-#else  
-        return ::dlopen(path.c_str(), RTLD_LAZY);  
+        return ::LoadLibraryW(path.c_str());
+#else
+        return ::dlopen(path.c_str(), RTLD_LAZY);
 #endif
     }
 
     void* GetSymbol(void* module, char const* name)
     {
 #ifdef BUILD_WINDOWS
-        return ::GetProcAddress((HMODULE)module, name);  
-#else  
-        return ::dlsym(module, name); 
+        return ::GetProcAddress((HMODULE)module, name);
+#else
+        return ::dlsym(module, name);
 #endif
     }
 
     using MetaDataGetDispenser = HRESULT(STDMETHODCALLTYPE*)(REFCLSID, REFIID, LPVOID*);
 
     using CoreCLRInitialize = int(STDMETHODCALLTYPE*)(
-            char const* exePath,  
-            char const* appDomainFriendlyName,  
-            int propertyCount,  
-            char const** propertyKeys,  
-            char const** propertyValues,  
-            void** hostHandle,  
-            uint32_t* domainId);  
+            char const* exePath,
+            char const* appDomainFriendlyName,
+            int propertyCount,
+            char const** propertyKeys,
+            char const** propertyValues,
+            void** hostHandle,
+            uint32_t* domainId);
 
     MetaDataGetDispenser LoadGetDispenser()
     {
@@ -63,7 +85,7 @@ namespace
         auto mod = LoadModule(coreClrPath);
         if (mod == nullptr)
         {
-            std::cerr << "Failed to load metadata baseline module: " << coreClrPath << std::endl;
+            pal::cerr() << X("Failed to load metadata baseline module: ") << coreClrPath << std::endl;
             return nullptr;
         }
 #ifndef BUILD_WINDOWS
@@ -72,11 +94,11 @@ namespace
         auto init = (CoreCLRInitialize)GetSymbol(mod, "coreclr_initialize");
         if (init == nullptr)
         {
-            std::cerr << "Failed to find coreclr_initialize in module: " << coreClrPath << std::endl;
+            pal::cerr() << X("Failed to find coreclr_initialize in module: ") << coreClrPath << std::endl;
             return nullptr;
         }
 
-        char const* propertyKeys[] = { "TRUSTED_PLATFORM_ASSEMBLIES" };  
+        char const* propertyKeys[] = { "TRUSTED_PLATFORM_ASSEMBLIES" };
         char const* propertyValues[] = { coreClrPath.c_str() };
         init("regpal", "regpal", 1, propertyKeys, propertyValues, nullptr, nullptr);
 #endif
@@ -84,7 +106,7 @@ namespace
         auto getDispenser = (MetaDataGetDispenser)GetSymbol(mod, "MetaDataGetDispenser");
         if (getDispenser == nullptr)
         {
-            std::cerr << "Failed to find MetaDataGetDispenser in module: " << coreClrPath << std::endl;
+            pal::cerr() << X("Failed to find MetaDataGetDispenser in module: ") << coreClrPath << std::endl;
             return nullptr;
         }
 
@@ -107,7 +129,7 @@ HRESULT pal::GetBaselineMetadataDispenser(IMetaDataDispenser** dispenser)
 bool pal::ReadFile(pal::path path, malloc_span<uint8_t>& b)
 {
 #ifdef BUILD_WINDOWS
-    wil::unique_Handle file{ CreateFileW(path.c_str(), GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr) };
+    wil::unique_handle file{ CreateFileW(path.c_str(), GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr) };
     if (!file)
         return false;
 
@@ -118,7 +140,7 @@ bool pal::ReadFile(pal::path path, malloc_span<uint8_t>& b)
     b = { (uint8_t*)std::malloc(size), size };
 
     DWORD bytesRead;
-    if (!ReadFile(file.get(), b.data(), b.size(), &bytesRead, nullptr))
+    if (!ReadFile(file.get(), b, (DWORD)b.size(), &bytesRead, nullptr))
         return false;
 
     return bytesRead == b.size();
@@ -162,7 +184,7 @@ pal::path pal::GetCoreClrPath()
     void* hostfxrModule = LoadModule(hostfxr_path.get());
     if (hostfxrModule == nullptr)
     {
-        std::cerr << "Failed to load hostfxr module: " << hostFxrPath << std::endl;
+        cerr() << "Failed to load hostfxr module: " << hostFxrPath << std::endl;
         return {};
     }
 
@@ -172,7 +194,11 @@ pal::path pal::GetCoreClrPath()
     // We need to do this because hostfxr_get_dotnet_environment_info only returns information
     // for a globally-installed dotnet if we don't pass a path to the dotnet root.
     // The macOS machines on GitHub Actions don't have dotnet globally installed.
+#ifdef BUILD_WINDOWS
+    pal::path dotnetRoot = hostFxrPath.substr(0, hostFxrPath.find(X("host\\fxr"), 0));
+#else
     pal::path dotnetRoot = hostFxrPath.substr(0, hostFxrPath.find(X("host/fxr"), 0));
+#endif
 
     pal::path coreClrPath = {};
     auto getDotnetEnvironmentInfo = (hostfxr_get_dotnet_environment_info_fn)GetSymbol(hostfxrModule, "hostfxr_get_dotnet_environment_info");
@@ -220,15 +246,3 @@ bool pal::FileExists(pal::path path)
     return access(path.c_str(), F_OK) != -1;
 #endif
 }
-
-#ifdef BUILD_WINDOWS
-std::wostream& pal::cout()
-{
-    return std::wcout;
-}
-#else
-std::ostream& pal::cout()
-{
-    return std::cout;
-}
-#endif
