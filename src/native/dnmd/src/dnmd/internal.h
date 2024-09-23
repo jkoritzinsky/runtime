@@ -20,6 +20,18 @@ typedef size_t rsize_t;
 
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof(*a))
 
+#ifndef NDEBUG
+#define ASSERT_ASSUME(x) assert(x)
+#elif defined(_MSC_VER)
+#define ASSERT_ASSUME(x) __assume(x)
+#elif defined(__clang__)
+#define ASSERT_ASSUME(x) __builtin_assume(x)
+#elif defined(__GNUC__)
+#define ASSERT_ASSUME(x) do { if (!(x)) __builtin_unreachable(); } while (0)
+#else
+#define ASSERT_ASSUME(x) (void)(x)
+#endif
+
 // Mutable data
 typedef struct mddata__
 {

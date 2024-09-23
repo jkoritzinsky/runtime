@@ -506,14 +506,12 @@ static int32_t col_compare_2bytes(void const* key, void const* row, void* cxt)
     uint16_t const lhs = *(uint16_t*)key;
     uint16_t rhs = 0;
     size_t col_len = fcxt->data_len;
-    assert(col_len == 2);
+    ASSERT_ASSUME(col_len == 2);
     bool success = read_u16(&col_data, &col_len, &rhs);
     assert(success && col_len == 0);
     (void)success;
 
-    return (lhs == rhs) ? 0
-        : (lhs < rhs) ? -1
-        : 1;
+    return lhs - rhs;
 }
 
 static int32_t col_compare_4bytes(void const* key, void const* row, void* cxt)
@@ -526,14 +524,12 @@ static int32_t col_compare_4bytes(void const* key, void const* row, void* cxt)
     uint32_t const lhs = *(uint32_t*)key;
     uint32_t rhs = 0;
     size_t col_len = fcxt->data_len;
-    assert(col_len == 4);
+    ASSERT_ASSUME(col_len == 4);
     bool success = read_u32(&col_data, &col_len, &rhs);
     assert(success && col_len == 0);
     (void)success;
 
-    return (lhs == rhs) ? 0
-        : (lhs < rhs) ? -1
-        : 1;
+    return lhs - rhs;
 }
 
 typedef int32_t(*md_bcompare_t)(void const* key, void const* row, void*);
