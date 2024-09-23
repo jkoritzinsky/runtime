@@ -129,6 +129,9 @@ bool read_i8(uint8_t const** data, size_t* data_len, int8_t* o)
     return read_le(data, data_len, o, sizeof(*o));
 }
 
+// MSVC doesn't optimize away the implementation on Little-Endian platforms,
+// so manually provide an optimized implementation for MSVC.
+#ifndef _MSC_VER
 bool read_u16(uint8_t const** data, size_t* data_len, uint16_t* o)
 {
     return read_le(data, data_len, o, sizeof(*o));
@@ -158,6 +161,75 @@ bool read_i64(uint8_t const** data, size_t* data_len, int64_t* o)
 {
     return read_le(data, data_len, o, sizeof(*o));
 }
+
+#else
+bool read_u16(uint8_t const** data, size_t* data_len, uint16_t* o)
+{
+    if (*data_len < 2)
+        return false;
+    
+    *o = *(uint16_t const*)*data;
+    *data += 2;
+    *data_len -= 2;
+    return true;
+}
+
+bool read_i16(uint8_t const** data, size_t* data_len, int16_t* o)
+{
+    if (*data_len < 2)
+        return false;
+    
+    *o = *(int16_t const*)*data;
+    *data += 2;
+    *data_len -= 2;
+    return true;
+}
+
+bool read_u32(uint8_t const** data, size_t* data_len, uint32_t* o)
+{
+    if (*data_len < 4)
+        return false;
+    
+    *o = *(uint32_t const*)*data;
+    *data += 4;
+    *data_len -= 4;
+    return true;
+}
+
+bool read_i32(uint8_t const** data, size_t* data_len, int32_t* o)
+{
+    if (*data_len < 4)
+        return false;
+    
+    *o = *(int32_t const*)*data;
+    *data += 4;
+    *data_len -= 4;
+    return true;
+}
+
+bool read_u64(uint8_t const** data, size_t* data_len, uint64_t* o)
+{
+    if (*data_len < 8)
+        return false;
+    
+    *o = *(uint64_t const*)*data;
+    *data += 8;
+    *data_len -= 8;
+    return true;
+}
+
+bool read_i64(uint8_t const** data, size_t* data_len, int64_t* o)
+{
+    if (*data_len < 8)
+        return false;
+    
+    *o = *(int64_t const*)*data;
+    *data += 8;
+    *data_len -= 8;
+    return true;
+}
+
+#endif
 
 bool write_u8(uint8_t** data, size_t* data_len, uint8_t o)
 {
