@@ -111,7 +111,7 @@ namespace
         ValidateAndCloseEnum(import, hcorenum, (ULONG)tokens.size());
         return tokens;
     }
-    
+
     std::vector<uint32_t> EnumExportedTypes(IMetaDataAssemblyImport* import)
     {
         std::vector<uint32_t> tokens;
@@ -124,7 +124,7 @@ namespace
             for (ULONG i = 0; i < returned; ++i)
                 tokens.push_back(tokensBuffer[i]);
         }
-        dncp::com_ptr<IMetaDataImport2>  mdImport;
+        minipal::com_ptr<IMetaDataImport2>  mdImport;
         HRESULT hr = import->QueryInterface(IID_IMetaDataImport2, (void**)&mdImport);
         EXPECT_HRESULT_SUCCEEDED(hr);
         ValidateAndCloseEnum(mdImport, hcorenum, (ULONG)tokens.size());
@@ -143,13 +143,13 @@ namespace
             for (ULONG i = 0; i < returned; ++i)
                 tokens.push_back(tokensBuffer[i]);
         }
-        dncp::com_ptr<IMetaDataImport2>  mdImport;
+        minipal::com_ptr<IMetaDataImport2>  mdImport;
         HRESULT hr = import->QueryInterface(IID_IMetaDataImport2, (void**)&mdImport);
         EXPECT_HRESULT_SUCCEEDED(hr);
         ValidateAndCloseEnum(mdImport, hcorenum, (ULONG)tokens.size());
         return tokens;
     }
-    
+
     std::vector<uint32_t> GetCustomAttributeByName(IMDInternalImport* import, LPCSTR customAttr, mdToken tkObj)
     {
         std::vector<uint32_t> values;
@@ -391,7 +391,7 @@ namespace
         values.push_back(hr);
         if (hr == S_OK)
             values.push_back(parent);
-        
+
         return values;
     }
 
@@ -918,7 +918,7 @@ namespace
             if (associates != nullptr)
                 *associates = std::vector<ASSOCIATE_RECORD>(recordsBuffer.get(), recordsBuffer.get() + count);
         }
-        
+
         return values;
     }
 
@@ -982,7 +982,7 @@ namespace
         values.push_back(hr);
         if (hr == S_OK)
             values.push_back(pulClassSize);
-        
+
         MD_CLASS_LAYOUT layout;
         hr = import->GetClassLayoutInit(tk, &layout);
         values.push_back(hr);
@@ -1162,7 +1162,7 @@ namespace
     std::vector<uint32_t> GetManifestResourceProps(IMDInternalImport* import, mdManifestResource mmr, LPCSTR* nameBuffer = nullptr)
     {
         std::vector<uint32_t> values;
-        
+
         LPCSTR name;
         ULONG offset;
         mdToken implementation;
@@ -1236,16 +1236,16 @@ TEST_P(InternalMetadataImportTest, ImportAPIs)
     uint32_t dataLen = (uint32_t)blob.size();
 
     // Load metadata
-    dncp::com_ptr<IMDInternalImport> baselineImport;
-    dncp::com_ptr<IMetaDataImport2> baselinePublic;
+    minipal::com_ptr<IMDInternalImport> baselineImport;
+    minipal::com_ptr<IMetaDataImport2> baselinePublic;
     ASSERT_HRESULT_SUCCEEDED(TestBaseline::InternalMetadata(data, dataLen, ofRead, IID_IMDInternalImport, (void**)&baselineImport));
     ASSERT_HRESULT_SUCCEEDED(CreateImport(TestBaseline::Metadata, data, dataLen, &baselinePublic));
-    
-    dncp::com_ptr<IMetaDataDispenser> dispenser;
+
+    minipal::com_ptr<IMetaDataDispenser> dispenser;
     ASSERT_HRESULT_SUCCEEDED(GetDispenser(IID_IMetaDataDispenser, (void**)&dispenser));
-    dncp::com_ptr<IMetaDataImport2> currentPublic;
+    minipal::com_ptr<IMetaDataImport2> currentPublic;
     ASSERT_HRESULT_SUCCEEDED(CreateImport(dispenser, data, dataLen, &currentPublic));
-    dncp::com_ptr<IMDInternalImport> currentImport;
+    minipal::com_ptr<IMDInternalImport> currentImport;
     ASSERT_HRESULT_SUCCEEDED(currentPublic->QueryInterface(IID_IMDInternalImport, (void**)&currentImport));
 
     // Verify APIs
@@ -1308,7 +1308,7 @@ TEST_P(InternalMetadataImportTest, ImportAPIs)
         ASSERT_THAT(GetNameAndSigOfMethodDef(currentImport, methoddef), testing::ElementsAreArray(GetNameAndSigOfMethodDef(baselineImport, methoddef)));
         ASSERT_THAT(GetCustomAttribute_CompilerGenerated(currentImport, methoddef), testing::ElementsAreArray(GetCustomAttribute_CompilerGenerated(baselineImport, methoddef)));
         ASSERT_EQ(GetParentToken(baselineImport, methoddef), GetParentToken(currentImport, methoddef));
-        
+
         TokenList paramdefs;
         ASSERT_EQUAL_AND_SET(paramdefs, EnumParams(baselineImport, methoddef), EnumParams(currentImport, methoddef));
         for (auto paramdef : paramdefs)
@@ -1321,7 +1321,7 @@ TEST_P(InternalMetadataImportTest, ImportAPIs)
 
         ASSERT_THAT(GetPinvokeMap(currentImport, methoddef), testing::ElementsAreArray(GetPinvokeMap(baselineImport, methoddef)));
     }
-    
+
     TokenList globalFields;
     ASSERT_EQUAL_AND_SET(globalFields, EnumGlobalFields(baselineImport), EnumGlobalFields(currentImport));
     for (auto fielddef : globalFields)
@@ -1358,7 +1358,7 @@ TEST_P(InternalMetadataImportTest, ImportAPIs)
             ASSERT_THAT(GetNameAndSigOfMethodDef(currentImport, methoddef), testing::ElementsAreArray(GetNameAndSigOfMethodDef(baselineImport, methoddef)));
             ASSERT_THAT(GetCustomAttribute_CompilerGenerated(currentImport, methoddef), testing::ElementsAreArray(GetCustomAttribute_CompilerGenerated(baselineImport, methoddef)));
             ASSERT_EQ(GetParentToken(baselineImport, methoddef), GetParentToken(currentImport, methoddef));
-            
+
             TokenList paramdefs;
             ASSERT_EQUAL_AND_SET(paramdefs, EnumParams(baselineImport, methoddef), EnumParams(currentImport, methoddef));
             for (auto paramdef : paramdefs)
@@ -1371,7 +1371,7 @@ TEST_P(InternalMetadataImportTest, ImportAPIs)
 
             ASSERT_THAT(GetPinvokeMap(currentImport, methoddef), testing::ElementsAreArray(GetPinvokeMap(baselineImport, methoddef)));
         }
-        
+
         TokenList methodspecs;
         ASSERT_EQUAL_AND_SET(methodspecs, EnumMethodSpecs(baselineImport), EnumMethodSpecs(currentImport));
         for (auto methodspec : methodspecs)
@@ -1428,9 +1428,9 @@ TEST_P(InternalMetadataImportTest, ImportAPIs)
         }
     }
 
-    dncp::com_ptr<IMetaDataAssemblyImport> baselineAssembly;
+    minipal::com_ptr<IMetaDataAssemblyImport> baselineAssembly;
     ASSERT_THAT(S_OK, baselinePublic->QueryInterface(IID_IMetaDataAssemblyImport, (void**)&baselineAssembly));
-    dncp::com_ptr<IMetaDataAssemblyImport> currentAssembly;
+    minipal::com_ptr<IMetaDataAssemblyImport> currentAssembly;
     ASSERT_THAT(S_OK, currentPublic->QueryInterface(IID_IMetaDataAssemblyImport, (void**)&currentAssembly));
 
     TokenList assemblyTokens;
@@ -1479,8 +1479,8 @@ TEST_P(InternalMetadataImportTest, ImportAPIs)
 
 INSTANTIATE_TEST_SUITE_P(InternalMetaDataImportTestCore, InternalMetadataImportTest, testing::ValuesIn(MetadataFilesInDirectory(GetBaselineDirectory())), PrintName);
 
-INSTANTIATE_TEST_SUITE_P(InternalMetaDataImportTestFx4_0, InternalMetadataImportTest, testing::ValuesIn(MetadataFilesInDirectory(FindFrameworkInstall("v4.0.30319"))), PrintName);
-INSTANTIATE_TEST_SUITE_P(InternalMetaDataImportTestFx2_0, InternalMetadataImportTest, testing::ValuesIn(MetadataFilesInDirectory(FindFrameworkInstall("v2.0.50727"))), PrintName);
+INSTANTIATE_TEST_SUITE_P(InternalMetaDataImportTestFx4_0, InternalMetadataImportTest, testing::ValuesIn(MetadataFilesInDirectory(FindFrameworkInstall(X("v4.0.30319")))), PrintName);
+INSTANTIATE_TEST_SUITE_P(InternalMetaDataImportTestFx2_0, InternalMetadataImportTest, testing::ValuesIn(MetadataFilesInDirectory(FindFrameworkInstall(X("v2.0.50727")))), PrintName);
 
 INSTANTIATE_TEST_SUITE_P(InternalMetaDataImportTest_IndirectionTables, InternalMetadataImportTest, testing::Values(MetadataFile{ MetadataFile::Kind::Generated, IndirectionTablesKey }), PrintName);
 
@@ -1504,14 +1504,14 @@ TEST_P(InternalMetaDataLongRunningTest, ImportAPIs)
     uint32_t dataLen = (uint32_t)blob.size();
 
     // Load metadata
-    dncp::com_ptr<IMDInternalImport> baselineImport;
+    minipal::com_ptr<IMDInternalImport> baselineImport;
     ASSERT_HRESULT_SUCCEEDED(TestBaseline::InternalMetadata(data, dataLen, ofRead, IID_IMDInternalImport, (void**)&baselineImport));
-    
-    dncp::com_ptr<IMetaDataDispenser> dispenser;
+
+    minipal::com_ptr<IMetaDataDispenser> dispenser;
     ASSERT_HRESULT_SUCCEEDED(GetDispenser(IID_IMetaDataDispenser, (void**)&dispenser));
-    dncp::com_ptr<IMetaDataImport2> currentPublic;
+    minipal::com_ptr<IMetaDataImport2> currentPublic;
     ASSERT_HRESULT_SUCCEEDED(CreateImport(dispenser, data, dataLen, &currentPublic));
-    dncp::com_ptr<IMDInternalImport> currentImport;
+    minipal::com_ptr<IMDInternalImport> currentImport;
     ASSERT_HRESULT_SUCCEEDED(currentPublic->QueryInterface(IID_IMDInternalImport, (void**)&currentImport));
 
     static auto VerifyMemberRef = [](IMDInternalImport* import, mdToken memberRef) -> std::vector<uint32_t>

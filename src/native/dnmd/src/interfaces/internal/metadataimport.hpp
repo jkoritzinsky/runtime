@@ -6,8 +6,6 @@
 #include <cstring>
 #include <atomic>
 
-typedef char* LPUTF8;
-typedef char const* LPCUTF8;
 class CQuickBytes;
 class IMetaModelCommon;
 

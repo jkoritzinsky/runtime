@@ -15,6 +15,7 @@ namespace TestBaseline
     minipal::com_ptr<IMetaDataDispenser> Metadata = nullptr;
     minipal::com_ptr<IMetaDataDispenserEx> DeltaMetadataBuilder = nullptr;
     minipal::com_ptr<ISymUnmanagedBinder> Symbol = nullptr;
+    MetaDataInternalInterfaceFactory InternalMetadata = nullptr;
 }
 
 

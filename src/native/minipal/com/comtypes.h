@@ -122,6 +122,9 @@
     } ULARGE_INTEGER;
 #endif // MINIPAL_COM_TYPEDEFS
 
+typedef char* LPUTF8;
+typedef char const* LPCUTF8;
+
 //
 // Windows headers
 //
