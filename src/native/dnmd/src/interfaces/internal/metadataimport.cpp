@@ -2115,7 +2115,7 @@ STDMETHODIMP InternalMetadataImportRO::GetPinvokeMap(
 STDMETHODIMP InternalMetadataImportRO::ConvertTextSigToComSig(
     BOOL        fCreateTrIfNotFound,
     LPCSTR      pSignature,
-    BYTE        *pqbNewSig,
+    CQuickBytes *pqbNewSig,
     ULONG       *pcbCount)
 {
     UNREFERENCED_PARAMETER(fCreateTrIfNotFound);

@@ -550,7 +550,7 @@ public: // IMDInternalImport
     STDMETHOD(ConvertTextSigToComSig)(      // Return hresult.
         BOOL        fCreateTrIfNotFound,    // [IN] create typeref if not found
         LPCSTR      pSignature,             // [IN] class file format signature
-        BYTE        *pqbNewSig,             // [OUT] place holder for CLR signature
+        CQuickBytes *pqbNewSig,             // [OUT] place holder for CLR signature
         ULONG       *pcbCount) override;        // [OUT] the result size of signature
 
     //*****************************************************************************

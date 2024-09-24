@@ -18,6 +18,11 @@
 class IMetaModelCommon;
 class MDInternalRW;
 class UTSemReadWrite;
+class CQuickBytes;
+
+typedef CHAR UTF8;
+typedef UTF8 *LPUTF8;
+typedef const UTF8 *LPCUTF8;
 
 inline int IsGlobalMethodParentTk(mdTypeDef td)
 {
@@ -798,7 +803,7 @@ DECLARE_INTERFACE_(IMDInternalImport, IUnknown)
     STDMETHOD(ConvertTextSigToComSig)(      // Return hresult.
         BOOL        fCreateTrIfNotFound,    // [IN] create typeref if not found
         LPCSTR      pSignature,             // [IN] class file format signature
-        BYTE        *pqbNewSig,             // [OUT] place holder for CLR signature
+        CQuickBytes *pqbNewSig,             // [OUT] place holder for CLR signature
         ULONG       *pcbCount) PURE;        // [OUT] the result size of signature
 
     //*****************************************************************************
@@ -1271,7 +1276,11 @@ public:
         } CONTRACTL_END;
 
         _ASSERTE(!m_fAcquired);
-        IfFailThrow(m_pInternalImport->EnumAssociateInit(tkParent, &m_hEnum));
+        HRESULT hr = m_pInternalImport->EnumAssociateInit(tkParent, &m_hEnum);
+        if (FAILED(hr))
+        {
+            ThrowHR(hr);
+        }
         m_fAcquired = TRUE;
     }
 
