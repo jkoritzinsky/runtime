@@ -1343,13 +1343,13 @@ STDMETHODIMP InternalMetadataImportRO::GetDefaultValue(
     }
 
     uint32_t type;
-    if (!md_get_column_value_as_constant(constant, mdtConstant_Type, 1, &type))
+    if (1 != md_get_column_value_as_constant(constant, mdtConstant_Type, 1, &type))
         return CLDB_E_FILE_CORRUPT;
 
     // get the value blob
     uint8_t const* value;
     uint32_t valueLength;
-    if (!md_get_column_value_as_blob(constant, mdtConstant_Value, 1, &value, &valueLength))
+    if (1 != md_get_column_value_as_blob(constant, mdtConstant_Value, 1, &value, &valueLength))
         return CLDB_E_FILE_CORRUPT;
 
     hr = FillMDDefaultValue((BYTE)type, value, valueLength, pDefaultValue);
