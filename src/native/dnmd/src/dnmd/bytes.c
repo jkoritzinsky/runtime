@@ -167,7 +167,7 @@ bool read_u16(uint8_t const** data, size_t* data_len, uint16_t* o)
 {
     if (*data_len < 2)
         return false;
-    
+
     *o = *(uint16_t const*)*data;
     *data += 2;
     *data_len -= 2;
@@ -178,7 +178,7 @@ bool read_i16(uint8_t const** data, size_t* data_len, int16_t* o)
 {
     if (*data_len < 2)
         return false;
-    
+
     *o = *(int16_t const*)*data;
     *data += 2;
     *data_len -= 2;
@@ -189,7 +189,7 @@ bool read_u32(uint8_t const** data, size_t* data_len, uint32_t* o)
 {
     if (*data_len < 4)
         return false;
-    
+
     *o = *(uint32_t const*)*data;
     *data += 4;
     *data_len -= 4;
@@ -200,7 +200,7 @@ bool read_i32(uint8_t const** data, size_t* data_len, int32_t* o)
 {
     if (*data_len < 4)
         return false;
-    
+
     *o = *(int32_t const*)*data;
     *data += 4;
     *data_len -= 4;
@@ -211,7 +211,7 @@ bool read_u64(uint8_t const** data, size_t* data_len, uint64_t* o)
 {
     if (*data_len < 8)
         return false;
-    
+
     *o = *(uint64_t const*)*data;
     *data += 8;
     *data_len -= 8;
@@ -222,7 +222,7 @@ bool read_i64(uint8_t const** data, size_t* data_len, int64_t* o)
 {
     if (*data_len < 8)
         return false;
-    
+
     *o = *(int64_t const*)*data;
     *data += 8;
     *data_len -= 8;
@@ -280,9 +280,30 @@ bool decompress_u32(uint8_t const** data, size_t* data_len, uint32_t* o)
     assert(s != NULL);
 
     uint32_t val;
-    switch (*s & 0xc0)
+
+    // The valid leading bits are 00, 10, and 110.
+    // All others are invalid.
+    // PERF: Check for 00 vs 10 first as we get better codegen
+    // on Intel/AMD processors (shorter instruction sequences and better branch prediction).
+    if ((*s & 0x80) == 0x00)
     {
-    case 0xc0:
+        if (*data_len < 1)
+            return false;
+
+        *data_len -= 1;
+        val = *s++;
+    }
+    else if ((*s & 0xC0) == 0x80)
+    {
+        if (*data_len < 2)
+            return false;
+
+        *data_len -= 2;
+        val = ((*s++ & 0x3f) << 8);
+        val |= *s++;
+    }
+    else if ((*s & 0xE0) == 0xC0)
+    {
         if (*data_len < 4)
             return false;
 
@@ -291,24 +312,10 @@ bool decompress_u32(uint8_t const** data, size_t* data_len, uint32_t* o)
         val |= (*s++ << 16);
         val |= (*s++ << 8);
         val |= *s++;
-        break;
-
-    case 0x80:
-        if (*data_len < 2)
-            return false;
-
-        *data_len -= 2;
-        val = ((*s++ & 0x3f) << 8);
-        val |= *s++;
-        break;
-
-    default:
-        if (*data_len < 1)
-            return false;
-
-        *data_len -= 1;
-        val = *s++;
-        break;
+    }
+    else
+    {
+        return false;
     }
 
     *o = val;
