@@ -2857,14 +2857,6 @@ STDMETHODIMP InternalMetadataImportRO::FindMethodDefUsingCompare(
         mdcursor_t method;
         if (!md_resolve_indirect_cursor(methodCursor, &method))
             return CLDB_E_FILE_CORRUPT;
-        uint32_t flags;
-        if (1 != md_get_column_value_as_constant(method, mdtMethodDef_Flags, 1, &flags))
-            return CLDB_E_FILE_CORRUPT;
-
-        // Ignore PrivateScope methods. By the spec, they can only be referred to by a MethodDef token
-        // and cannot be discovered in any other way.
-        if (IsMdPrivateScope(flags))
-            continue;
 
         char const* methodName;
         if (1 != md_get_column_value_as_utf8(method, mdtMethodDef_Name, 1, &methodName))
@@ -2884,6 +2876,20 @@ STDMETHODIMP InternalMetadataImportRO::FindMethodDefUsingCompare(
                 continue;
             }
         }
+
+        // PERF: Read the flags at the end. Even though the flag check is cheaper than
+        // the strcmp, we'll almost never hit this code path as "Private scope" is almost never used.
+        // As a result, the extra memory read of the flags is an additional cost that we can avoid
+        // in the "negative" case.
+        uint32_t flags;
+        if (1 != md_get_column_value_as_constant(method, mdtMethodDef_Flags, 1, &flags))
+            return CLDB_E_FILE_CORRUPT;
+
+        // Ignore PrivateScope methods. By the spec, they can only be referred to by a MethodDef token
+        // and cannot be discovered in any other way.
+        if (IsMdPrivateScope(flags))
+            continue;
+
         if (!md_cursor_to_token(method, pmd))
             return CLDB_E_FILE_CORRUPT;
         return S_OK;
