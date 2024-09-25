@@ -41,36 +41,6 @@ static_assert(sizeof(HCORENUMImpl) <= sizeof(HENUMInternal), "HCORENUMImpl must 
 
 namespace
 {
-    HRESULT ConstructTypeName(
-        char const* nspace,
-        char const* name,
-        malloc_ptr<char>& mem)
-    {
-        char* buffer;
-        size_t nspaceLen = nspace == nullptr ? 0 : ::strlen(nspace);
-        size_t nameLen = name == nullptr ? 0 : ::strlen(name);
-        size_t bufferLength = nspaceLen + nameLen + 1 + 1; // +1 for type delim and +1 for null.
-
-        mem.reset((char*)::malloc(bufferLength * sizeof(*buffer)));
-        if (mem == nullptr)
-            return E_OUTOFMEMORY;
-
-        buffer = mem.get();
-        buffer[0] = '\0';
-
-        if (nspaceLen > 0)
-        {
-            ::strcat_s(buffer, bufferLength, nspace);
-            ::strcat_s(buffer, bufferLength, ".");
-        }
-
-        if (nameLen > 0)
-            ::strcat_s(buffer, bufferLength, name);
-
-        return S_OK;
-    }
-
-
     HRESULT CreateEnumTokenRangeForSortedTableKey(
         mdhandle_t mdhandle,
         mdtable_id_t table,
@@ -507,9 +477,17 @@ STDMETHODIMP InternalMetadataImportRO::EnumCustomAttributeByNameInit(
         LPCSTR pNamespace;
         LPCSTR pName;
         RETURN_IF_FAILED(GetNameOfCustomAttribute(caToken, &pNamespace, &pName));
-        malloc_ptr<char> fullName;
-        RETURN_IF_FAILED(ConstructTypeName(pNamespace, pName, fullName));
-        if (strcmp(fullName.get(), szName) == 0)
+
+        // PERF: Avoid constructing the full type name and instead compare the namespace and name separately
+        // with the input name.
+        // This removes a heap allocation.
+        size_t namespaceLen = strlen(pNamespace);
+
+        // If szName == $"{pNamespace}.{pName}", then it's a match.
+        // This is safe because if strcmp(pNamespace, szName) == 0, then szName[namespaceLen] == '\0', so we don't read past the end of the buffer.
+        if (strncmp(szName, pNamespace, namespaceLen) == 0
+            && szName[namespaceLen] == '.'
+            && strcmp(szName + namespaceLen + 1, pName) == 0)
         {
             RETURN_IF_FAILED(HCORENUMImpl::AddToDynamicEnum(*impl, caToken));
         }
