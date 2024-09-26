@@ -2777,9 +2777,81 @@ STDMETHODIMP_(mdModule) InternalMetadataImportRO::GetModuleFromScope()
 
 namespace
 {
-    BOOL CompareSignatures(PCCOR_SIGNATURE sig1, DWORD sig1Length, PCCOR_SIGNATURE sig2, DWORD sig2Length, void* context)
+    template<typename TComparer>
+    STDMETHODIMP FindMethodDef(
+        mdhandle_t handle,
+        mdTypeDef   classdef,
+        LPCSTR      szName,
+        PCCOR_SIGNATURE pvSigBlob,
+        ULONG       cbSigBlob,
+        TComparer   comparer,
+        mdMethodDef *pmd)
     {
-        UNREFERENCED_PARAMETER(context);
+        if (TypeFromToken(classdef) != mdtTypeDef && classdef != mdTokenNil)
+            return E_INVALIDARG;
+
+        if (classdef == mdTypeDefNil || classdef == mdTokenNil)
+            classdef = MD_GLOBAL_PARENT_TOKEN;
+
+        mdcursor_t typedefCursor;
+        if (!md_token_to_cursor(handle, classdef, &typedefCursor))
+            return CLDB_E_INDEX_NOTFOUND;
+
+        mdcursor_t methodCursor;
+        uint32_t count;
+        if (!md_get_column_value_as_range(typedefCursor, mdtTypeDef_MethodList, &methodCursor, &count))
+            return CLDB_E_FILE_CORRUPT;
+
+        inline_span<uint8_t> methodDefSig;
+        GetMethodDefSigFromMethodRefSig({(uint8_t*)pvSigBlob, (size_t)cbSigBlob}, methodDefSig);
+
+        for (uint32_t i = 0; i < count; (void)md_cursor_next(&methodCursor), ++i)
+        {
+            mdcursor_t method;
+            if (!md_resolve_indirect_cursor(methodCursor, &method))
+                return CLDB_E_FILE_CORRUPT;
+
+            char const* methodName;
+            if (1 != md_get_column_value_as_utf8(method, mdtMethodDef_Name, 1, &methodName))
+                return CLDB_E_FILE_CORRUPT;
+            if (::strcmp(methodName, szName) != 0)
+                continue;
+
+            if (cbSigBlob != 0)
+            {
+                uint8_t const* sig;
+                uint32_t sigLen;
+                if (1 != md_get_column_value_as_blob(method, mdtMethodDef_Signature, 1, &sig, &sigLen))
+                    return CLDB_E_FILE_CORRUPT;
+                if (sigLen != methodDefSig.size()
+                    || (comparer(sig, sigLen, methodDefSig, (DWORD)methodDefSig.size()) == FALSE))
+                {
+                    continue;
+                }
+            }
+
+            // PERF: Read the flags at the end. Even though the flag check is cheaper than
+            // the strcmp, we'll almost never hit this code path as "Private scope" is almost never used.
+            // As a result, the extra memory read of the flags is an additional cost that we can avoid
+            // in the "negative" case.
+            uint32_t flags;
+            if (1 != md_get_column_value_as_constant(method, mdtMethodDef_Flags, 1, &flags))
+                return CLDB_E_FILE_CORRUPT;
+
+            // Ignore PrivateScope methods. By the spec, they can only be referred to by a MethodDef token
+            // and cannot be discovered in any other way.
+            if (IsMdPrivateScope(flags))
+                continue;
+
+            if (!md_cursor_to_token(method, pmd))
+                return CLDB_E_FILE_CORRUPT;
+            return S_OK;
+        }
+        return CLDB_E_RECORD_NOTFOUND;
+    }
+
+    BOOL CompareSignatures(PCCOR_SIGNATURE sig1, DWORD sig1Length, PCCOR_SIGNATURE sig2, DWORD sig2Length)
+    {
         if (sig1Length != sig2Length || memcmp(sig1, sig2, sig2Length))
             return FALSE;
         else
@@ -2794,13 +2866,13 @@ STDMETHODIMP InternalMetadataImportRO::FindMethodDef(
     ULONG       cbSigBlob,
     mdMethodDef *pmd)
 {
-   return FindMethodDefUsingCompare(
+   return ::FindMethodDef(
+    m_handle.get(),
     classdef,
     szName,
     pvSigBlob,
     cbSigBlob,
     CompareSignatures,
-    nullptr,
     pmd);
 }
 
@@ -2813,66 +2885,21 @@ STDMETHODIMP InternalMetadataImportRO::FindMethodDefUsingCompare(
     void*       pSignatureArgs,
     mdMethodDef *pmd)
 {
-    if (TypeFromToken(classdef) != mdtTypeDef && classdef != mdTokenNil)
-        return E_INVALIDARG;
-
-    if (classdef == mdTypeDefNil || classdef == mdTokenNil)
-        classdef = MD_GLOBAL_PARENT_TOKEN;
-
-    mdcursor_t typedefCursor;
-    if (!md_token_to_cursor(m_handle.get(), classdef, &typedefCursor))
-        return CLDB_E_INDEX_NOTFOUND;
-
-    mdcursor_t methodCursor;
-    uint32_t count;
-    if (!md_get_column_value_as_range(typedefCursor, mdtTypeDef_MethodList, &methodCursor, &count))
-        return CLDB_E_FILE_CORRUPT;
-
-    malloc_span<uint8_t> methodDefSig = GetMethodDefSigFromMethodRefSig({(uint8_t*)pvSigBlob, (size_t)cbSigBlob});
-
-    for (uint32_t i = 0; i < count; (void)md_cursor_next(&methodCursor), ++i)
-    {
-        mdcursor_t method;
-        if (!md_resolve_indirect_cursor(methodCursor, &method))
-            return CLDB_E_FILE_CORRUPT;
-
-        char const* methodName;
-        if (1 != md_get_column_value_as_utf8(method, mdtMethodDef_Name, 1, &methodName))
-            return CLDB_E_FILE_CORRUPT;
-        if (::strcmp(methodName, szName) != 0)
-            continue;
-
-        if (cbSigBlob != 0 && pSignatureCompare != nullptr)
+    return ::FindMethodDef(
+        m_handle.get(),
+        classdef,
+        szName,
+        pvSigBlob,
+        cbSigBlob,
+        [pSignatureCompare, pSignatureArgs](PCCOR_SIGNATURE sig1, DWORD sig1Length, PCCOR_SIGNATURE sig2, DWORD sig2Length)
         {
-            uint8_t const* sig;
-            uint32_t sigLen;
-            if (1 != md_get_column_value_as_blob(method, mdtMethodDef_Signature, 1, &sig, &sigLen))
-                return CLDB_E_FILE_CORRUPT;
-            if (sigLen != methodDefSig.size()
-                || (pSignatureCompare(sig, sigLen, methodDefSig, (DWORD)methodDefSig.size(), pSignatureArgs) == FALSE))
+            if (pSignatureCompare == nullptr)
             {
-                continue;
+                return 0;
             }
-        }
-
-        // PERF: Read the flags at the end. Even though the flag check is cheaper than
-        // the strcmp, we'll almost never hit this code path as "Private scope" is almost never used.
-        // As a result, the extra memory read of the flags is an additional cost that we can avoid
-        // in the "negative" case.
-        uint32_t flags;
-        if (1 != md_get_column_value_as_constant(method, mdtMethodDef_Flags, 1, &flags))
-            return CLDB_E_FILE_CORRUPT;
-
-        // Ignore PrivateScope methods. By the spec, they can only be referred to by a MethodDef token
-        // and cannot be discovered in any other way.
-        if (IsMdPrivateScope(flags))
-            continue;
-
-        if (!md_cursor_to_token(method, pmd))
-            return CLDB_E_FILE_CORRUPT;
-        return S_OK;
-    }
-    return CLDB_E_RECORD_NOTFOUND;
+            return pSignatureCompare(sig1, sig1Length, sig2, sig2Length, pSignatureArgs);
+        },
+        pmd);
 }
 
 STDMETHODIMP InternalMetadataImportRO::GetFieldOffset(

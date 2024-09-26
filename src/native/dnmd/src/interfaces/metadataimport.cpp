@@ -1112,10 +1112,10 @@ HRESULT STDMETHODCALLTYPE MetadataImportRO::FindMethod(
     if (!md_get_column_value_as_range(typedefCursor, mdtTypeDef_MethodList, &methodCursor, &count))
         return CLDB_E_FILE_CORRUPT;
 
-    malloc_span<uint8_t> methodDefSig;
+    inline_span<uint8_t> methodDefSig;
     try
     {
-        methodDefSig = GetMethodDefSigFromMethodRefSig({ (uint8_t*)pvSigBlob, (size_t)cbSigBlob });    
+        GetMethodDefSigFromMethodRefSig({ (uint8_t*)pvSigBlob, (size_t)cbSigBlob }, methodDefSig);
     }
     catch (std::exception const&)
     {
