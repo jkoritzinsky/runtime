@@ -31,7 +31,7 @@ bool create_access_context(mdcursor_t* cursor, col_index_t col_idx, uint32_t row
     {
         acxt->writable_data = NULL;
     }
-    
+
     acxt->start = acxt->data = table->data.ptr + (row * table->row_size_bytes) + offset;
 
     // Compute the beginning of the row after the last valid row.
@@ -55,12 +55,28 @@ bool read_column_data(access_cxt_t* acxt, uint32_t* data)
     assert(acxt != NULL && data != NULL);
     *data = 0;
 
-    if (acxt->writable_data != NULL)
-        acxt->writable_data += (acxt->col_details & mdtc_b2) ? 2 : 4;
+    if ((acxt->col_details & mdtc_b4) == mdtc_b4)
+    {
+        if (acxt->writable_data != NULL)
+        {
+            acxt->writable_data += 4;
+        }
+        return read_u32(&acxt->data, &acxt->data_len, data);
+    }
+    else
+    {
+        if (acxt->writable_data != NULL)
+        {
+            acxt->writable_data += 2;
+        }
 
-    return (acxt->col_details & mdtc_b2)
-        ? read_u16(&acxt->data, &acxt->data_len, (uint16_t*)data)
-        : read_u32(&acxt->data, &acxt->data_len, data);
+        uint16_t value;
+        if (!read_u16(&acxt->data, &acxt->data_len, &value))
+            return false;
+
+        *data = value;
+        return true;
+    }
 }
 
 bool write_column_data(access_cxt_t* acxt, uint32_t data)

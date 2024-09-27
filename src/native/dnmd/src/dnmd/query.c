@@ -631,34 +631,63 @@ md_range_result_t md_find_range_from_cursor(mdcursor_t begin, col_index_t idx, u
     // This was already created and validated when the row was found.
     // We assume the data is still valid.
     (void)create_find_context(table, idx, &fcxt);
-    md_bcompare_t cmp_func = fcxt.data_len == 2 ? col_compare_2bytes : col_compare_4bytes;
 
     // A valid value was found, so we are at least within the range.
     // Now find the extrema.
     *start = found;
-    while (cursor_move_no_checks(start, -1))
+    mdcursor_t end = found;
+
+    // PERF: Split this into an if/else instead of using a function pointer
+    // to avoid CFG overhead in MSVC.
+    if (fcxt.data_len == 2)
     {
-        // Since we are moving backwards in a sorted column,
-        // the value should match or be greater.
-        res = cmp_func(&value, cursor_to_row_bytes(start), &fcxt);
-        assert(res >= 0);
-        if (res > 0)
+        while (cursor_move_no_checks(start, -1))
         {
-            // Move forward to the start.
-            (void)cursor_move_no_checks(start, 1);
-            break;
+            // Since we are moving backwards in a sorted column,
+            // the value should match or be greater.
+            res = col_compare_2bytes(&value, cursor_to_row_bytes(start), &fcxt);
+            assert(res >= 0);
+            if (res > 0)
+            {
+                // Move forward to the start.
+                (void)cursor_move_no_checks(start, 1);
+                break;
+            }
+        }
+        while (cursor_move_no_checks(&end, 1) && !CursorEnd(&end))
+        {
+            // Since we are moving forwards in a sorted column,
+            // the value should match or be less.
+            res = col_compare_2bytes(&value, cursor_to_row_bytes(&end), &fcxt);
+            assert(res <= 0);
+            if (res < 0)
+                break;
         }
     }
-
-    mdcursor_t end = found;
-    while (cursor_move_no_checks(&end, 1) && !CursorEnd(&end))
+    else
     {
-        // Since we are moving forwards in a sorted column,
-        // the value should match or be less.
-        res = cmp_func(&value, cursor_to_row_bytes(&end), &fcxt);
-        assert(res <= 0);
-        if (res < 0)
-            break;
+        while (cursor_move_no_checks(start, -1))
+        {
+            // Since we are moving backwards in a sorted column,
+            // the value should match or be greater.
+            res = col_compare_4bytes(&value, cursor_to_row_bytes(start), &fcxt);
+            assert(res >= 0);
+            if (res > 0)
+            {
+                // Move forward to the start.
+                (void)cursor_move_no_checks(start, 1);
+                break;
+            }
+        }
+        while (cursor_move_no_checks(&end, 1) && !CursorEnd(&end))
+        {
+            // Since we are moving forwards in a sorted column,
+            // the value should match or be less.
+            res = col_compare_4bytes(&value, cursor_to_row_bytes(&end), &fcxt);
+            assert(res <= 0);
+            if (res < 0)
+                break;
+        }
     }
 
     // Compute the row delta
