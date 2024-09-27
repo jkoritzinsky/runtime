@@ -690,15 +690,19 @@ STDMETHODIMP InternalMetadataImportRO::GetNameOfMethodDef(
     mdMethodDef md,
     LPCSTR     *pszName)
 {
-    mdcursor_t c;
-    if (!md_token_to_cursor(m_handle.get(), md, &c))
-        return CLDB_E_FILE_CORRUPT;
+    [[msvc::forceinline_calls]]
+    {
+        mdcursor_t c;
+        if (!md_token_to_cursor(m_handle.get(), md, &c))
+            return CLDB_E_FILE_CORRUPT;
 
-    if (1 != md_get_column_value_as_utf8(c, mdtMethodDef_Name, 1, pszName))
-        return CLDB_E_FILE_CORRUPT;
+        if (1 != md_get_column_value_as_utf8(c, mdtMethodDef_Name, 1, pszName))
+            return CLDB_E_FILE_CORRUPT;
 
-    return S_OK;
+        return S_OK;
+    }
 }
+
 STDMETHODIMP InternalMetadataImportRO::GetNameAndSigOfMethodDef(
     mdMethodDef      methoddef,
     PCCOR_SIGNATURE *ppvSigBlob,
