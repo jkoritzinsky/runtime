@@ -690,6 +690,7 @@ STDMETHODIMP InternalMetadataImportRO::GetNameOfMethodDef(
     mdMethodDef md,
     LPCSTR     *pszName)
 {
+    // Force inline calls to avoid https://developercommunity.visualstudio.com/t/Bad-quality-AMD64-bad-codegen---Storing/10764816
     [[msvc::forceinline_calls]]
     {
         mdcursor_t c;
@@ -731,14 +732,18 @@ STDMETHODIMP InternalMetadataImportRO::GetNameOfFieldDef(
     mdFieldDef fd,
     LPCSTR    *pszName)
 {
-    mdcursor_t c;
-    if (!md_token_to_cursor(m_handle.get(), fd, &c))
-        return CLDB_E_FILE_CORRUPT;
+    // Force inline calls to avoid https://developercommunity.visualstudio.com/t/Bad-quality-AMD64-bad-codegen---Storing/10764816
+    [[msvc::forceinline_calls]]
+    {
+        mdcursor_t c;
+        if (!md_token_to_cursor(m_handle.get(), fd, &c))
+            return CLDB_E_FILE_CORRUPT;
 
-    if (1 != md_get_column_value_as_utf8(c, mdtField_Name, 1, pszName))
-        return CLDB_E_FILE_CORRUPT;
+        if (1 != md_get_column_value_as_utf8(c, mdtField_Name, 1, pszName))
+            return CLDB_E_FILE_CORRUPT;
 
-    return S_OK;
+        return S_OK;
+    }
 }
 
 STDMETHODIMP InternalMetadataImportRO::GetNameOfTypeRef(
