@@ -124,12 +124,326 @@ bool md_walk_user_string_heap(mdhandle_t handle, mduserstringcursor_t* cursor, m
     return true;
 }
 
-static int32_t get_column_value_as_token_or_cursor(mdcursor_t* c, uint32_t col_idx, uint32_t out_length, mdToken* tk, mdcursor_t* cursor)
+static bool get_column_value_as_token_or_cursor(mdcursor_t* c, uint32_t col_idx, mdToken* tk, mdcursor_t* cursor)
 {
-    assert(c != NULL && out_length != 0 && (tk != NULL || cursor != NULL));
+    assert(c != NULL && (tk != NULL || cursor != NULL));
 
     access_cxt_t acxt;
-    if (!create_access_context(c, col_idx, out_length, false, &acxt))
+    if (!create_access_context(c, col_idx, 1, false, &acxt))
+        return false;
+
+    // If this isn't an index column, then fail.
+    if (!(acxt.col_details & (mdtc_idx_table | mdtc_idx_coded)))
+        return false;
+
+    uint32_t table_row;
+    mdtable_id_t table_id;
+
+    uint32_t raw;
+
+    if (!read_column_data(&acxt, &raw))
+        return false;
+
+    if (acxt.col_details & mdtc_idx_table)
+    {
+        // The raw value is the row index into the table that
+        // is embedded in the column details.
+        table_row = RidFromToken(raw);
+        table_id = ExtractTable(acxt.col_details);
+    }
+    else
+    {
+        assert(acxt.col_details & mdtc_idx_coded);
+        if (!decompose_coded_index(raw, acxt.col_details, &table_id, &table_row))
+            return false;
+    }
+
+    if (0 > table_id || table_id >= MDTABLE_MAX_COUNT)
+        return false;
+
+    mdtable_t* table;
+    if (tk != NULL)
+    {
+        *tk = CreateTokenType(table_id) | table_row;
+    }
+    else
+    {
+        // Returning a cursor means pointing directly into a table
+        // so we must validate the cursor is valid prior to creation.
+        table = type_to_table(acxt.table->cxt, table_id);
+
+        // Indices into tables begin at 1 - see II.22.
+        // However, tables can contain a row ID of 0 to
+        // indicate "none" or point 1 past the end.
+        if (table_row > table->row_count + 1)
+            return false;
+
+        // Sometimes we can get an index into a table of 0 or 1 past the end
+        // of a table that does not exist. In that case, our table object here
+        // will be completely uninitialized. Set the table id so we can do operations
+        // that need a table id, like creating the table or getting a token.
+        if (table->table_id == 0 && table_id != 0)
+        {
+            assert(table_row == 0 || table_row == 1);
+            table->table_id = table_id;
+        }
+
+        assert(cursor != NULL);
+        *cursor = create_cursor(table, table_row);
+    }
+
+    return true;
+}
+
+bool md_get_column_value_as_token(mdcursor_t c, col_index_t col_idx, mdToken* tk)
+{
+    assert(tk != NULL);
+    return get_column_value_as_token_or_cursor(&c, col_idx, tk, NULL);
+}
+
+bool md_get_column_value_as_cursor(mdcursor_t c, col_index_t col_idx, mdcursor_t* cursor)
+{
+    assert(cursor != NULL);
+    return get_column_value_as_token_or_cursor(&c, col_idx, NULL, cursor);
+}
+
+// Forward declaration
+//#define DNMD_DEBUG_FIND_TOKEN_OF_RANGE_ELEMENT
+#ifdef DNMD_DEBUG_FIND_TOKEN_OF_RANGE_ELEMENT
+static bool _validate_md_find_token_of_range_element(mdcursor_t expected, mdcursor_t begin, uint32_t count);
+#endif // DNMD_DEBUG_FIND_TOKEN_OF_RANGE_ELEMENT
+
+bool md_get_column_value_as_range(mdcursor_t c, col_index_t col_idx, mdcursor_t* cursor, uint32_t* count)
+{
+    assert(cursor != NULL);
+    if (!get_column_value_as_token_or_cursor(&c, col_idx, NULL, cursor))
+        return false;
+
+    // Check if the cursor is null or the end of the table
+    if (CursorNull(cursor) || CursorEnd(cursor))
+    {
+        *count = 0;
+        return true;
+    }
+
+    mdcursor_t nextMaybe = c;
+    // Loop here as we may have a bunch of null cursors in the column.
+    for (;;)
+    {
+        // The cursor into the current table remains valid,
+        // we can safely move it at least one beyond the last.
+        (void)cursor_move_no_checks(&nextMaybe, 1);
+
+        // Check if we are at the end of the current table. If so,
+        // ECMA states we use the remaining rows in the target table.
+        if (CursorEnd(&nextMaybe))
+        {
+            // Add +1 for inclusive count.
+            *count = CursorTable(cursor)->row_count - CursorRow(cursor) + 1;
+        }
+        else
+        {
+            // Examine the current table's next row value to find the
+            // extrema of the target table range.
+            mdcursor_t end;
+            if (!md_get_column_value_as_cursor(nextMaybe, col_idx, &end))
+                return false;
+
+            // The next row is a null cursor, which means we need to
+            // check the next row in the current table.
+            if (CursorNull(&end))
+                continue;
+            *count = CursorRow(&end) - CursorRow(cursor);
+        }
+        break;
+    }
+
+    // Use the results of this function to validate md_find_token_of_range_element()
+#ifdef DNMD_DEBUG_FIND_TOKEN_OF_RANGE_ELEMENT
+    (void)_validate_md_find_token_of_range_element(c, *cursor, *count);
+#endif // DNMD_DEBUG_FIND_TOKEN_OF_RANGE_ELEMENT
+
+    return true;
+}
+
+bool md_get_column_value_as_constant(mdcursor_t c, col_index_t col_idx, uint32_t* constant)
+{
+    assert(constant != NULL);
+
+    access_cxt_t acxt;
+    if (!create_access_context(&c, col_idx, 1, false, &acxt))
+        return false;
+
+    // If this isn't an constant column, then fail.
+    if (!(acxt.col_details & mdtc_constant))
+        return false;
+
+    if (!read_column_data(&acxt, constant))
+        return false;
+
+    return true;
+}
+
+// Set a column value as an existing offset into a heap.
+bool get_column_value_as_heap_offset(mdcursor_t c, col_index_t col_idx, uint32_t* offset)
+{
+    assert(offset != NULL);
+
+    access_cxt_t acxt;
+    if (!create_access_context(&c, col_idx, 1, false, &acxt))
+        return false;
+
+    // If this isn't a heap index column, then fail.
+    if (!(acxt.col_details & mdtc_idx_heap))
+        return false;
+
+    mdstream_t const* heap = get_heap_by_id(acxt.table->cxt, ExtractHeapType(acxt.col_details));
+    if (heap == NULL)
+        return false;
+
+#ifdef DEBUG_COLUMN_SORTING
+    validate_column_not_sorted(acxt.table, col_idx);
+#endif
+
+    if (!read_column_data(&acxt, offset))
+        return false;
+
+    return true;
+}
+
+bool md_get_column_value_as_utf8(mdcursor_t c, col_index_t col_idx, char const** str)
+{
+    access_cxt_t acxt;
+    if (!create_access_context(&c, col_idx, 1, false, &acxt))
+        return false;
+
+    // If this isn't a heap index column, then fail.
+    if (!(acxt.col_details & mdtc_hstring))
+        return false;
+
+    mdstream_t const* heap = &
+    acxt.table->cxt->strings_heap;
+    if (heap == NULL)
+        return false;
+
+#ifdef DEBUG_COLUMN_SORTING
+    validate_column_not_sorted(acxt.table, col_idx);
+#endif
+
+    uint32_t offset;
+
+    if (!read_column_data(&acxt, &offset))
+        return false;
+
+    if (!try_get_string(CursorTable(&c)->cxt, offset, str))
+        return false;
+
+    return true;
+}
+
+bool md_get_column_value_as_userstring(mdcursor_t c, col_index_t col_idx, mduserstring_t* string)
+{
+    assert(string != NULL);
+
+    access_cxt_t acxt;
+    if (!create_access_context(&c, col_idx, 1, false, &acxt))
+        return false;
+
+    // If this isn't a heap index column, then fail.
+    if (!(acxt.col_details & mdtc_hus))
+        return false;
+
+    mdstream_t const* heap = &
+    acxt.table->cxt->strings_heap;
+    if (heap == NULL)
+        return false;
+
+#ifdef DEBUG_COLUMN_SORTING
+    validate_column_not_sorted(acxt.table, col_idx);
+#endif
+
+    uint32_t offset;
+
+    if (!read_column_data(&acxt, &offset))
+        return false;
+
+    size_t next_offset;
+    if (!try_get_user_string(CursorTable(&c)->cxt, offset, string, &next_offset))
+        return false;
+
+    return true;
+}
+
+bool md_get_column_value_as_blob(mdcursor_t c, col_index_t col_idx, uint8_t const** blob, uint32_t* blob_len)
+{
+    assert(blob != NULL && blob_len != NULL);
+
+    access_cxt_t acxt;
+    if (!create_access_context(&c, col_idx, 1, false, &acxt))
+        return false;
+
+    // If this isn't a heap index column, then fail.
+    if (!(acxt.col_details & mdtc_hblob))
+        return false;
+
+    mdstream_t const* heap = &
+    acxt.table->cxt->strings_heap;
+    if (heap == NULL)
+        return false;
+
+#ifdef DEBUG_COLUMN_SORTING
+    validate_column_not_sorted(acxt.table, col_idx);
+#endif
+
+    uint32_t offset;
+
+    if (!read_column_data(&acxt, &offset))
+        return false;
+
+    if (!try_get_blob(CursorTable(&c)->cxt, offset, blob, blob_len))
+        return false;
+
+    return true;
+}
+
+bool md_get_column_value_as_guid(mdcursor_t c, col_index_t col_idx, mdguid_t* guid)
+{
+    assert(guid != NULL);
+
+    access_cxt_t acxt;
+    if (!create_access_context(&c, col_idx, 1, false, &acxt))
+        return false;
+
+    // If this isn't a heap index column, then fail.
+    if (!(acxt.col_details & mdtc_hguid))
+        return false;
+
+    mdstream_t const* heap = &
+    acxt.table->cxt->strings_heap;
+    if (heap == NULL)
+        return false;
+
+#ifdef DEBUG_COLUMN_SORTING
+    validate_column_not_sorted(acxt.table, col_idx);
+#endif
+
+    uint32_t offset;
+
+    if (!read_column_data(&acxt, &offset))
+        return false;
+
+    if (!try_get_guid(CursorTable(&c)->cxt, offset, guid))
+        return false;
+
+    return true;
+}
+
+int32_t md_get_many_rows_column_value_as_token(mdcursor_t c, uint32_t col_idx, uint32_t out_length, mdToken* tk)
+{
+    assert(out_length != 0 && tk != NULL);
+
+    access_cxt_t acxt;
+    if (!create_access_context(&c, col_idx, out_length, false, &acxt))
         return -1;
 
     // If this isn't an index column, then fail.
@@ -163,289 +477,13 @@ static int32_t get_column_value_as_token_or_cursor(mdcursor_t* c, uint32_t col_i
         if (0 > table_id || table_id >= MDTABLE_MAX_COUNT)
             return -1;
 
-        mdtable_t* table;
-        if (tk != NULL)
-        {
-            tk[read_in] = CreateTokenType(table_id) | table_row;
-        }
-        else
-        {
-            // Returning a cursor means pointing directly into a table
-            // so we must validate the cursor is valid prior to creation.
-            table = type_to_table(acxt.table->cxt, table_id);
-
-            // Indices into tables begin at 1 - see II.22.
-            // However, tables can contain a row ID of 0 to
-            // indicate "none" or point 1 past the end.
-            if (table_row > table->row_count + 1)
-                return -1;
-
-            // Sometimes we can get an index into a table of 0 or 1 past the end
-            // of a table that does not exist. In that case, our table object here
-            // will be completely uninitialized. Set the table id so we can do operations
-            // that need a table id, like creating the table or getting a token.
-            if (table->table_id == 0 && table_id != 0)
-            {
-                assert(table_row == 0 || table_row == 1);
-                table->table_id = table_id;
-            }
-
-            assert(cursor != NULL);
-            cursor[read_in] = create_cursor(table, table_row);
-        }
+        tk[read_in] = CreateTokenType(table_id) | table_row;
         read_in++;
     } while (out_length > 1 && next_row(&acxt));
 
     return read_in;
 }
 
-int32_t md_get_column_value_as_token(mdcursor_t c, col_index_t col_idx, uint32_t out_length, mdToken* tk)
-{
-    if (out_length == 0)
-        return 0;
-    assert(tk != NULL);
-    return get_column_value_as_token_or_cursor(&c, col_idx, out_length, tk, NULL);
-}
-
-int32_t md_get_column_value_as_cursor(mdcursor_t c, col_index_t col_idx, uint32_t out_length, mdcursor_t* cursor)
-{
-    if (out_length == 0)
-        return 0;
-    assert(cursor != NULL);
-    return get_column_value_as_token_or_cursor(&c, col_idx, out_length, NULL, cursor);
-}
-
-// Forward declaration
-//#define DNMD_DEBUG_FIND_TOKEN_OF_RANGE_ELEMENT
-#ifdef DNMD_DEBUG_FIND_TOKEN_OF_RANGE_ELEMENT
-static bool _validate_md_find_token_of_range_element(mdcursor_t expected, mdcursor_t begin, uint32_t count);
-#endif // DNMD_DEBUG_FIND_TOKEN_OF_RANGE_ELEMENT
-
-bool md_get_column_value_as_range(mdcursor_t c, col_index_t col_idx, mdcursor_t* cursor, uint32_t* count)
-{
-    assert(cursor != NULL);
-    if (1 != get_column_value_as_token_or_cursor(&c, col_idx, 1, NULL, cursor))
-        return false;
-
-    // Check if the cursor is null or the end of the table
-    if (CursorNull(cursor) || CursorEnd(cursor))
-    {
-        *count = 0;
-        return true;
-    }
-
-    mdcursor_t nextMaybe = c;
-    // Loop here as we may have a bunch of null cursors in the column.
-    for (;;)
-    {
-        // The cursor into the current table remains valid,
-        // we can safely move it at least one beyond the last.
-        (void)cursor_move_no_checks(&nextMaybe, 1);
-
-        // Check if we are at the end of the current table. If so,
-        // ECMA states we use the remaining rows in the target table.
-        if (CursorEnd(&nextMaybe))
-        {
-            // Add +1 for inclusive count.
-            *count = CursorTable(cursor)->row_count - CursorRow(cursor) + 1;
-        }
-        else
-        {
-            // Examine the current table's next row value to find the
-            // extrema of the target table range.
-            mdcursor_t end;
-            if (1 != md_get_column_value_as_cursor(nextMaybe, col_idx, 1, &end))
-                return false;
-
-            // The next row is a null cursor, which means we need to
-            // check the next row in the current table.
-            if (CursorNull(&end))
-                continue;
-            *count = CursorRow(&end) - CursorRow(cursor);
-        }
-        break;
-    }
-
-    // Use the results of this function to validate md_find_token_of_range_element()
-#ifdef DNMD_DEBUG_FIND_TOKEN_OF_RANGE_ELEMENT
-    (void)_validate_md_find_token_of_range_element(c, *cursor, *count);
-#endif // DNMD_DEBUG_FIND_TOKEN_OF_RANGE_ELEMENT
-
-    return true;
-}
-
-int32_t md_get_column_value_as_constant(mdcursor_t c, col_index_t col_idx, uint32_t out_length, uint32_t* constant)
-{
-    if (out_length == 0)
-        return 0;
-    assert(constant != NULL);
-
-    access_cxt_t acxt;
-    if (!create_access_context(&c, col_idx, out_length, false, &acxt))
-        return -1;
-
-    // If this isn't an constant column, then fail.
-    if (!(acxt.col_details & mdtc_constant))
-        return -1;
-
-    int32_t read_in = 0;
-    do
-    {
-        if (!read_column_data(&acxt, &constant[read_in]))
-            return -1;
-        read_in++;
-    } while (out_length > 1 && next_row(&acxt));
-
-    return read_in;
-}
-
-// Set a column value as an existing offset into a heap.
-int32_t get_column_value_as_heap_offset(mdcursor_t c, col_index_t col_idx, uint32_t out_length, uint32_t* offset)
-{
-    if (out_length == 0)
-        return 0;
-    assert(offset != NULL);
-
-    access_cxt_t acxt;
-    if (!create_access_context(&c, col_idx, out_length, false, &acxt))
-        return -1;
-
-    // If this isn't a heap index column, then fail.
-    if (!(acxt.col_details & mdtc_idx_heap))
-        return -1;
-
-    mdstream_t const* heap = get_heap_by_id(acxt.table->cxt, ExtractHeapType(acxt.col_details));
-    if (heap == NULL)
-        return -1;
-
-#ifdef DEBUG_COLUMN_SORTING
-    validate_column_not_sorted(acxt.table, col_idx);
-#endif
-
-    int32_t read_in = 0;
-    do
-    {
-        if (!read_column_data(&acxt, &offset[read_in]))
-            return -1;
-
-        read_in++;
-    } while (out_length > 1 && next_row(&acxt));
-
-    return read_in;
-}
-
-int32_t md_get_column_value_as_utf8(mdcursor_t c, col_index_t col_idx, uint32_t out_length, char const** str)
-{
-    if (out_length == 0)
-        return 0;
-    assert(str != NULL);
-
-    access_cxt_t acxt;
-    if (!create_access_context(&c, col_idx, out_length, false, &acxt))
-        return -1;
-
-    // If this isn't a #String column, then fail.
-    if (!(acxt.col_details & mdtc_hstring))
-        return -1;
-
-    uint32_t offset;
-    int32_t read_in = 0;
-    do
-    {
-        if (!read_column_data(&acxt, &offset))
-            return -1;
-        if (!try_get_string(acxt.table->cxt, offset, &str[read_in]))
-            return -1;
-        read_in++;
-    } while (out_length > 1 && next_row(&acxt));
-
-    return read_in;
-}
-
-int32_t md_get_column_value_as_userstring(mdcursor_t c, col_index_t col_idx, uint32_t out_length, mduserstring_t* strings)
-{
-    if (out_length == 0)
-        return 0;
-    assert(strings != NULL);
-
-    access_cxt_t acxt;
-    if (!create_access_context(&c, col_idx, out_length, false, &acxt))
-        return -1;
-
-    // If this isn't a #US column, then fail.
-    if (!(acxt.col_details & mdtc_hus))
-        return -1;
-
-    size_t unused;
-    uint32_t offset;
-    int32_t read_in = 0;
-    do
-    {
-        if (!read_column_data(&acxt, &offset))
-            return -1;
-        if (!try_get_user_string(acxt.table->cxt, offset, &strings[read_in], &unused))
-            return -1;
-        read_in++;
-    } while (out_length > 1 && next_row(&acxt));
-
-    return read_in;
-}
-
-int32_t md_get_column_value_as_blob(mdcursor_t c, col_index_t col_idx, uint32_t out_length, uint8_t const** blob, uint32_t* blob_len)
-{
-    if (out_length == 0)
-        return 0;
-    assert(blob != NULL && blob_len != NULL);
-
-    access_cxt_t acxt;
-    if (!create_access_context(&c, col_idx, out_length, false, &acxt))
-        return -1;
-
-    // If this isn't a #Blob column, then fail.
-    if (!(acxt.col_details & mdtc_hblob))
-        return -1;
-
-    uint32_t offset;
-    int32_t read_in = 0;
-    do
-    {
-        if (!read_column_data(&acxt, &offset))
-            return -1;
-        if (!try_get_blob(acxt.table->cxt, offset, &blob[read_in], &blob_len[read_in]))
-            return -1;
-        read_in++;
-    } while (out_length > 1 && next_row(&acxt));
-
-    return read_in;
-}
-
-int32_t md_get_column_value_as_guid(mdcursor_t c, col_index_t col_idx, uint32_t out_length, mdguid_t* guid)
-{
-    if (out_length == 0)
-        return 0;
-    assert(guid != NULL);
-
-    access_cxt_t acxt;
-    if (!create_access_context(&c, col_idx, out_length, false, &acxt))
-        return -1;
-
-    // If this isn't a #GUID column, then fail.
-    if (!(acxt.col_details & mdtc_hguid))
-        return -1;
-
-    uint32_t idx;
-    int32_t read_in = 0;
-    do
-    {
-        if (!read_column_data(&acxt, &idx))
-            return -1;
-        if (!try_get_guid(acxt.table->cxt, idx, &guid[read_in]))
-            return -1;
-        read_in++;
-    } while (out_length > 1 && next_row(&acxt));
-
-    return read_in;
-}
 
 bool md_get_column_values_raw(mdcursor_t c, uint32_t values_length, bool* values_to_get, uint32_t* values_raw)
 {
@@ -845,7 +883,7 @@ static bool find_range_element(mdcursor_t element, mdcursor_t* tgt_cursor)
         {
             pos = tmp;
             if (!cursor_move_no_checks(&tmp, 1)
-                || 1 != md_get_column_value_as_token(tmp, tgt_col, 1, &tmp_tk))
+                || !md_get_column_value_as_token(tmp, tgt_col, &tmp_tk))
             {
                 break;
             }
@@ -869,9 +907,9 @@ static bool find_range_element(mdcursor_t element, mdcursor_t* tgt_cursor)
         *tgt_cursor = pos;
         return true;
     case mdtid_Event:
-        return md_get_column_value_as_cursor(pos, mdtEventMap_Parent, 1, tgt_cursor);
+        return md_get_column_value_as_cursor(pos, mdtEventMap_Parent, tgt_cursor);
     case mdtid_Property:
-        return md_get_column_value_as_cursor(pos, mdtPropertyMap_Parent, 1, tgt_cursor);
+        return md_get_column_value_as_cursor(pos, mdtPropertyMap_Parent, tgt_cursor);
     default:
         assert(!"Invalid table ID");
         return false;
@@ -921,5 +959,5 @@ bool md_resolve_indirect_cursor(mdcursor_t c, mdcursor_t* target)
         return true;
     }
 
-    return 1 == md_get_column_value_as_cursor(c, col_idx, 1, target);
+    return md_get_column_value_as_cursor(c, col_idx, target);
 }

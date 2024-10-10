@@ -382,8 +382,8 @@ bool write_column_data(access_cxt_t* acxt, uint32_t data);
 bool next_row(access_cxt_t* acxt);
 
 // Internal functions used to read/write columns with minimal validation.
-int32_t get_column_value_as_heap_offset(mdcursor_t c, col_index_t col_idx, uint32_t out_length, uint32_t* offset);
-int32_t set_column_value_as_heap_offset(mdcursor_t c, col_index_t col_idx, uint32_t in_length, uint32_t* offset);
+bool get_column_value_as_heap_offset(mdcursor_t c, col_index_t col_idx, uint32_t* offset);
+bool set_column_value_as_heap_offset(mdcursor_t c, col_index_t col_idx, uint32_t offset);
 
 //
 // Manipulation of bits
