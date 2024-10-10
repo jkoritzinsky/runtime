@@ -164,24 +164,18 @@ static bool set_column_value_as_token_or_cursor(mdcursor_t c, uint32_t col_idx, 
     return true;
 }
 
-bool md_set_column_value_as_token(mdcursor_t c, col_index_t col, mdToken const* tk)
+bool md_set_column_value_as_token(mdcursor_t c, col_index_t col, mdToken tk)
 {
-    if (tk == NULL)
-        return false;
-    return set_column_value_as_token_or_cursor(c, col_to_index(col, CursorTable(&c)), tk, NULL);
+    return set_column_value_as_token_or_cursor(c, col_to_index(col, CursorTable(&c)), &tk, NULL);
 }
 
-bool md_set_column_value_as_cursor(mdcursor_t c, col_index_t col, mdcursor_t const* cursor)
+bool md_set_column_value_as_cursor(mdcursor_t c, col_index_t col, mdcursor_t cursor)
 {
-    if (cursor == NULL)
-        return false;
-    return set_column_value_as_token_or_cursor(c, col_to_index(col, CursorTable(&c)), NULL, cursor);
+    return set_column_value_as_token_or_cursor(c, col_to_index(col, CursorTable(&c)), NULL, &cursor);
 }
 
-bool md_set_column_value_as_constant(mdcursor_t c, col_index_t col_idx, uint32_t const* constant)
+bool md_set_column_value_as_constant(mdcursor_t c, col_index_t col_idx, uint32_t constant)
 {
-    assert(constant != NULL);
-
     access_cxt_t acxt;
     if (!create_access_context(&c, col_idx, 1, true, &acxt))
         return false;
@@ -211,7 +205,7 @@ bool md_set_column_value_as_constant(mdcursor_t c, col_index_t col_idx, uint32_t
         }
     }
 
-    if (!write_column_data(&acxt, *constant))
+    if (!write_column_data(&acxt, constant))
         return false;
 
     // If the column we are writing to is a key of a sorted column, then we need to validate that it is sorted correctly.
@@ -300,7 +294,7 @@ bool set_column_value_as_heap_offset(mdcursor_t c, col_index_t col_idx, uint32_t
     return true;
 }
 
-bool md_set_column_value_as_utf8(mdcursor_t c, col_index_t col_idx, char const* const* str)
+bool md_set_column_value_as_utf8(mdcursor_t c, col_index_t col_idx, char const* str)
 {
     access_cxt_t acxt;
     if (!create_access_context(&c, col_idx, 1, true, &acxt))
@@ -315,9 +309,9 @@ bool md_set_column_value_as_utf8(mdcursor_t c, col_index_t col_idx, char const* 
 #endif
 
     uint32_t heap_offset;
-    heap_offset = add_to_string_heap(acxt.table->cxt, *str);
+    heap_offset = add_to_string_heap(acxt.table->cxt, str);
 
-    if (heap_offset == 0 && (*str)[0] != '\0')
+    if (heap_offset == 0 && str[0] != '\0')
         return false;
 
     if (!write_column_data(&acxt, heap_offset))
@@ -327,7 +321,7 @@ bool md_set_column_value_as_utf8(mdcursor_t c, col_index_t col_idx, char const* 
 }
 
 // TODO: These functions should not call set_column_value_as_heap_offset.
-bool md_set_column_value_as_blob(mdcursor_t c, col_index_t col_idx, uint8_t const* const* blob, uint32_t const* blob_len)
+bool md_set_column_value_as_blob(mdcursor_t c, col_index_t col_idx, uint8_t const* blob, uint32_t blob_len)
 {
     access_cxt_t acxt;
     if (!create_access_context(&c, col_idx, 1, true, &acxt))
@@ -341,9 +335,9 @@ bool md_set_column_value_as_blob(mdcursor_t c, col_index_t col_idx, uint8_t cons
     validate_column_is_not_key(acxt.table, col_idx);
 #endif
 
-    uint32_t heap_offset = add_to_blob_heap(acxt.table->cxt, *blob, *blob_len);
+    uint32_t heap_offset = add_to_blob_heap(acxt.table->cxt, blob, blob_len);
 
-    if (heap_offset == 0 && *blob_len > 0)
+    if (heap_offset == 0 && blob_len > 0)
         return false;
 
     if (!write_column_data(&acxt, heap_offset))
@@ -352,7 +346,7 @@ bool md_set_column_value_as_blob(mdcursor_t c, col_index_t col_idx, uint8_t cons
     return true;
 }
 
-bool md_set_column_value_as_guid(mdcursor_t c, col_index_t col_idx, mdguid_t const* guid)
+bool md_set_column_value_as_guid(mdcursor_t c, col_index_t col_idx, mdguid_t guid)
 {
     access_cxt_t acxt;
     if (!create_access_context(&c, col_idx, 1, true, &acxt))
@@ -366,15 +360,15 @@ bool md_set_column_value_as_guid(mdcursor_t c, col_index_t col_idx, mdguid_t con
     validate_column_is_not_key(acxt.table, col_idx);
 #endif
 
-    uint32_t index = add_to_guid_heap(acxt.table->cxt, *guid);
+    uint32_t index = add_to_guid_heap(acxt.table->cxt, guid);
 
-    if (index == 0 && memcmp(guid, &empty_guid, sizeof(mdguid_t)) != 0)
+    if (index == 0 && memcmp(&guid, &empty_guid, sizeof(mdguid_t)) != 0)
         return false;
 
     return set_column_value_as_heap_offset(c, col_idx, index);
 }
 
-bool md_set_column_value_as_userstring(mdcursor_t c, col_index_t col_idx, char16_t const* const* userstring)
+bool md_set_column_value_as_userstring(mdcursor_t c, col_index_t col_idx, char16_t const* userstring)
 {
     access_cxt_t acxt;
     if (!create_access_context(&c, col_idx, 1, true, &acxt))
@@ -388,9 +382,9 @@ bool md_set_column_value_as_userstring(mdcursor_t c, col_index_t col_idx, char16
     validate_column_is_not_key(acxt.table, col_idx);
 #endif
 
-    uint32_t index = add_to_user_string_heap(CursorTable(&c)->cxt, *userstring);
+    uint32_t index = add_to_user_string_heap(CursorTable(&c)->cxt, userstring);
 
-    if (index == 0 && (*userstring)[0] != 0)
+    if (index == 0 && userstring[0] != 0)
         return false;
 
     if (!write_column_data(&acxt, index))
@@ -423,7 +417,7 @@ int32_t update_shifted_row_references(mdcursor_t* c, uint32_t count, uint8_t col
             {
                 rid += diff;
                 tk = TokenFromRid(rid, CreateTokenType(updated_table));
-                if (!md_set_column_value_as_token(*c, col, &tk))
+                if (!md_set_column_value_as_token(*c, col, tk))
                     return -1;
             }
         }
@@ -482,12 +476,12 @@ static bool copy_cursor_column(mdcursor_t dest, mdcursor_t src, col_index_t idx)
     switch (dest_table->column_details[idx] & mdtc_categorymask)
     {
     case mdtc_constant:
-        if (!md_set_column_value_as_constant(dest, idx, &column_value))
+        if (!md_set_column_value_as_constant(dest, idx, column_value))
             return false;
         break;
     case mdtc_idx_coded:
     case mdtc_idx_table:
-        if (!md_set_column_value_as_token(dest, idx, &column_value))
+        if (!md_set_column_value_as_token(dest, idx, column_value))
             return false;
         break;
     case mdtc_idx_heap:
@@ -508,7 +502,7 @@ static bool set_column_as_end_of_table_cursor(mdcursor_t c, col_index_t col_idx)
     mdtable_id_t target_table = ExtractTable(table->column_details[col_to_index(col_idx, table)]);
     mdcursor_t end_of_table = create_cursor(&table->cxt->tables[target_table], table->cxt->tables[target_table].row_count + 1);
 
-    return md_set_column_value_as_cursor(c, col_idx, &end_of_table);
+    return md_set_column_value_as_cursor(c, col_idx, end_of_table);
 }
 
 static bool initialize_list_columns(mdcursor_t c)
@@ -660,7 +654,7 @@ static bool add_new_row_to_list(mdcursor_t list_owner, col_index_t list_col, mdc
         if (!md_insert_row_before(row_to_insert_before, &new_indirection_row))
             return false;
 
-        if (!md_set_column_value_as_cursor(new_indirection_row, index_to_col(0, CursorTable(&row_to_insert_before)->table_id), new_row))
+        if (!md_set_column_value_as_cursor(new_indirection_row, index_to_col(0, CursorTable(&row_to_insert_before)->table_id), *new_row))
             return false;
 
         if (count == 0 || CursorRow(&range) == CursorRow(&row_to_insert_before))
@@ -669,7 +663,7 @@ static bool add_new_row_to_list(mdcursor_t list_owner, col_index_t list_col, mdc
             // If the start of our range is the same as the row we're inserting before, then we're inserting at the start of the list.
             // In both of these cases, we need to update the parent's row column to point to the newly inserted row.
             // Otherwise, this element would be associated with the entry before the parent row.
-            if (!md_set_column_value_as_cursor(list_owner, list_col, &new_indirection_row))
+            if (!md_set_column_value_as_cursor(list_owner, list_col, new_indirection_row))
                 return false;
         }
 
@@ -712,7 +706,7 @@ static bool add_new_row_to_list(mdcursor_t list_owner, col_index_t list_col, mdc
 
             for (; CursorRow(&parent_row) <= CursorRow(&list_owner); md_cursor_next(&parent_row))
             {
-                if (!md_set_column_value_as_cursor(parent_row, list_col, new_row))
+                if (!md_set_column_value_as_cursor(parent_row, list_col, *new_row))
                     return false;
             }
         }
@@ -849,7 +843,7 @@ bool md_add_new_row_to_sorted_list(mdcursor_t list_owner, col_index_t list_col, 
 
     // Now that we've added the new column to the list, set the sort order column to the provided value to
     // ensure the sort is accurate.
-    if (!md_set_column_value_as_constant(*new_row, sort_order_col, &sort_col_value))
+    if (!md_set_column_value_as_constant(*new_row, sort_order_col, sort_col_value))
         return false;
 
     return true;
@@ -1024,7 +1018,7 @@ bool sort_list_by_column(mdcursor_t parent, col_index_t list_col, col_index_t co
     mdcursor_t to_update = range;
     for (uint32_t i = 0; i < count; i++)
     {
-        if (!md_set_column_value_as_cursor(to_update, indirect_col, &correct_cursor_order[i]))
+        if (!md_set_column_value_as_cursor(to_update, indirect_col, correct_cursor_order[i]))
         {
             free(cursor_order_buffer);
             return false;

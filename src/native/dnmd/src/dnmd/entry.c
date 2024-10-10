@@ -261,7 +261,7 @@ static bool initialize_minimal_table_rows(mdcxt_t* cxt)
 
     // Set the Generation to 0
     uint32_t generation = 0;
-    if (!md_set_column_value_as_constant(module_cursor, mdtModule_Generation, &generation))
+    if (!md_set_column_value_as_constant(module_cursor, mdtModule_Generation, generation))
         return false;
 
     // Use the 0 index to specify the NULL guid as the guids for the image.
@@ -274,7 +274,7 @@ static bool initialize_minimal_table_rows(mdcxt_t* cxt)
     }
 
     char const* name = "";
-    if (!md_set_column_value_as_utf8(module_cursor, mdtModule_Name, &name))
+    if (!md_set_column_value_as_utf8(module_cursor, mdtModule_Name, name))
         return false;
 
     // Mark that we're done adding the Module row.
@@ -286,19 +286,19 @@ static bool initialize_minimal_table_rows(mdcxt_t* cxt)
         return false;
 
     uint32_t flags = 0;
-    if (!md_set_column_value_as_constant(global_type_cursor, mdtTypeDef_Flags, &flags))
+    if (!md_set_column_value_as_constant(global_type_cursor, mdtTypeDef_Flags, flags))
         return false;
 
     char const* global_type_name = "<Module>"; // Defined in ECMA-335 II.10.8
-    if (!md_set_column_value_as_utf8(global_type_cursor, mdtTypeDef_TypeName, &global_type_name))
+    if (!md_set_column_value_as_utf8(global_type_cursor, mdtTypeDef_TypeName, global_type_name))
         return false;
 
     char const* namespace = "";
-    if (!md_set_column_value_as_utf8(global_type_cursor, mdtTypeDef_TypeNamespace, &namespace))
+    if (!md_set_column_value_as_utf8(global_type_cursor, mdtTypeDef_TypeNamespace, namespace))
         return false;
 
     mdToken nil_typedef = CreateTokenType(mdtid_TypeDef);
-    if (!md_set_column_value_as_token(global_type_cursor, mdtTypeDef_Extends, &nil_typedef))
+    if (!md_set_column_value_as_token(global_type_cursor, mdtTypeDef_Extends, nil_typedef))
         return false;
 
     // Mark that we're done adding the TypeDef row.

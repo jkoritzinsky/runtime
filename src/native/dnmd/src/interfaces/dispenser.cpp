@@ -89,7 +89,7 @@ namespace
             if (FAILED(hr))
                 return hr;
 
-            if (!md_set_column_value_as_guid(moduleCursor, mdtModule_Mvid, &mvid))
+            if (!md_set_column_value_as_guid(moduleCursor, mdtModule_Mvid, mvid))
                 return E_OUTOFMEMORY;
 
             minipal::com_ptr<ControllingIUnknown> obj;

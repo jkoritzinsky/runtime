@@ -530,28 +530,28 @@ namespace
 
         onRowAdded(assemblyRef);
 
-        if (!md_set_column_value_as_constant(assemblyRef, mdtAssemblyRef_MajorVersion, &majorVersion))
+        if (!md_set_column_value_as_constant(assemblyRef, mdtAssemblyRef_MajorVersion, majorVersion))
             return E_FAIL;
 
-        if (!md_set_column_value_as_constant(assemblyRef, mdtAssemblyRef_MinorVersion, &minorVersion))
+        if (!md_set_column_value_as_constant(assemblyRef, mdtAssemblyRef_MinorVersion, minorVersion))
             return E_FAIL;
 
-        if (!md_set_column_value_as_constant(assemblyRef, mdtAssemblyRef_BuildNumber, &buildNumber))
+        if (!md_set_column_value_as_constant(assemblyRef, mdtAssemblyRef_BuildNumber, buildNumber))
             return E_FAIL;
 
-        if (md_set_column_value_as_constant(assemblyRef, mdtAssemblyRef_RevisionNumber, &revisionNumber))
+        if (md_set_column_value_as_constant(assemblyRef, mdtAssemblyRef_RevisionNumber, revisionNumber))
             return E_FAIL;
 
-        if (!md_set_column_value_as_constant(assemblyRef, mdtAssemblyRef_Flags, &flags))
+        if (!md_set_column_value_as_constant(assemblyRef, mdtAssemblyRef_Flags, flags))
             return E_FAIL;
 
-        if (!md_set_column_value_as_utf8(assemblyRef, mdtAssemblyRef_Name, &assemblyName))
+        if (!md_set_column_value_as_utf8(assemblyRef, mdtAssemblyRef_Name, assemblyName))
             return E_FAIL;
 
-        if (!md_set_column_value_as_utf8(assemblyRef, mdtAssemblyRef_Culture, &assemblyCulture))
+        if (!md_set_column_value_as_utf8(assemblyRef, mdtAssemblyRef_Culture, assemblyCulture))
             return E_FAIL;
 
-        if (!md_set_column_value_as_blob(assemblyRef, mdtAssemblyRef_PublicKeyOrToken, &publicKey, &publicKeyLength))
+        if (!md_set_column_value_as_blob(assemblyRef, mdtAssemblyRef_PublicKeyOrToken, publicKey, publicKeyLength))
             return E_FAIL;
 
         *targetAssembly = assemblyRef;
@@ -662,35 +662,35 @@ namespace
 
         onRowAdded(assemblyRef);
 
-        if (!md_set_column_value_as_constant(assemblyRef, mdtAssemblyRef_MajorVersion, &majorVersion))
+        if (!md_set_column_value_as_constant(assemblyRef, mdtAssemblyRef_MajorVersion, majorVersion))
             return E_FAIL;
 
-        if (!md_set_column_value_as_constant(assemblyRef, mdtAssemblyRef_MinorVersion, &minorVersion))
+        if (!md_set_column_value_as_constant(assemblyRef, mdtAssemblyRef_MinorVersion, minorVersion))
             return E_FAIL;
 
-        if (!md_set_column_value_as_constant(assemblyRef, mdtAssemblyRef_BuildNumber, &buildNumber))
+        if (!md_set_column_value_as_constant(assemblyRef, mdtAssemblyRef_BuildNumber, buildNumber))
             return E_FAIL;
 
-        if (md_set_column_value_as_constant(assemblyRef, mdtAssemblyRef_RevisionNumber, &revisionNumber))
+        if (md_set_column_value_as_constant(assemblyRef, mdtAssemblyRef_RevisionNumber, revisionNumber))
             return E_FAIL;
 
-        if (!md_set_column_value_as_constant(assemblyRef, mdtAssemblyRef_Flags, &flags))
+        if (!md_set_column_value_as_constant(assemblyRef, mdtAssemblyRef_Flags, flags))
             return E_FAIL;
 
-        if (!md_set_column_value_as_utf8(assemblyRef, mdtAssemblyRef_Name, &assemblyName))
+        if (!md_set_column_value_as_utf8(assemblyRef, mdtAssemblyRef_Name, assemblyName))
             return E_FAIL;
 
-        if (!md_set_column_value_as_utf8(assemblyRef, mdtAssemblyRef_Culture, &assemblyCulture))
+        if (!md_set_column_value_as_utf8(assemblyRef, mdtAssemblyRef_Culture, assemblyCulture))
             return E_FAIL;
 
         uint8_t const* hash = sourceAssemblyHash;
         uint32_t hashLength = (uint32_t)sourceAssemblyHash.size();
-        if (!md_set_column_value_as_blob(assemblyRef, mdtAssemblyRef_HashValue, &hash, &hashLength))
+        if (!md_set_column_value_as_blob(assemblyRef, mdtAssemblyRef_HashValue, hash, hashLength))
             return E_FAIL;
 
         uint8_t const* publicKeyTokenBlob = publicKeyToken.data();
         uint32_t publicKeyTokenLength = (uint32_t)publicKeyToken.size();
-        if (!md_set_column_value_as_blob(assemblyRef, mdtAssemblyRef_PublicKeyOrToken, &publicKeyTokenBlob, &publicKeyTokenLength))
+        if (!md_set_column_value_as_blob(assemblyRef, mdtAssemblyRef_PublicKeyOrToken, publicKeyTokenBlob, publicKeyTokenLength))
             return E_FAIL;
 
         *targetAssembly = assemblyRef;
@@ -789,7 +789,7 @@ HRESULT ImportReferenceToTypeDef(
 
         md_added_row_t moduleRef;
         if (!md_append_row(targetModule, mdtid_ModuleRef, &moduleRef)
-            || !md_set_column_value_as_utf8(moduleRef, mdtModuleRef_Name, &importName))
+            || !md_set_column_value_as_utf8(moduleRef, mdtModuleRef_Name, importName))
         {
             return E_FAIL;
         }
@@ -845,19 +845,19 @@ HRESULT ImportReferenceToTypeDef(
             if (!md_append_row(targetModule, mdtid_TypeRef, &typeRef))
                 return E_FAIL;
 
-            if (!md_set_column_value_as_cursor(typeRef, mdtTypeRef_ResolutionScope, &resolutionScope))
+            if (!md_set_column_value_as_cursor(typeRef, mdtTypeRef_ResolutionScope, resolutionScope))
                 return E_FAIL;
 
             char const* typeName;
             if (!md_get_column_value_as_utf8(typeDef, mdtTypeDef_TypeName, &typeName)
-                || !md_set_column_value_as_utf8(typeRef, mdtTypeRef_TypeName, &typeName))
+                || !md_set_column_value_as_utf8(typeRef, mdtTypeRef_TypeName, typeName))
             {
                 return E_FAIL;
             }
 
             char const* typeNamespace;
             if (!md_get_column_value_as_utf8(typeDef, mdtTypeDef_TypeNamespace, &typeNamespace)
-                || !md_set_column_value_as_utf8(typeRef, mdtTypeRef_TypeNamespace, &typeNamespace))
+                || !md_set_column_value_as_utf8(typeRef, mdtTypeRef_TypeNamespace, typeNamespace))
             {
                 return E_FAIL;
             }
@@ -977,7 +977,7 @@ namespace
                             if (!md_append_row(module, mdtid_ModuleRef, &moduleRef))
                                 return E_FAIL;
 
-                            if (!md_set_column_value_as_utf8(moduleRef, mdtModuleRef_Name, &fileName))
+                            if (!md_set_column_value_as_utf8(moduleRef, mdtModuleRef_Name, fileName))
                                 return E_FAIL;
 
                             *importedScope = moduleRef;
@@ -1065,7 +1065,7 @@ namespace
                     if (!md_append_row(module, mdtid_ModuleRef, &moduleRef))
                         return E_FAIL;
 
-                    if (!md_set_column_value_as_utf8(moduleRef, mdtModuleRef_Name, &assemblyModuleName))
+                    if (!md_set_column_value_as_utf8(moduleRef, mdtModuleRef_Name, assemblyModuleName))
                         return E_FAIL;
 
                     *importedScope = moduleRef;
@@ -1273,7 +1273,7 @@ namespace
                     if (!md_append_row(targetModule, mdtid_ModuleRef, &moduleRef))
                         return E_FAIL;
 
-                    if (!md_set_column_value_as_utf8(moduleRef, mdtModuleRef_Name, &moduleName))
+                    if (!md_set_column_value_as_utf8(moduleRef, mdtModuleRef_Name, moduleName))
                         return E_FAIL;
 
                     targetOutermostScope = moduleRef;
@@ -1308,7 +1308,7 @@ namespace
                     if (!md_append_row(targetModule, mdtid_ModuleRef, &moduleRef))
                         return E_FAIL;
 
-                    if (!md_set_column_value_as_utf8(moduleRef, mdtModuleRef_Name, &moduleName))
+                    if (!md_set_column_value_as_utf8(moduleRef, mdtModuleRef_Name, moduleName))
                         return E_FAIL;
 
                     targetOutermostScope = moduleRef;
@@ -1627,19 +1627,19 @@ namespace
             if (!md_append_row(targetModule, mdtid_TypeRef, &targetEnclosingTypeRef))
                 return E_FAIL;
 
-            if (!md_set_column_value_as_cursor(targetEnclosingTypeRef, mdtTypeRef_ResolutionScope, &resolutionScope))
+            if (!md_set_column_value_as_cursor(targetEnclosingTypeRef, mdtTypeRef_ResolutionScope, resolutionScope))
                 return E_FAIL;
 
             char const* typeName;
             if (!md_get_column_value_as_utf8(sourceEnclosingTypeRef, mdtTypeRef_TypeName, &typeName)
-                || !md_set_column_value_as_utf8(targetEnclosingTypeRef, mdtTypeRef_TypeName, &typeName))
+                || !md_set_column_value_as_utf8(targetEnclosingTypeRef, mdtTypeRef_TypeName, typeName))
             {
                 return E_FAIL;
             }
 
             char const* typeNamespace;
             if (!md_get_column_value_as_utf8(sourceEnclosingTypeRef, mdtTypeRef_TypeNamespace, &typeNamespace)
-                || !md_set_column_value_as_utf8(targetEnclosingTypeRef, mdtTypeRef_TypeNamespace, &typeNamespace))
+                || !md_set_column_value_as_utf8(targetEnclosingTypeRef, mdtTypeRef_TypeNamespace, typeNamespace))
             {
                 return E_FAIL;
             }
@@ -1704,7 +1704,7 @@ HRESULT ImportReferenceToTypeDefOrRefOrSpec(
 
             uint8_t const* importedSignatureData = importedSignature;
             uint32_t importedSignatureLength = (uint32_t)importedSignature.size();
-            if (!md_set_column_value_as_blob(typeSpec, mdtTypeSpec_Signature, &importedSignatureData, &importedSignatureLength))
+            if (!md_set_column_value_as_blob(typeSpec, mdtTypeSpec_Signature, importedSignatureData, importedSignatureLength))
                 return E_FAIL;
 
             if (!md_cursor_to_token(typeSpec, importedToken))

@@ -500,13 +500,13 @@ bool md_resolve_indirect_cursor(mdcursor_t c, mdcursor_t* target);
 
 // Set row's column values
 // The returned number represents the number of rows updated.
-bool md_set_column_value_as_token(mdcursor_t c, col_index_t col, mdToken const* tk);
-bool md_set_column_value_as_cursor(mdcursor_t c, col_index_t col, mdcursor_t const* cursor);
-bool md_set_column_value_as_constant(mdcursor_t c, col_index_t col_idx, uint32_t const* constant);
-bool md_set_column_value_as_utf8(mdcursor_t c, col_index_t col_idx, char const* const* str);
-bool md_set_column_value_as_blob(mdcursor_t c, col_index_t col_idx, uint8_t const* const* blob, uint32_t const* blob_len);
-bool md_set_column_value_as_guid(mdcursor_t c, col_index_t col_idx, mdguid_t const* guid);
-bool md_set_column_value_as_userstring(mdcursor_t c, col_index_t col_idx, char16_t const* const* userstring);
+bool md_set_column_value_as_token(mdcursor_t c, col_index_t col, mdToken tk);
+bool md_set_column_value_as_cursor(mdcursor_t c, col_index_t col, mdcursor_t cursor);
+bool md_set_column_value_as_constant(mdcursor_t c, col_index_t col_idx, uint32_t constant);
+bool md_set_column_value_as_utf8(mdcursor_t c, col_index_t col_idx, char const* str);
+bool md_set_column_value_as_blob(mdcursor_t c, col_index_t col_idx, uint8_t const* blob, uint32_t blob_len);
+bool md_set_column_value_as_guid(mdcursor_t c, col_index_t col_idx, mdguid_t guid);
+bool md_set_column_value_as_userstring(mdcursor_t c, col_index_t col_idx, char16_t const* userstring);
 
 // Create a new row logically before the row specified by the cursor.
 // If the given row is in a table that is a target of a list column, this function will return false.
