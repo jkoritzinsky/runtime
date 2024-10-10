@@ -129,7 +129,7 @@ static bool get_column_value_as_token_or_cursor(mdcursor_t* c, uint32_t col_idx,
     assert(c != NULL && (tk != NULL || cursor != NULL));
 
     access_cxt_t acxt;
-    if (!create_access_context(c, col_idx, 1, false, &acxt))
+    if (!create_access_context(c, col_idx, false, &acxt))
         return false;
 
     // If this isn't an index column, then fail.
@@ -271,7 +271,7 @@ bool md_get_column_value_as_constant(mdcursor_t c, col_index_t col_idx, uint32_t
     assert(constant != NULL);
 
     access_cxt_t acxt;
-    if (!create_access_context(&c, col_idx, 1, false, &acxt))
+    if (!create_access_context(&c, col_idx, false, &acxt))
         return false;
 
     // If this isn't an constant column, then fail.
@@ -290,7 +290,7 @@ bool get_column_value_as_heap_offset(mdcursor_t c, col_index_t col_idx, uint32_t
     assert(offset != NULL);
 
     access_cxt_t acxt;
-    if (!create_access_context(&c, col_idx, 1, false, &acxt))
+    if (!create_access_context(&c, col_idx, false, &acxt))
         return false;
 
     // If this isn't a heap index column, then fail.
@@ -314,7 +314,7 @@ bool get_column_value_as_heap_offset(mdcursor_t c, col_index_t col_idx, uint32_t
 bool md_get_column_value_as_utf8(mdcursor_t c, col_index_t col_idx, char const** str)
 {
     access_cxt_t acxt;
-    if (!create_access_context(&c, col_idx, 1, false, &acxt))
+    if (!create_access_context(&c, col_idx, false, &acxt))
         return false;
 
     // If this isn't a heap index column, then fail.
@@ -346,7 +346,7 @@ bool md_get_column_value_as_userstring(mdcursor_t c, col_index_t col_idx, mduser
     assert(string != NULL);
 
     access_cxt_t acxt;
-    if (!create_access_context(&c, col_idx, 1, false, &acxt))
+    if (!create_access_context(&c, col_idx, false, &acxt))
         return false;
 
     // If this isn't a heap index column, then fail.
@@ -379,7 +379,7 @@ bool md_get_column_value_as_blob(mdcursor_t c, col_index_t col_idx, uint8_t cons
     assert(blob != NULL && blob_len != NULL);
 
     access_cxt_t acxt;
-    if (!create_access_context(&c, col_idx, 1, false, &acxt))
+    if (!create_access_context(&c, col_idx, false, &acxt))
         return false;
 
     // If this isn't a heap index column, then fail.
@@ -411,7 +411,7 @@ bool md_get_column_value_as_guid(mdcursor_t c, col_index_t col_idx, mdguid_t* gu
     assert(guid != NULL);
 
     access_cxt_t acxt;
-    if (!create_access_context(&c, col_idx, 1, false, &acxt))
+    if (!create_access_context(&c, col_idx, false, &acxt))
         return false;
 
     // If this isn't a heap index column, then fail.
@@ -442,8 +442,8 @@ int32_t md_get_many_rows_column_value_as_token(mdcursor_t c, uint32_t col_idx, u
 {
     assert(out_length != 0 && tk != NULL);
 
-    access_cxt_t acxt;
-    if (!create_access_context(&c, col_idx, out_length, false, &acxt))
+    bulk_access_cxt_t acxt;
+    if (!create_bulk_access_context(&c, col_idx, out_length, &acxt))
         return -1;
 
     // If this isn't an index column, then fail.
@@ -457,7 +457,7 @@ int32_t md_get_many_rows_column_value_as_token(mdcursor_t c, uint32_t col_idx, u
     int32_t read_in = 0;
     do
     {
-        if (!read_column_data(&acxt, &raw))
+        if (!read_column_data_and_advance(&acxt, &raw))
             return -1;
 
         if (acxt.col_details & mdtc_idx_table)
@@ -501,7 +501,7 @@ bool md_get_column_values_raw(mdcursor_t c, uint32_t values_length, bool* values
             continue;
 
         // Create access context for the next column value
-        if (!create_access_context(&c, i, 1, false, &acxt))
+        if (!create_access_context(&c, i, false, &acxt))
             return false;
 
         if (!read_column_data(&acxt, &values_raw[i]))

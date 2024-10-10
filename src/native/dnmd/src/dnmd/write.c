@@ -8,7 +8,7 @@ static bool is_row_sorted_with_next_row(md_key_info_t const* keys, uint8_t count
         col_index_t key_col = index_to_col(keys[i].index, table_id);
 
         access_cxt_t row_acxt;
-        if (!create_access_context(&row, key_col, 1, false, &row_acxt))
+        if (!create_access_context(&row, key_col, false, &row_acxt))
             return false;
 
         // Key columns can only be constant, index into a table, or a coded token index.
@@ -16,7 +16,7 @@ static bool is_row_sorted_with_next_row(md_key_info_t const* keys, uint8_t count
         assert(row_acxt.col_details & (mdtc_constant | mdtc_idx_table | mdtc_idx_coded));
 
         access_cxt_t next_acxt;
-        if (!create_access_context(&next_row, key_col, 1, false, &next_acxt))
+        if (!create_access_context(&next_row, key_col, false, &next_acxt))
             return false;
 
         uint32_t row_value;
@@ -37,7 +37,7 @@ static bool is_row_sorted_with_next_row(md_key_info_t const* keys, uint8_t count
 static bool set_column_value_as_token_or_cursor(mdcursor_t c, uint32_t col_idx, mdToken const* tk, mdcursor_t const* cursor)
 {
     access_cxt_t acxt;
-    if (!create_access_context(&c, col_idx, 1, true, &acxt))
+    if (!create_access_context(&c, col_idx, true, &acxt))
         return false;
 
     // If we can't write on the underlying table, then fail.
@@ -177,7 +177,7 @@ bool md_set_column_value_as_cursor(mdcursor_t c, col_index_t col, mdcursor_t cur
 bool md_set_column_value_as_constant(mdcursor_t c, col_index_t col_idx, uint32_t constant)
 {
     access_cxt_t acxt;
-    if (!create_access_context(&c, col_idx, 1, true, &acxt))
+    if (!create_access_context(&c, col_idx, true, &acxt))
         return false;
 
     // If this isn't an constant column, then fail.
@@ -273,7 +273,7 @@ static void validate_column_is_not_key(mdtable_t const* table, col_index_t col_i
 bool set_column_value_as_heap_offset(mdcursor_t c, col_index_t col_idx, uint32_t offset)
 {
     access_cxt_t acxt;
-    if (!create_access_context(&c, col_idx, 1, true, &acxt))
+    if (!create_access_context(&c, col_idx, true, &acxt))
         return false;
 
     // If this isn't a heap index column, then fail.
@@ -297,7 +297,7 @@ bool set_column_value_as_heap_offset(mdcursor_t c, col_index_t col_idx, uint32_t
 bool md_set_column_value_as_utf8(mdcursor_t c, col_index_t col_idx, char const* str)
 {
     access_cxt_t acxt;
-    if (!create_access_context(&c, col_idx, 1, true, &acxt))
+    if (!create_access_context(&c, col_idx, true, &acxt))
         return false;
 
     // If this isn't an constant column, then fail.
@@ -324,7 +324,7 @@ bool md_set_column_value_as_utf8(mdcursor_t c, col_index_t col_idx, char const* 
 bool md_set_column_value_as_blob(mdcursor_t c, col_index_t col_idx, uint8_t const* blob, uint32_t blob_len)
 {
     access_cxt_t acxt;
-    if (!create_access_context(&c, col_idx, 1, true, &acxt))
+    if (!create_access_context(&c, col_idx, true, &acxt))
         return false;
 
     // If this isn't an constant column, then fail.
@@ -349,7 +349,7 @@ bool md_set_column_value_as_blob(mdcursor_t c, col_index_t col_idx, uint8_t cons
 bool md_set_column_value_as_guid(mdcursor_t c, col_index_t col_idx, mdguid_t guid)
 {
     access_cxt_t acxt;
-    if (!create_access_context(&c, col_idx, 1, true, &acxt))
+    if (!create_access_context(&c, col_idx, true, &acxt))
         return false;
 
     // If this isn't an constant column, then fail.
@@ -371,7 +371,7 @@ bool md_set_column_value_as_guid(mdcursor_t c, col_index_t col_idx, mdguid_t gui
 bool md_set_column_value_as_userstring(mdcursor_t c, col_index_t col_idx, char16_t const* userstring)
 {
     access_cxt_t acxt;
-    if (!create_access_context(&c, col_idx, 1, true, &acxt))
+    if (!create_access_context(&c, col_idx, true, &acxt))
         return false;
 
     // If this isn't an constant column, then fail.
