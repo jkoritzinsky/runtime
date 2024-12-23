@@ -1106,7 +1106,7 @@ namespace System.Runtime.InteropServices
         private sealed class RcwCache
         {
             private readonly Lock _lock = new Lock(useTrivialWaits: true);
-            private readonly Dictionary<object, WeakReference<NativeObjectWrapper>> _cache = [];
+            private readonly Dictionary<object, GCHandle> _cache = [];
 
             /// <summary>
             /// Gets the current RCW proxy object for <paramref name="comPointer"/> if it exists in the cache or inserts a new entry with <paramref name="comProxy"/>.
@@ -1120,31 +1120,37 @@ namespace System.Runtime.InteropServices
                 lock (_lock)
                 {
                     Debug.Assert(wrapper.ProxyHandle.Target == comProxy);
-                    ref WeakReference<NativeObjectWrapper>? rcwEntry = ref CollectionsMarshal.GetValueRefOrAddDefault(_cache, comPointer, out bool exists);
+                    ref GCHandle rcwEntry = ref CollectionsMarshal.GetValueRefOrAddDefault(_cache, comPointer, out bool exists);
                     if (!exists)
                     {
                         // Someone else didn't beat us to adding the entry to the cache.
                         // Add our entry here.
-                        rcwEntry = new WeakReference<NativeObjectWrapper>(wrapper);
-                    }
-                    else if (!rcwEntry.TryGetTarget(out NativeObjectWrapper? cachedWrapper))
-                    {
-                        // The target was collected, so we need to update the cache entry.
-                        rcwEntry.SetTarget(wrapper);
+                        rcwEntry = GCHandle.Alloc(wrapper, GCHandleType.Weak);
                     }
                     else
                     {
-                        object? existingProxy = cachedWrapper.ProxyHandle.Target;
-                        // The target NativeObjectWrapper was not collected, but we need to make sure
-                        // that the proxy object is still alive.
-                        if (existingProxy is not null)
-                        {
-                            // The existing proxy object is still alive, we will use that.
-                            return (cachedWrapper, existingProxy);
-                        }
+                        NativeObjectWrapper? cachedWrapper = Unsafe.As<NativeObjectWrapper>(rcwEntry.Target);
 
-                        // The proxy object was collected, so we need to update the cache entry.
-                        rcwEntry.SetTarget(wrapper);
+                        if (cachedWrapper is null)
+                        {
+                            // The target was collected, so we need to update the cache entry.
+                            rcwEntry.Target = wrapper;
+                        }
+                        else
+                        {
+                            object? existingProxy = cachedWrapper.ProxyHandle.Target;
+
+                            // The target NativeObjectWrapper was not collected, but we need to make sure
+                            // that the proxy object is still alive.
+                            if (existingProxy is not null)
+                            {
+                                // The existing proxy object is still alive, we will use that.
+                                return (cachedWrapper, existingProxy);
+                            }
+
+                            // The proxy object was collected, so we need to update the cache entry.
+                            rcwEntry.Target = wrapper;
+                        }
                     }
 
                     // We either added an entry to the cache or updated an existing entry that was dead.
@@ -1157,11 +1163,16 @@ namespace System.Runtime.InteropServices
             {
                 lock (_lock)
                 {
-                    if (_cache.TryGetValue(comPointer, out WeakReference<NativeObjectWrapper>? existingHandle))
+                    if (_cache.TryGetValue(comPointer, out GCHandle existingHandle))
                     {
-                        if (!existingHandle.TryGetTarget(out NativeObjectWrapper? cachedWrapper)
-                            || cachedWrapper.ProxyHandle.Target == null)
+                        Debug.Assert(existingHandle.IsAllocated);
+                        NativeObjectWrapper? cachedWrapper = Unsafe.As<NativeObjectWrapper>(existingHandle.Target);
+
+                        if (cachedWrapper is null || cachedWrapper.ProxyHandle.Target is null)
                         {
+                            // Free the handle before removing it from the dictionary (all handles in it are guaranteed to be allocated)
+                            existingHandle.Free();
+
                             // The target was collected, so we need to remove the entry from the cache.
                             _cache.Remove(comPointer);
                             return null;
@@ -1180,11 +1191,17 @@ namespace System.Runtime.InteropServices
                     // TryGetOrCreateObjectForComInstanceInternal may have put a new entry into the cache
                     // in the time between the GC cleared the contents of the GC handle but before the
                     // NativeObjectWrapper finalizer ran.
-                    if (_cache.TryGetValue(comPointer, out WeakReference<NativeObjectWrapper>? cachedRef)
-                        && cachedRef.TryGetTarget(out NativeObjectWrapper? cachedValue)
-                        && wrapper == cachedValue)
+                    if (_cache.TryGetValue(comPointer, out GCHandle cachedRef))
                     {
-                        _cache.Remove(comPointer);
+                        Debug.Assert(cachedRef.IsAllocated);
+                        NativeObjectWrapper? cachedValue = Unsafe.As<NativeObjectWrapper>(cachedRef.Target);
+
+                        if (cachedValue is not null && wrapper == cachedValue)
+                        {
+                            cachedRef.Free();
+
+                            _cache.Remove(comPointer);
+                        }
                     }
                 }
             }
