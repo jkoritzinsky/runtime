@@ -56,52 +56,6 @@ namespace System.Runtime.InteropServices
             fpRelease = (IntPtr)(delegate* unmanaged<IntPtr, uint>)&ComWrappers.IUnknown_Release;
         }
 
-        // Used during GC callback
-        internal static unsafe void WalkExternalTrackerObjects()
-        {
-            bool walkFailed = false;
-
-            foreach (GCHandle weakNativeObjectWrapperHandle in s_referenceTrackerNativeObjectWrapperCache)
-            {
-                ReferenceTrackerNativeObjectWrapper? nativeObjectWrapper = Unsafe.As<ReferenceTrackerNativeObjectWrapper?>(weakNativeObjectWrapperHandle.Target);
-                if (nativeObjectWrapper != null &&
-                    nativeObjectWrapper.TrackerObject != IntPtr.Zero)
-                {
-                    FindReferenceTargetsCallback.s_currentRootObjectHandle = nativeObjectWrapper.ProxyHandle;
-                    if (IReferenceTracker.FindTrackerTargets(nativeObjectWrapper.TrackerObject, TrackerObjectManager.s_findReferencesTargetCallback) != HResults.S_OK)
-                    {
-                        walkFailed = true;
-                        FindReferenceTargetsCallback.s_currentRootObjectHandle = default;
-                        break;
-                    }
-                    FindReferenceTargetsCallback.s_currentRootObjectHandle = default;
-                }
-            }
-
-            // Report whether walking failed or not.
-            if (walkFailed)
-            {
-                TrackerObjectManager.s_isGlobalPeggingOn = true;
-            }
-            IReferenceTrackerManager.FindTrackerTargetsCompleted(TrackerObjectManager.s_trackerManager, walkFailed);
-        }
-
-        // Used during GC callback
-        internal static void DetachNonPromotedObjects()
-        {
-            foreach (GCHandle weakNativeObjectWrapperHandle in s_referenceTrackerNativeObjectWrapperCache)
-            {
-                ReferenceTrackerNativeObjectWrapper? nativeObjectWrapper = Unsafe.As<ReferenceTrackerNativeObjectWrapper?>(weakNativeObjectWrapperHandle.Target);
-                if (nativeObjectWrapper != null &&
-                    nativeObjectWrapper.TrackerObject != IntPtr.Zero &&
-                    !RuntimeImports.RhIsPromoted(nativeObjectWrapper.ProxyHandle.Target))
-                {
-                    // Notify the wrapper it was not promoted and is being collected.
-                    TrackerObjectManager.BeforeWrapperFinalized(nativeObjectWrapper.TrackerObject);
-                }
-            }
-        }
-
         [UnmanagedCallersOnly]
         internal static unsafe int IUnknown_QueryInterface(IntPtr pThis, Guid* guid, IntPtr* ppObject)
         {
@@ -162,6 +116,24 @@ namespace System.Runtime.InteropServices
             vftbl[5] = (IntPtr)(delegate* unmanaged<IntPtr, uint>)&ComWrappers.IReferenceTrackerTarget_Peg;
             vftbl[6] = (IntPtr)(delegate* unmanaged<IntPtr, uint>)&ComWrappers.IReferenceTrackerTarget_Unpeg;
             return (IntPtr)vftbl;
+        }
+
+
+
+        [UnmanagedCallersOnly]
+        internal static unsafe int ITaggedImpl_IsCurrentVersion(IntPtr pThis, IntPtr version)
+        {
+            return version == (IntPtr)(delegate* unmanaged<IntPtr, IntPtr, int>)&ITaggedImpl_IsCurrentVersion
+                ? HResults.S_OK
+                : HResults.E_FAIL;
+        }
+
+        private static partial IntPtr GetTaggedImplCurrentVersion()
+        {
+            unsafe
+            {
+                return (IntPtr)(delegate* unmanaged<IntPtr, IntPtr, int>)&ITaggedImpl_IsCurrentVersion;
+            }
         }
     }
 }

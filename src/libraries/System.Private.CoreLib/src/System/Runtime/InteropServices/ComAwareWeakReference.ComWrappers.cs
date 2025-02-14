@@ -4,8 +4,6 @@
 using System;
 using System.Runtime.CompilerServices;
 
-#if FEATURE_COMINTEROP || FEATURE_COMWRAPPERS
-
 namespace System
 {
     internal sealed partial class ComAwareWeakReference
@@ -28,22 +26,21 @@ namespace System
             s_possiblyComObjectCallback = possiblyComObject;
         }
 
-        internal static unsafe object? ComWeakRefToObject(IntPtr pComWeakRef, long wrapperId)
+        internal static unsafe object? ComWeakRefToComWrappersObject(IntPtr pComWeakRef, long wrapperId)
         {
             return s_comWeakRefToObjectCallback != null ? s_comWeakRefToObjectCallback(pComWeakRef, wrapperId) : null;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static unsafe bool PossiblyComObject(object target)
+        internal static unsafe bool PossiblyComWrappersObject(object target)
         {
             return s_possiblyComObjectCallback != null ? s_possiblyComObjectCallback(target) : false;
         }
 
-        internal static unsafe IntPtr ObjectToComWeakRef(object target, out long wrapperId)
+        internal static unsafe IntPtr ComWrappersObjectToComWeakRef(object target, out long wrapperId)
         {
             wrapperId = 0;
             return s_objectToComWeakRefCallback != null ? s_objectToComWeakRefCallback(target, out wrapperId) : IntPtr.Zero;
         }
     }
 }
-#endif
