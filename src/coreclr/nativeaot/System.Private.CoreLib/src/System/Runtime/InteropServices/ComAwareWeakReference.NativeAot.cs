@@ -8,9 +8,9 @@ namespace System
 {
     internal sealed partial class ComAwareWeakReference
     {
-        internal static unsafe object? ComWeakRefToObject(IntPtr pComWeakRef, long wrapperId)
+        internal static unsafe object? ComWeakRefToObject(IntPtr pComWeakRef, object? context)
         {
-            return ComWeakRefToComWrappersObject(pComWeakRef, wrapperId);
+            return ComWeakRefToComWrappersObject(pComWeakRef, context);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -19,9 +19,9 @@ namespace System
             return PossiblyComWrappersObject(target);
         }
 
-        internal static unsafe IntPtr ObjectToComWeakRef(object target, out long wrapperId)
+        internal static unsafe IntPtr ObjectToComWeakRef(object target, out object? context)
         {
-            return ComWrappersObjectToComWeakRef(target, out wrapperId);
+            return ComWrappersObjectToComWeakRef(target, out context);
         }
     }
 }

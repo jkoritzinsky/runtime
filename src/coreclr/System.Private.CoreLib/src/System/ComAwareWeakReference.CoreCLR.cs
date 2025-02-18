@@ -12,9 +12,9 @@ namespace System
         [LibraryImport(RuntimeHelpers.QCall, EntryPoint = "ComWeakRefToObject")]
         private static partial void ComWeakRefToObject(IntPtr pComWeakRef, ObjectHandleOnStack retRcw);
 
-        internal static object? ComWeakRefToObject(IntPtr pComWeakRef, long wrapperId)
+        internal static object? ComWeakRefToObject(IntPtr pComWeakRef, object? context)
         {
-            if (wrapperId == 0)
+            if (context is null)
             {
                 // This wrapper was not created by ComWrappers, so we try to rehydrate using built-in COM.
                 object? retRcw = null;
@@ -22,7 +22,7 @@ namespace System
                 return retRcw;
             }
 
-            return ComWeakRefToComWrappersObject(pComWeakRef, wrapperId);
+            return ComWeakRefToComWrappersObject(pComWeakRef, context);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -48,22 +48,22 @@ namespace System
         [LibraryImport(RuntimeHelpers.QCall, EntryPoint = "ObjectToComWeakRef")]
         private static partial IntPtr ObjectToComWeakRef(ObjectHandleOnStack retRcw);
 
-        internal static nint ObjectToComWeakRef(object target, out long wrapperId)
+        internal static nint ObjectToComWeakRef(object target, out object? context)
         {
             if (!HasInteropInfo(target))
             {
-                wrapperId = 0;
+                context = null;
                 return IntPtr.Zero;
             }
 
             if (target is __ComObject)
             {
                 // This object is using built-in COM, so use built-in COM to create the weak reference.
-                wrapperId = 0;
+                context = null;
                 return ObjectToComWeakRef(ObjectHandleOnStack.Create(ref target));
             }
 
-            return ComWrappersObjectToComWeakRef(target, out wrapperId);
+            return ComWrappersObjectToComWeakRef(target, out context);
         }
     }
 }

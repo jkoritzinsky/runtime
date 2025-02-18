@@ -45,17 +45,17 @@ namespace System.Runtime.InteropServices
         private readonly ConditionalWeakTable<object, ManagedObjectWrapperHolder> _managedObjectWrapperTable = new ConditionalWeakTable<object, ManagedObjectWrapperHolder>();
         private readonly RcwCache _rcwCache = new();
 
-        internal static bool TryGetComInstanceForIID(object obj, Guid iid, out IntPtr unknown, out long wrapperId)
+        internal static bool TryGetComInstanceForIID(object obj, Guid iid, out IntPtr unknown, out ComWrappers? comWrappers)
         {
             if (obj == null
                 || !s_nativeObjectWrapperTable.TryGetValue(obj, out NativeObjectWrapper? wrapper))
             {
                 unknown = IntPtr.Zero;
-                wrapperId = 0;
+                comWrappers = null;
                 return false;
             }
 
-            wrapperId = wrapper.ComWrappers.id;
+            comWrappers = wrapper.ComWrappers;
             return Marshal.QueryInterface(wrapper.ExternalComObject, iid, out unknown) == HResults.S_OK;
         }
 
@@ -703,16 +703,13 @@ namespace System.Runtime.InteropServices
         /// </summary>
         private static ComWrappers? s_globalInstanceForMarshalling;
 
-        private static long s_instanceCounter;
-        private readonly long id = Interlocked.Increment(ref s_instanceCounter);
-
-        internal static object? GetOrCreateObjectFromWrapper(long wrapperId, IntPtr externalComObject)
+        internal static object? GetOrCreateObjectFromWrapper(ComWrappers wrapper, IntPtr externalComObject)
         {
-            if (s_globalInstanceForTrackerSupport != null && s_globalInstanceForTrackerSupport.id == wrapperId)
+            if (s_globalInstanceForTrackerSupport != null && s_globalInstanceForTrackerSupport == wrapper)
             {
                 return s_globalInstanceForTrackerSupport.GetOrCreateObjectForComInstance(externalComObject, CreateObjectFlags.TrackerObject);
             }
-            else if (s_globalInstanceForMarshalling != null && s_globalInstanceForMarshalling.id == wrapperId)
+            else if (s_globalInstanceForMarshalling != null && s_globalInstanceForMarshalling == wrapper)
             {
                 return ComObjectForInterface(externalComObject);
             }
@@ -1403,9 +1400,9 @@ namespace System.Runtime.InteropServices
             }
         }
 
-        private static object? ComWeakRefToObject(IntPtr pComWeakRef, long wrapperId)
+        private static object? ComWeakRefToObject(IntPtr pComWeakRef, object? context)
         {
-            if (wrapperId == 0)
+            if (context is not ComWrappers comWrappers)
             {
                 return null;
             }
@@ -1420,7 +1417,7 @@ namespace System.Runtime.InteropServices
                 if (Marshal.QueryInterface(target.Ptr, IID_IUnknown, out IntPtr targetIdentityPtr) == HResults.S_OK)
                 {
                     using ComHolder targetIdentity = new ComHolder(targetIdentityPtr);
-                    return GetOrCreateObjectFromWrapper(wrapperId, targetIdentity.Ptr);
+                    return GetOrCreateObjectFromWrapper(comWrappers, targetIdentity.Ptr);
                 }
             }
 
@@ -1435,14 +1432,16 @@ namespace System.Runtime.InteropServices
             return s_nativeObjectWrapperTable.TryGetValue(target, out NativeObjectWrapper? wrapper) && !wrapper.IsAggregatedWithManagedObjectWrapper;
         }
 
-        private static unsafe IntPtr ObjectToComWeakRef(object target, out long wrapperId)
+        private static unsafe IntPtr ObjectToComWeakRef(object target, out object? context)
         {
+            context = null;
             if (TryGetComInstanceForIID(
                 target,
                 IID_IWeakReferenceSource,
                 out IntPtr weakReferenceSourcePtr,
-                out wrapperId))
+                out ComWrappers? wrapper))
             {
+                context = wrapper;
                 using ComHolder weakReferenceSource = new ComHolder(weakReferenceSourcePtr);
                 if (IWeakReferenceSource.GetWeakReference(weakReferenceSource.Ptr, out IntPtr weakReference) == HResults.S_OK)
                 {
