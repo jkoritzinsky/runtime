@@ -587,7 +587,10 @@ if [[ "$bootstrap" == "1" ]]; then
   bootstrapArguments="${arguments//-sign/}"
   bootstrapArguments="${bootstrapArguments//-publish/}"
   bootstrapArguments="${bootstrapArguments//-pack/}"
-  bootstrapArguments="${bootstrapArguments//-test/}"
+  bootstrapArguments="${arguments//--sign/}"
+  bootstrapArguments="${bootstrapArguments//--publish/}"
+  bootstrapArguments="${bootstrapArguments//--pack/}"
+  bootstrapArguments="${bootstrapArguments//--test/}"
   "$scriptroot/common/build.sh" $bootstrapArguments /p:Subset=bootstrap -bl:$scriptroot/../artifacts/log/bootstrap.binlog
 
   # Remove artifacts from the bootstrap build so the product build is a "clean" build.
