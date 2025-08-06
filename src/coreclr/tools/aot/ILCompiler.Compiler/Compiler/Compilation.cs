@@ -322,16 +322,20 @@ namespace ILCompiler
 
                         if (type.IsInterface)
                         {
-                            // We counter-intuitively ask for a constructed type symbol. This is needed due to IDynamicInterfaceCastable.
+                            // We counter-intuitively ask for a constructed or metadata type symbol.
+                            // This is needed due to IDynamicInterfaceCastable.
                             // If this cast happens with an object that implements IDynamicInterfaceCastable, user code will
                             // see a RuntimeTypeHandle representing this interface.
+                            // We only need to preserve a constructed one if we may have a dynamic implementation of said interface.
+                            // Otherwise, we can use a metadata type symbol as that will preserve enough information
+                            // for the user to determine that there is no dynamic implementation.
                             if (NodeFactory.DevirtualizationManager.CanHaveDynamicInterfaceImplementations(type))
                             {
                                 return NodeFactory.MaximallyConstructableType(type);
                             }
                             else
                             {
-                                return NecessaryTypeSymbolIfPossible(type);
+                                return NodeFactory.MetadataTypeSymbol(type);
                             }
                         }
 

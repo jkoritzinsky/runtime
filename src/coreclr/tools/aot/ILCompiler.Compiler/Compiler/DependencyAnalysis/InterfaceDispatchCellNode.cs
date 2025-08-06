@@ -60,7 +60,7 @@ namespace ILCompiler.DependencyAnalysis
             }
             else
             {
-                return factory.NecessaryTypeSymbol(_targetMethod.OwningType);
+                return factory.MetadataTypeSymbol(_targetMethod.OwningType);
             }
         }
 
