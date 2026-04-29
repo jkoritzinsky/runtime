@@ -6028,120 +6028,73 @@ EXTERN_C void* PInvokeImportWorker(PInvokeMethodDesc* pMD)
 //  Support for Pinvoke Calli instruction
 //
 //===========================================================================
-static void GetILStubForCalli(VASigCookie* pVASigCookie, MethodDesc* pMD)
+
+MethodDesc* PInvoke::GetILStubForCalli(Signature signature, Module* pModule, SigTypeContext* pTypeContext)
 {
-    CONTRACTL
-    {
-        THROWS;
-        GC_TRIGGERS;
-        ENTRY_POINT;
-        MODE_ANY;
-        PRECONDITION(CheckPointer(pVASigCookie));
-        PRECONDITION(CheckPointer(pMD, NULL_OK));
-    }
-    CONTRACTL_END;
+    STANDARD_VM_CONTRACT;
 
-    PCODE pTempILStub = (PCODE)NULL;
-
-    INSTALL_MANAGED_EXCEPTION_DISPATCHER;
-    // this function is called by CLR to native assembly stubs which are called by
-    // managed code as a result, we need an unwind and continue handler to translate
-    // any of our internal exceptions into managed exceptions.
-    INSTALL_UNWIND_AND_CONTINUE_HANDLER;
-
-    // Force a GC if the stress level is high enough
-    GCStress<cfg_any>::MaybeTrigger();
-
-    GCX_PREEMP();
-
-    Signature signature = pVASigCookie->signature;
     CorInfoCallConvExtension unmgdCallConv = CorInfoCallConvExtension::Managed;
 
-    DWORD dwStubFlags = PINVOKESTUB_FL_BESTFIT;
+    DWORD dwStubFlags = PINVOKESTUB_FL_BESTFIT | PINVOKESTUB_FL_UNMANAGED_CALLI;
 
-    if (pMD == NULL)
+    // need to convert the CALLI signature to stub signature with managed calling convention
+    BYTE callConv = MetaSig::GetCallingConvention(signature);
+
+    // Unmanaged calling convention indicates modopt should be read
+    if (callConv != IMAGE_CEE_CS_CALLCONV_UNMANAGED)
     {
-        dwStubFlags |= PINVOKESTUB_FL_UNMANAGED_CALLI;
-
-        // need to convert the CALLI signature to stub signature with managed calling convention
-        BYTE callConv = MetaSig::GetCallingConvention(signature);
-
-        // Unmanaged calling convention indicates modopt should be read
-        if (callConv != IMAGE_CEE_CS_CALLCONV_UNMANAGED)
-        {
-            unmgdCallConv = (CorInfoCallConvExtension)callConv;
-        }
-        else
-        {
-            CallConvBuilder builder;
-            UINT errorResID;
-            HRESULT hr = CallConv::TryGetUnmanagedCallingConventionFromModOpt(GetScopeHandle(pVASigCookie->pModule), signature.GetRawSig(), signature.GetRawSigLen(), &builder, &errorResID);
-            if (FAILED(hr))
-                COMPlusThrowHR(hr, errorResID);
-
-            unmgdCallConv = builder.GetCurrentCallConv();
-            if (unmgdCallConv == CallConvBuilder::UnsetValue)
-            {
-                unmgdCallConv = CallConv::GetDefaultUnmanagedCallingConvention();
-            }
-
-            if (builder.IsCurrentCallConvModSet(CallConvBuilder::CALL_CONV_MOD_SUPPRESSGCTRANSITION))
-            {
-                dwStubFlags |= PINVOKESTUB_FL_SUPPRESSGCTRANSITION;
-            }
-        }
-
-        LoaderHeap *pHeap = pVASigCookie->pLoaderModule->GetLoaderAllocator()->GetHighFrequencyHeap();
-        PCOR_SIGNATURE new_sig = (PCOR_SIGNATURE)(void *)pHeap->AllocMem(S_SIZE_T(signature.GetRawSigLen()));
-        CopyMemory(new_sig, signature.GetRawSig(), signature.GetRawSigLen());
-
-        // make the stub IMAGE_CEE_CS_CALLCONV_DEFAULT
-        *new_sig &= ~IMAGE_CEE_CS_CALLCONV_MASK;
-        *new_sig |= IMAGE_CEE_CS_CALLCONV_DEFAULT;
-
-        signature = Signature(new_sig, signature.GetRawSigLen());
+        unmgdCallConv = (CorInfoCallConvExtension)callConv;
     }
     else
     {
-        _ASSERTE(pMD->IsPInvoke());
-        dwStubFlags |= PINVOKESTUB_FL_CONVSIGASVARARG;
+        CallConvBuilder builder;
+        UINT errorResID;
+        HRESULT hr = CallConv::TryGetUnmanagedCallingConventionFromModOpt(GetScopeHandle(pModule), signature.GetRawSig(), signature.GetRawSigLen(), &builder, &errorResID);
+        if (FAILED(hr))
+            COMPlusThrowHR(hr, errorResID);
 
-        // vararg P/Invoke must be cdecl
-        unmgdCallConv = CorInfoCallConvExtension::C;
+        unmgdCallConv = builder.GetCurrentCallConv();
+        if (unmgdCallConv == CallConvBuilder::UnsetValue)
+        {
+            unmgdCallConv = CallConv::GetDefaultUnmanagedCallingConvention();
+        }
+
+        if (builder.IsCurrentCallConvModSet(CallConvBuilder::CALL_CONV_MOD_SUPPRESSGCTRANSITION))
+        {
+            dwStubFlags |= PINVOKESTUB_FL_SUPPRESSGCTRANSITION;
+        }
     }
+
+    // TODO-CalliNoCookie: the new signature must have an additional void*/intptr parameter to pass the calli target (no secret arg any more).
+
+    LoaderHeap *pHeap = pModule->GetLoaderAllocator()->GetHighFrequencyHeap();
+    PCOR_SIGNATURE new_sig = (PCOR_SIGNATURE)(void *)pHeap->AllocMem(S_SIZE_T(signature.GetRawSigLen()));
+    CopyMemory(new_sig, signature.GetRawSig(), signature.GetRawSigLen());
+
+    // make the stub IMAGE_CEE_CS_CALLCONV_DEFAULT
+    *new_sig &= ~IMAGE_CEE_CS_CALLCONV_MASK;
+    *new_sig |= IMAGE_CEE_CS_CALLCONV_DEFAULT;
+
+    signature = Signature(new_sig, signature.GetRawSigLen());
 
     mdMethodDef md = mdMethodDefNil;
     CorNativeLinkFlags nlFlags = nlfNone;
     CorNativeLinkType nlType = nltAnsi;
 
-    if (pMD != NULL)
-    {
-        _ASSERTE(pMD->IsPInvoke());
-        _ASSERTE(!pMD->IsAsyncMethod());
-        PInvokeStaticSigInfo sigInfo(pMD);
+    StubSigDesc sigDesc(signature, pModule);
+    sigDesc.m_typeContext.InitTypeContext(pTypeContext);
 
-        md = pMD->GetMemberDef();
-        nlFlags = sigInfo.GetLinkFlags();
-        nlType  = sigInfo.GetCharSet();
-    }
-
-    StubSigDesc sigDesc(pMD, signature, pVASigCookie->pModule, pVASigCookie->pLoaderModule);
-    sigDesc.InitTypeContext(pVASigCookie->classInst, pVASigCookie->methodInst);
-
+    // TODO-CalliNoCookie: don't generate the IL for calli stubs here,
+    // instead use the transient IL technology to do the generation (like regular P/Invokes).
+    //
+    // We'll need to introduce a mechanism for creating a DynamicMethodDesc that does not
+    // automatically require backing IL/FinalizeILStub (and instead gets its implementation from the transient IL path).
     MethodDesc* pStubMD = PInvoke::CreateCLRToNativeILStub(&sigDesc,
                                     nlType,
                                     nlFlags,
                                     unmgdCallConv,
                                     dwStubFlags);
-
-    pTempILStub = JitILStub(pStubMD);
-
-    InterlockedCompareExchangeT<PCODE>(&pVASigCookie->pPInvokeILStub,
-                                                    pTempILStub,
-                                                    (PCODE)NULL);
-
-    UNINSTALL_UNWIND_AND_CONTINUE_HANDLER;
-    UNINSTALL_MANAGED_EXCEPTION_DISPATCHER;
+    return pStubMD;
 }
 
 EXTERN_C void STDCALL VarargPInvokeStubWorker(TransitionBlock* pTransitionBlock, VASigCookie *pVASigCookie, MethodDesc *pMD)
@@ -6166,12 +6119,51 @@ EXTERN_C void STDCALL VarargPInvokeStubWorker(TransitionBlock* pTransitionBlock,
 
     _ASSERTE(pVASigCookie == pFrame->GetVASigCookie());
     _ASSERTE(pMD == pFrame->GetFunction());
+    _ASSERTE(pMD->IsPInvoke());
 
-    GetILStubForCalli(pVASigCookie, pMD);
+    INSTALL_MANAGED_EXCEPTION_DISPATCHER;
+    INSTALL_UNWIND_AND_CONTINUE_HANDLER;
+
+    // Force a GC if the stress level is high enough
+    GCStress<cfg_any>::MaybeTrigger();
+
+    GCX_PREEMP();
+
+    // vararg P/Invoke must be cdecl
+    CorInfoCallConvExtension unmgdCallConv = CorInfoCallConvExtension::C;
+
+    DWORD dwStubFlags = PINVOKESTUB_FL_BESTFIT | PINVOKESTUB_FL_CONVSIGASVARARG;
+
+    _ASSERTE(pMD->IsPInvoke());
+    _ASSERTE(!pMD->IsAsyncMethod());
+    PInvokeStaticSigInfo sigInfo(pMD);
+
+    mdMethodDef md = pMD->GetMemberDef();
+    CorNativeLinkFlags nlFlags = sigInfo.GetLinkFlags();
+    CorNativeLinkType nlType  = sigInfo.GetCharSet();
+
+    StubSigDesc sigDesc(pMD, signature, pModule, pLoaderModule);
+    sigDesc.InitTypeContext(classInst, methodInst);
+
+    MethodDesc* pStubMD = PInvoke::CreateCLRToNativeILStub(&sigDesc,
+                                    nlType,
+                                    nlFlags,
+                                    unmgdCallConv,
+                                    dwStubFlags);
+
+    PCODE pTempILStub = JitILStub(pStubMD);
+
+    InterlockedCompareExchangeT<PCODE>(&pVASigCookie->pPInvokeILStub,
+                                                    pTempILStub,
+                                                    (PCODE)NULL);
+
+    UNINSTALL_UNWIND_AND_CONTINUE_HANDLER;
+    UNINSTALL_MANAGED_EXCEPTION_DISPATCHER;
 
     pFrame->Pop(CURRENT_THREAD);
 }
 
+// TODO-CalliNoCookie: Delete this and all transitively unused code.
 EXTERN_C void STDCALL GenericPInvokeCalliStubWorker(TransitionBlock * pTransitionBlock, VASigCookie * pVASigCookie, PCODE pUnmanagedTarget)
 {
     PreserveLastErrorHolder preserveLastError;
@@ -6186,6 +6178,7 @@ EXTERN_C void STDCALL GenericPInvokeCalliStubWorker(TransitionBlock * pTransitio
 #ifdef _DEBUG
     Thread::ObjectRefFlush(CURRENT_THREAD);
 #endif
+    UNREACHABLE();
 
     PInvokeCalliFrame frame(pTransitionBlock, pVASigCookie, pUnmanagedTarget);
     PInvokeCalliFrame * pFrame = &frame;
@@ -6194,7 +6187,7 @@ EXTERN_C void STDCALL GenericPInvokeCalliStubWorker(TransitionBlock * pTransitio
 
     _ASSERTE(pVASigCookie == pFrame->GetVASigCookie());
 
-    GetILStubForCalli(pVASigCookie, NULL);
+    UNREACHABLE();
 
     pFrame->Pop(CURRENT_THREAD);
 }

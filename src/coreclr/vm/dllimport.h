@@ -131,6 +131,8 @@ public:
                     PInvokeMethodDesc* pMD,
                     DynamicResolver** ppResolver);
 
+    static MethodDesc* GetILStubForCalli(Signature signature, Module* pModule, SigTypeContext* pTypeContext);
+
 #ifdef FEATURE_COMINTEROP
     static MethodDesc* CreateFieldAccessILStub(
                     PCCOR_SIGNATURE    szMetaSig,

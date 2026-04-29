@@ -10143,7 +10143,8 @@ LPVOID CEEInfo::GetCookieForPInvokeCalliSig(CORINFO_SIG_INFO* szMetaSig,
 {
     WRAPPER_NO_CONTRACT;
 
-    return getVarArgsHandle(szMetaSig, NULL, ppIndirection);
+    UNREACHABLE();
+    return nullptr;
 }
 
 // Check any constraints on method type arguments
@@ -15105,7 +15106,46 @@ CORINFO_METHOD_HANDLE CEEJitInfo::getAsyncResumptionStub(void** entryPoint)
 
 bool CEEInfo::convertPInvokeCalliToCall(CORINFO_RESOLVED_TOKEN * pResolvedToken, bool fMustConvert)
 {
-    return false;
+    CONTRACTL{
+        THROWS;
+        GC_TRIGGERS;
+        MODE_PREEMPTIVE;
+    } CONTRACTL_END;
+
+    Module* module = GetModule(pResolvedToken->tokenScope);
+
+    ULONG cbSig;
+    PCCOR_SIGNATURE pSig;
+    if (!module->GetMDImport()->GetSigFromToken(pResolvedToken->token, &cbSig, &pSig))
+        return false;
+
+    Signature signature(pSig, cbSig);
+    SigTypeContext typeContext;
+    GetTypeContext(pResolvedToken->tokenContext, &typeContext);
+    MetaSig msig(pSig, cbSig, module, &typeContext);
+
+    if ((MetaSig::GetCallingConvention(signature) & IMAGE_CEE_CS_CALLCONV_MASK) == IMAGE_CEE_CS_CALLCONV_DEFAULT)
+        return false;
+
+    if (!fMustConvert
+        && !PInvoke::MarshalingRequired(
+            nullptr,
+            signature.CreateSigPointer(),
+            module,
+            &typeContext
+        ))
+    {
+        return false;
+    }
+
+    Instantiation classInst = typeContext.GetClassInstantiation();
+    Instantiation methodInst = typeContext.GetMethodInstantiation();
+
+    MethodDesc* pStubMD = PInvoke::GetILStubForCalli(signature, module, &typeContext);
+
+    pResolvedToken->hMethod = CORINFO_METHOD_HANDLE{pStubMD};
+
+    return true;
 }
 
 void CEEInfo::updateEntryPointForTailCall(CORINFO_CONST_LOOKUP* entryPoint)
