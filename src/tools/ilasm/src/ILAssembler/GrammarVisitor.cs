@@ -3020,7 +3020,7 @@ namespace ILAssembler
                     _ => throw new UnreachableException()
                 }));
             }
-            return new(builder.MoveToImmutable().SerializeSequence());
+            return new(builder.ToImmutable().SerializeSequence());
         }
         GrammarResult ICILVisitor<GrammarResult>.VisitF64seq(CILParser.F64seqContext context) => VisitF64seq(context);
         public GrammarResult.FormattedBlob VisitF64seq(CILParser.F64seqContext context)
@@ -3036,7 +3036,7 @@ namespace ILAssembler
                     _ => throw new UnreachableException()
                 }));
             }
-            return new(builder.MoveToImmutable().SerializeSequence());
+            return new(builder.ToImmutable().SerializeSequence());
         }
 
         public GrammarResult VisitFaultClause(CILParser.FaultClauseContext context) => throw new UnreachableException(NodeShouldNeverBeDirectlyVisited);
