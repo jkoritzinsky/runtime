@@ -249,11 +249,9 @@ internal sealed class Program
                 return 1;
             }
 
-            // Write output
-            using var outputStream = File.Create(outputPath);
             var blobBuilder = new BlobBuilder();
             compilationResult.Serialize(blobBuilder);
-            blobBuilder.WriteContentTo(outputStream);
+            OutputFile.Write(outputPath, blobBuilder);
 
             if (hasErrors)
             {

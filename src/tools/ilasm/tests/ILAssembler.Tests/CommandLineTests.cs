@@ -2,6 +2,9 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 
 using System;
+using System.IO;
+using System.Reflection.Metadata;
+using System.Threading.Tasks;
 using Xunit;
 
 namespace ILAssembler.Tests;
@@ -389,5 +392,38 @@ public class CommandLineTests
             NativeCommandLine.Normalize(
                 ["first.il", "-dllSuffix", "-outSuffix:test.dll", "second.il"],
                 allowSlashOptions: false));
+    }
+
+    [Fact]
+    public async Task OutputFile_Write_RetriesTransientSharingViolation()
+    {
+        if (!OperatingSystem.IsWindows())
+        {
+            return;
+        }
+
+        string path = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+        FileStream lockStream = File.Open(path, FileMode.CreateNew, FileAccess.ReadWrite, FileShare.Read);
+        Task releaseLock = Task.Run(async () =>
+        {
+            await Task.Delay(500);
+            lockStream.Dispose();
+        });
+
+        try
+        {
+            var content = new BlobBuilder();
+            content.WriteBytes(new byte[] { 1, 2, 3, 4 });
+
+            OutputFile.Write(path, content);
+
+            Assert.Equal([1, 2, 3, 4], File.ReadAllBytes(path));
+        }
+        finally
+        {
+            lockStream.Dispose();
+            await releaseLock;
+            File.Delete(path);
+        }
     }
 }

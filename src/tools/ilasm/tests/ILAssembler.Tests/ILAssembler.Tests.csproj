@@ -13,10 +13,13 @@
     <ProjectReference Include="..\..\src\ILAssembler\ILAssembler.csproj" SkipUseReferenceAssembly="true" />
   </ItemGroup>
 
-  <!-- Link CLI normalization so it can be tested without referencing the self-contained executable project. -->
+  <!-- Link testable CLI helpers without referencing the self-contained executable project. -->
   <ItemGroup>
     <Compile Include="..\..\src\ilasm\NativeCommandLine.cs">
       <Link>NativeCommandLine.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\ilasm\OutputFile.cs">
+      <Link>OutputFile.cs</Link>
     </Compile>
   </ItemGroup>
 
