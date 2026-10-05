@@ -274,14 +274,6 @@ STDMETHODIMP_(ULONG) InternalMetadataImportRO::EnumMethodImplGetCount(
     UNREFERENCED_PARAMETER(phEnumDecl);
     return EnumGetCount(phEnumBody);
 }
-STDMETHODIMP_(void) InternalMetadataImportRO::EnumMethodImplReset(
-    HENUMInternal   *phEnumBody,
-    HENUMInternal   *phEnumDecl)
-{
-    LOCK_INTERNAL_READ();
-    ToHCORENUMImpl(phEnumBody)->Reset(0);
-    ToHCORENUMImpl(phEnumDecl)->Reset(0);
-}
 STDMETHODIMP InternalMetadataImportRO::EnumMethodImplNext(
     HENUMInternal   *phEnumBody,
     HENUMInternal   *phEnumDecl,
@@ -308,15 +300,6 @@ STDMETHODIMP InternalMetadataImportRO::EnumMethodImplNext(
         return CLDB_E_FILE_CORRUPT;
     return S_OK;
 }
-STDMETHODIMP_(void) InternalMetadataImportRO::EnumMethodImplClose(
-    HENUMInternal   *phEnumBody,
-    HENUMInternal   *phEnumDecl)
-{
-    LOCK_INTERNAL_READ();
-    HCORENUMImpl::Destroy(ToHCORENUMImpl(phEnumBody));
-    HCORENUMImpl::Destroy(ToHCORENUMImpl(phEnumDecl));
-}
-
 STDMETHODIMP InternalMetadataImportRO::EnumGlobalFunctionsInit(
     HENUMInternal   *phEnum)
 {
@@ -1050,19 +1033,20 @@ STDMETHODIMP InternalMetadataImportRO::GetCountNestedClasses(
     if (TypeFromToken(tkEnclosingClass) != mdtTypeDef)
         return E_INVALIDARG;
 
+    *pcNestedClassesCount = 0;
     mdcursor_t cursor;
     uint32_t count;
     mdcursor_t nestedClassRowStart;
     uint32_t nestedClassRowCount;
     if (!md_create_cursor(m_handle.get(), mdtid_NestedClass, &cursor, &count))
     {
-        return CLDB_E_RECORD_NOTFOUND;
+        return S_OK;
     }
 
     md_range_result_t result = md_find_range_from_cursor(cursor, mdtNestedClass_EnclosingClass, RidFromToken(tkEnclosingClass), &nestedClassRowStart, &nestedClassRowCount);
     if (result == MD_RANGE_NOT_FOUND)
     {
-        return CLDB_E_RECORD_NOTFOUND;
+        return S_OK;
     }
     else if (result == MD_RANGE_NOT_SUPPORTED)
     {
@@ -1093,19 +1077,20 @@ STDMETHODIMP InternalMetadataImportRO::GetNestedClasses(
     if (TypeFromToken(tkEnclosingClass) != mdtTypeDef)
         return E_INVALIDARG;
 
+    *pcNestedClasses = 0;
     mdcursor_t cursor;
     uint32_t count;
     mdcursor_t nestedClassRowStart;
     uint32_t nestedClassRowCount;
     if (!md_create_cursor(m_handle.get(), mdtid_NestedClass, &cursor, &count))
     {
-        return CLDB_E_RECORD_NOTFOUND;
+        return S_OK;
     }
 
     md_range_result_t result = md_find_range_from_cursor(cursor, mdtNestedClass_EnclosingClass, RidFromToken(tkEnclosingClass), &nestedClassRowStart, &nestedClassRowCount);
     if (result == MD_RANGE_NOT_FOUND)
     {
-        return CLDB_E_RECORD_NOTFOUND;
+        return S_OK;
     }
     else if (result == MD_RANGE_NOT_SUPPORTED)
     {
@@ -1118,11 +1103,10 @@ STDMETHODIMP InternalMetadataImportRO::GetNestedClasses(
 
             if (enclosingClass == tkEnclosingClass)
             {
-                if (!md_get_column_value_as_token(cursor, mdtNestedClass_NestedClass, &rNestedClasses[nestedClassRowCount++]))
+                if (nestedClassRowCount < ulNestedClasses
+                    && !md_get_column_value_as_token(cursor, mdtNestedClass_NestedClass, &rNestedClasses[nestedClassRowCount]))
                     return CLDB_E_FILE_CORRUPT;
-
-                if (nestedClassRowCount == ulNestedClasses)
-                    break;
+                nestedClassRowCount++;
             }
         }
 
@@ -1130,12 +1114,14 @@ STDMETHODIMP InternalMetadataImportRO::GetNestedClasses(
         return S_OK;
     }
 
-    int32_t numReadRows = md_get_many_rows_column_value_as_token(nestedClassRowStart, mdtNestedClass_NestedClass, std::min((uint32_t)ulNestedClasses, nestedClassRowCount), rNestedClasses);
-
-    if (numReadRows == -1)
-        return CLDB_E_FILE_CORRUPT;
-
-    *pcNestedClasses = (uint32_t)numReadRows;
+    uint32_t toRead = std::min((uint32_t)ulNestedClasses, nestedClassRowCount);
+    if (toRead != 0)
+    {
+        int32_t numReadRows = md_get_many_rows_column_value_as_token(nestedClassRowStart, mdtNestedClass_NestedClass, toRead, rNestedClasses);
+        if (numReadRows < 0 || (uint32_t)numReadRows != toRead)
+            return CLDB_E_FILE_CORRUPT;
+    }
+    *pcNestedClasses = nestedClassRowCount;
 
     return S_OK;
 }
@@ -1540,7 +1526,9 @@ namespace
         mdToken tkEnclosingClass,
         mdTypeDef* ptd)
     {
-        assert(importer != nullptr && nspace != nullptr && name != nullptr && ptd != nullptr);
+        assert(importer != nullptr && name != nullptr && ptd != nullptr);
+        if (nspace == nullptr)
+            nspace = "";
         *ptd = mdTypeDefNil;
 
         HRESULT hr;
@@ -2921,8 +2909,8 @@ STDMETHODIMP InternalMetadataImportRO::TranslateSigWithScope(
     ULONG       cbHashValue,
     PCCOR_SIGNATURE pbSigBlob,
     ULONG       cbSigBlob,
-    IMetaDataAssemblyEmit *pAssemEmit,
-    IMetaDataEmit *emit,
+    IMDInternalEmit *pAssemEmit,
+    IMDInternalEmit *emit,
     CQuickBytes *pqkSigEmit,
     ULONG       *pcbSig)
 {
@@ -2938,6 +2926,13 @@ STDMETHODIMP InternalMetadataImportRO::TranslateSigWithScope(
     minipal::com_ptr<IMetaDataAssemblyImport> publicAssemblyImport;
     if (pAssemImport != nullptr)
         RETURN_IF_FAILED(pAssemImport->QueryInterface(IID_IMetaDataAssemblyImport, (void**)&publicAssemblyImport));
+
+    minipal::com_ptr<IMetaDataAssemblyEmit> publicAssemblyEmit;
+    if (pAssemEmit != nullptr)
+        RETURN_IF_FAILED(pAssemEmit->QueryInterface(IID_IMetaDataAssemblyEmit, (void**)&publicAssemblyEmit));
+
+    minipal::com_ptr<IMetaDataEmit> publicEmit;
+    RETURN_IF_FAILED(emit->QueryInterface(IID_IMetaDataEmit, (void**)&publicEmit));
 
     minipal::com_ptr<IUnknown> sourceIdentity, destinationIdentity;
     RETURN_IF_FAILED(QueryInterface(IID_IUnknown, (void**)&sourceIdentity));
@@ -2963,8 +2958,8 @@ STDMETHODIMP InternalMetadataImportRO::TranslateSigWithScope(
 
     *pcbSig = 0;
     ULONG translatedSize = 0;
-    hr = emit->TranslateSigWithScope(publicAssemblyImport.p, pbHashValue, cbHashValue,
-        publicImport.p, pbSigBlob, cbSigBlob, pAssemEmit, emit,
+    hr = publicEmit->TranslateSigWithScope(publicAssemblyImport.p, pbHashValue, cbHashValue,
+        publicImport.p, pbSigBlob, cbSigBlob, publicAssemblyEmit.p, publicEmit.p,
         static_cast<PCOR_SIGNATURE>(pqkSigEmit->Ptr()), (ULONG)capacity, &translatedSize);
     if (hr == CLDB_S_TRUNCATION)
         return CLDB_E_TOO_BIG;

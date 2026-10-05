@@ -3,7 +3,7 @@
 
 #include <minipal_com.h>
 #include <cor.h>
-#include <metadata.h>
+#include <corpriv.h>
 #include <dnmd.h>
 #include <dnmd_interfaces.hpp>
 #include <mdinternalemit.h>
@@ -146,6 +146,15 @@ TEST(InternalConversion, NewWritableScopeSharesPublicAndInternalIdentity)
     ASSERT_EQ(S_OK, emit->QueryInterface(IID_IMDInternalImport, (void**)&bridged));
     EXPECT_EQ(internal.p, bridged.p);
     ExpectSameComIdentity(internal.p, emit.p);
+    minipal::com_ptr<IMDInternalEmit> internalEmit;
+    ASSERT_EQ(S_OK, internal->QueryInterface(IID_IMDInternalEmit, (void**)&internalEmit));
+    ExpectSameComIdentity(internal.p, internalEmit.p);
+    minipal::com_ptr<IGetIMDInternalImport> getter;
+    ASSERT_EQ(S_OK, internalEmit->QueryInterface(IID_IGetIMDInternalImport, (void**)&getter));
+    EXPECT_EQ(E_POINTER, getter->GetIMDInternalImport(nullptr));
+    minipal::com_ptr<IMDInternalImport> fromEmit;
+    ASSERT_EQ(S_OK, getter->GetIMDInternalImport(&fromEmit));
+    EXPECT_EQ(internal.p, fromEmit.p);
     minipal::com_ptr<IMetaDataImport2> import;
     ASSERT_EQ(S_OK, GetDNMDPublicInterfaceFromInternal(internal.p,
         IID_IMetaDataImport2, (void**)&import));
@@ -162,14 +171,63 @@ TEST(InternalConversion, NewWritableScopeSharesPublicAndInternalIdentity)
     minipal_rwlock_destroy(&external);
 
     mdTypeDef type;
-    ASSERT_EQ(S_OK, emit->DefineTypeDef(W("Created"), tdPublic, mdTypeDefNil, nullptr, &type));
+    ASSERT_EQ(S_OK, internalEmit->DefineTypeDef(W("Created"), tdPublic, mdTypeDefNil, nullptr, &type));
     mdTypeDef found;
+    ASSERT_EQ(S_OK, internal->FindTypeDef(nullptr, "Created", mdTokenNil, &found));
+    EXPECT_EQ(type, found);
     ASSERT_EQ(S_OK, internal->FindTypeDef("", "Created", mdTokenNil, &found));
     EXPECT_EQ(type, found);
 
     IMDInternalImport* alreadyWritable = nullptr;
     EXPECT_EQ(S_FALSE, ConvertDNMDInternalImport(internal.p, &alreadyWritable));
     EXPECT_EQ(internal.p, alreadyWritable);
+}
+
+TEST(InternalConversion, NestedClassEnumerationIncludesEmptyAndUnsortedTables)
+{
+    minipal::com_ptr<IMetaDataDispenser> dispenser;
+    ASSERT_EQ(S_OK, GetDispenser(IID_IMetaDataDispenser, (void**)&dispenser));
+    minipal::com_ptr<IMDInternalImport> import;
+    ASSERT_EQ(S_OK, dispenser->DefineScope(CLSID_CorMetaDataRuntime, 0,
+        IID_IMDInternalImport, (IUnknown**)&import));
+    minipal::com_ptr<IMDInternalEmit> emit;
+    ASSERT_EQ(S_OK, import->QueryInterface(IID_IMDInternalEmit, (void**)&emit));
+
+    mdTypeDef parent, unrelated;
+    ASSERT_EQ(S_OK, emit->DefineTypeDef(W("Parent"), tdPublic, mdTypeDefNil, nullptr, &parent));
+    ASSERT_EQ(S_OK, emit->DefineTypeDef(W("Unrelated"), tdPublic, mdTypeDefNil, nullptr, &unrelated));
+
+    ULONG count;
+    ASSERT_EQ(S_OK, import->GetCountNestedClasses(parent, &count));
+    EXPECT_EQ(0u, count);
+    ASSERT_EQ(S_OK, import->GetNestedClasses(parent, nullptr, 0, &count));
+    EXPECT_EQ(0u, count);
+
+    mdTypeDef first, otherChild, second;
+    ASSERT_EQ(S_OK, emit->DefineNestedType(W("First"), tdNestedPublic, mdTypeDefNil, nullptr, parent, &first));
+    ASSERT_EQ(S_OK, import->GetCountNestedClasses(unrelated, &count));
+    EXPECT_EQ(0u, count);
+    ASSERT_EQ(S_OK, import->GetNestedClasses(unrelated, nullptr, 0, &count));
+    EXPECT_EQ(0u, count);
+
+    ASSERT_EQ(S_OK, emit->DefineNestedType(W("OtherChild"), tdNestedPublic, mdTypeDefNil, nullptr, unrelated, &otherChild));
+    ASSERT_EQ(S_OK, emit->DefineNestedType(W("Second"), tdNestedPublic, mdTypeDefNil, nullptr, parent, &second));
+
+    ASSERT_EQ(S_OK, import->GetCountNestedClasses(parent, &count));
+    EXPECT_EQ(2u, count);
+    ASSERT_EQ(S_OK, import->GetNestedClasses(parent, nullptr, 0, &count));
+    EXPECT_EQ(2u, count);
+
+    mdTypeDef found = mdTypeDefNil;
+    ASSERT_EQ(S_OK, import->GetNestedClasses(parent, &found, 1, &count));
+    EXPECT_EQ(2u, count);
+    EXPECT_EQ(first, found);
+
+    mdTypeDef children[2]{};
+    ASSERT_EQ(S_OK, import->GetNestedClasses(parent, children, 2, &count));
+    EXPECT_EQ(2u, count);
+    EXPECT_EQ(first, children[0]);
+    EXPECT_EQ(second, children[1]);
 }
 
 TEST(InternalConversion, MetadataHandleSlotTracksScopeReplacement)

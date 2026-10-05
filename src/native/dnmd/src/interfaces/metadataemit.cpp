@@ -1068,36 +1068,6 @@ HRESULT MetadataEmit::DefineTypeDefCore(
     if (!md_set_column_value_as_token(c, mdtTypeDef_Extends, tkExtends))
         return E_FAIL;
 
-    mdcursor_t fieldCursor;
-    uint32_t numFields;
-    if (!md_create_cursor(MetaData(), mdtid_Field, &fieldCursor, &numFields))
-    {
-        mdToken nilField = mdFieldDefNil;
-        if (!md_set_column_value_as_token(c, mdtTypeDef_FieldList, nilField))
-            return E_FAIL;
-    }
-    else
-    {
-        md_cursor_move(&fieldCursor, numFields);
-        if (!md_set_column_value_as_cursor(c, mdtTypeDef_FieldList, fieldCursor))
-            return E_FAIL;
-    }
-
-    mdcursor_t methodCursor;
-    uint32_t numMethods;
-    if (!md_create_cursor(MetaData(), mdtid_MethodDef, &methodCursor, &numMethods))
-    {
-        mdToken nilMethod = mdMethodDefNil;
-        if (!md_set_column_value_as_token(c, mdtTypeDef_MethodList, nilMethod))
-            return E_FAIL;
-    }
-    else
-    {
-        md_cursor_move(&methodCursor, numMethods);
-        if (!md_set_column_value_as_cursor(c, mdtTypeDef_MethodList, methodCursor))
-            return E_FAIL;
-    }
-
     if (!md_cursor_to_token(c, ptd))
         return E_FAIL;
     RETURN_IF_FAILED(LogToken(*ptd));
@@ -1172,6 +1142,8 @@ HRESULT MetadataEmit::DefineMethod(
         mdMethodDef     *pmd)
 {
     HRESULT hr;
+    if (IsGlobalMethodParentTk(td))
+        td = MD_GLOBAL_PARENT_TOKEN;
     if (TypeFromToken(td) != mdtTypeDef)
         return E_INVALIDARG;
 
@@ -1189,7 +1161,11 @@ HRESULT MetadataEmit::DefineMethod(
     if (!md_set_column_value_as_utf8(newMethod, mdtMethodDef_Name, name))
         return E_FAIL;
 
-    uint32_t flags = dwMethodFlags;
+    uint32_t flags = dwMethodFlags & ~mdReservedMask;
+    if (std::strcmp(name, COR_CTOR_METHOD_NAME) == 0
+        || std::strcmp(name, COR_CCTOR_METHOD_NAME) == 0
+        || std::strncmp(name, COR_VTABLEGAP_NAME_A, sizeof(COR_VTABLEGAP_NAME_A) - 1) == 0)
+        flags |= mdRTSpecialName | mdSpecialName;
     if (!md_set_column_value_as_constant(newMethod, mdtMethodDef_Flags, flags))
         return E_FAIL;
 
@@ -1576,9 +1552,12 @@ HRESULT MetadataEmit::DefineEvent(
         if (!md_set_column_value_as_utf8(addedEvent, mdtEvent_Name, name))
             return E_FAIL;
 
-        uint32_t flags = dwEventFlags;
-        if (!md_set_column_value_as_constant(addedEvent, mdtEvent_EventFlags, flags))
-            return E_FAIL;
+        if (dwEventFlags != std::numeric_limits<DWORD>::max())
+        {
+            uint32_t flags = dwEventFlags & ~evReservedMask;
+            if (!md_set_column_value_as_constant(addedEvent, mdtEvent_EventFlags, flags))
+                return E_FAIL;
+        }
 
         if (!md_set_column_value_as_token(addedEvent, mdtEvent_EventType, tkEventType))
             return E_FAIL;
@@ -2154,8 +2133,10 @@ HRESULT MetadataEmit::SetMethodProps(
 
     if (dwMethodFlags != std::numeric_limits<DWORD>::max())
     {
-        // TODO: Strip the reserved flags from user input and preserve the existing reserved flags.
-        uint32_t flags = dwMethodFlags;
+        uint32_t existingFlags;
+        if (!md_get_column_value_as_constant(c, mdtMethodDef_Flags, &existingFlags))
+            return CLDB_E_FILE_CORRUPT;
+        uint32_t flags = (dwMethodFlags & ~mdReservedMask) | (existingFlags & mdReservedMask);
         if (!md_set_column_value_as_constant(c, mdtMethodDef_Flags, flags))
             return E_FAIL;
     }
@@ -2310,7 +2291,10 @@ HRESULT MetadataEmit::SetEventProps(
 
     if (dwEventFlags != std::numeric_limits<DWORD>::max())
     {
-        uint32_t eventFlags = dwEventFlags;
+        uint32_t existingFlags;
+        if (!md_get_column_value_as_constant(c, mdtEvent_EventFlags, &existingFlags))
+            return CLDB_E_FILE_CORRUPT;
+        uint32_t eventFlags = (dwEventFlags & ~evReservedMask) | (existingFlags & evReservedMask);
         if (!md_set_column_value_as_constant(c, mdtEvent_EventFlags, eventFlags))
             return E_FAIL;
     }
@@ -3785,6 +3769,8 @@ HRESULT MetadataEmit::DefineField(
         mdFieldDef  *pmd)
 {
     HRESULT hr;
+    if (IsGlobalMethodParentTk(td))
+        td = MD_GLOBAL_PARENT_TOKEN;
     pal::StringConvert<WCHAR, char> cvt(szName);
     if (!cvt.Success())
         return E_INVALIDARG;
@@ -4022,7 +4008,7 @@ HRESULT MetadataEmit::DefineParam(
         mdParamDef  *ppd)
 {
     HRESULT hr;
-    pal::StringConvert<WCHAR, char> cvt(szName);
+    pal::StringConvert<WCHAR, char> cvt(szName == nullptr ? W("") : szName);
     if (!cvt.Success())
         return E_INVALIDARG;
 
@@ -4260,13 +4246,16 @@ HRESULT MetadataEmit::SetParamProps(
     if (!md_token_to_cursor(MetaData(), pd, &c))
         return CLDB_E_FILE_CORRUPT;
 
-    pal::StringConvert<WCHAR, char> cvt(szName);
-    if (!cvt.Success())
-        return E_INVALIDARG;
+    if (szName != nullptr)
+    {
+        pal::StringConvert<WCHAR, char> cvt(szName);
+        if (!cvt.Success())
+            return E_INVALIDARG;
 
-    char const* name = cvt;
-    if (!md_set_column_value_as_utf8(c, mdtParam_Name, name))
-        return E_FAIL;
+        char const* name = cvt;
+        if (!md_set_column_value_as_utf8(c, mdtParam_Name, name))
+            return E_FAIL;
+    }
 
     bool hasConstant = false;
     // See if there is a Constant.

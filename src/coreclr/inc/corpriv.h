@@ -20,8 +20,10 @@ STDAPI CreateMetaDataDispenser(
     REFIID riid,
     void ** pMetaDataDispenserOut);
 
+#ifdef FEATURE_ISYM_READER
 // Helper function to get a do-nothing IMetaDataImport2 instance for DIA.
 IMetaDataImport2* GetNoopMetaDataImport2();
+#endif // FEATURE_ISYM_READER
 
 // Helper function to get an Internal interface with an in-memory metadata section
 STDAPI  GetMDInternalInterface(

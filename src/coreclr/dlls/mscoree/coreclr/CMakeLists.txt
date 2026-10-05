@@ -77,7 +77,6 @@ set(CORECLR_LIBRARIES
     debug-pal
     ${LIB_UNWINDER}
     v3binder
-    ceefgen # PE writing for Reflection.Emit's CreateICeeGen
     corguids
     utilcode
     v3binder

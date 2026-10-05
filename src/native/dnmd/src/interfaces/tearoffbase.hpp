@@ -30,7 +30,7 @@ public: // IUnknown
         return _pUnkOuter->AddRef();
     }
 
-    STDMETHOD_(ULONG, Release)() override
+    STDMETHOD_(ULONG, Release)() noexcept override
     {
         return _pUnkOuter->Release();
     }
@@ -72,7 +72,7 @@ public:
     {
         return TearOffUnknown::AddRef();
     }
-    STDMETHOD_(ULONG, Release)() override final
+    STDMETHOD_(ULONG, Release)() noexcept override final
     {
         return TearOffUnknown::Release();
     }

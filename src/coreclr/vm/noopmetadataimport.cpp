@@ -5,6 +5,8 @@
 
 #include "common.h"
 
+#ifdef FEATURE_ISYM_READER
+
 // This importer is only used to satisfy the symbol binder's non-null parameter.
 // It is intentionally inert so we do not materialize the module's real public importer.
 #ifdef _DEBUG
@@ -152,3 +154,5 @@ IMetaDataImport2* GetNoopMetaDataImport2()
 
     return &g_NoopMetadataImport;
 }
+
+#endif // FEATURE_ISYM_READER

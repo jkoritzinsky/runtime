@@ -6,7 +6,7 @@
 #include <minipal/rwlock.h>
 #include <cor.h>
 #include <quickbytes.h>
-#include <metadata.h>
+#include <corpriv.h>
 #include <dnmd_interfaces.hpp>
 
 #include <gtest/gtest.h>
@@ -47,12 +47,19 @@ TEST(InternalTranslateSig, SameScopePreservesTypeRefTokenAndOwnsBuffer)
 {
     minipal::com_ptr<IMetaDataEmit> emit;
     ASSERT_EQ(S_OK, CreateScope(true, emit));
+    minipal::com_ptr<IMDInternalEmit> internalEmit;
+    ASSERT_EQ(S_OK, emit->QueryInterface(IID_IMDInternalEmit, (void**)&internalEmit));
     mdTypeRef typeRef;
     ASSERT_EQ(S_OK, emit->DefineTypeRefByName(TokenFromRid(1, mdtModule), W("N.Same"), &typeRef));
     ASSERT_EQ(TokenFromRid(1, mdtTypeRef), typeRef);
 
     minipal::com_ptr<IMDInternalImport> internal;
     ASSERT_EQ(S_OK, emit->QueryInterface(IID_IMDInternalImport, (void**)&internal));
+    minipal::com_ptr<IGetIMDInternalImport> getter;
+    ASSERT_EQ(S_OK, internalEmit->QueryInterface(IID_IGetIMDInternalImport, (void**)&getter));
+    minipal::com_ptr<IMDInternalImport> fromEmit;
+    ASSERT_EQ(S_OK, getter->GetIMDInternalImport(&fromEmit));
+    EXPECT_EQ(internal.p, fromEmit.p);
     std::array<BYTE, 3> signature = TypeRefSignature;
     CQuickBytes output;
     ASSERT_NE(nullptr, output.AllocNoThrow(6));
@@ -60,15 +67,18 @@ TEST(InternalTranslateSig, SameScopePreservesTypeRefTokenAndOwnsBuffer)
     ULONG length = UINT32_MAX;
 
     ASSERT_EQ(S_OK, internal->TranslateSigWithScope(nullptr, nullptr, 0,
-        signature.data(), (ULONG)signature.size(), nullptr, emit.p, &output, &length));
+        signature.data(), (ULONG)signature.size(), nullptr, internalEmit.p, &output, &length));
     EXPECT_EQ(signature.size(), length);
     EXPECT_EQ(signature.size(), output.Size());
     EXPECT_EQ(0, std::memcmp(TypeRefSignature.data(), output.Ptr(), length));
     EXPECT_EQ(1u, internal->GetCountWithTokenKind(mdtTypeRef));
 
     signature.fill(0);
+    fromEmit.Release();
+    getter.Release();
     internal.Release();
     emit.Release();
+    internalEmit.Release();
     EXPECT_EQ(0, std::memcmp(TypeRefSignature.data(), output.Ptr(), length));
 }
 
@@ -76,6 +86,8 @@ TEST(InternalTranslateSig, LongSignatureUsesOwnedHeapBuffer)
 {
     minipal::com_ptr<IMetaDataEmit> emit;
     ASSERT_EQ(S_OK, CreateScope(false, emit));
+    minipal::com_ptr<IMDInternalEmit> internalEmit;
+    ASSERT_EQ(S_OK, emit->QueryInterface(IID_IMDInternalEmit, (void**)&internalEmit));
     minipal::com_ptr<IMDInternalImport> internal;
     ASSERT_EQ(S_OK, emit->QueryInterface(IID_IMDInternalImport, (void**)&internal));
 
@@ -89,7 +101,7 @@ TEST(InternalTranslateSig, LongSignatureUsesOwnedHeapBuffer)
     ULONG length = 0;
 
     ASSERT_EQ(S_OK, internal->TranslateSigWithScope(nullptr, nullptr, 0,
-        signature.data(), (ULONG)signature.size(), nullptr, emit.p, &output, &length));
+        signature.data(), (ULONG)signature.size(), nullptr, internalEmit.p, &output, &length));
     EXPECT_EQ(expected.size(), length);
     EXPECT_EQ(expected.size(), output.Size());
     EXPECT_EQ(0, std::memcmp(expected.data(), output.Ptr(), length));
@@ -98,6 +110,7 @@ TEST(InternalTranslateSig, LongSignatureUsesOwnedHeapBuffer)
     signature.clear();
     internal.Release();
     emit.Release();
+    internalEmit.Release();
     EXPECT_EQ(0, std::memcmp(expected.data(), output.Ptr(), length));
 }
 
@@ -131,6 +144,8 @@ TEST(InternalTranslateSig, ReadOnlySourceCreatesReferencesInAnotherScope)
 
     minipal::com_ptr<IMetaDataEmit> target;
     ASSERT_EQ(S_OK, CreateScope(true, target));
+    minipal::com_ptr<IMDInternalEmit> internalTarget;
+    ASSERT_EQ(S_OK, target->QueryInterface(IID_IMDInternalEmit, (void**)&internalTarget));
     minipal::com_ptr<IMetaDataAssemblyEmit> targetAssembly;
     ASSERT_EQ(S_OK, target->QueryInterface(IID_IMetaDataAssemblyEmit, (void**)&targetAssembly));
     ASSERT_EQ(S_OK, targetAssembly->DefineAssembly(nullptr, 0, 0, W("Target"),
@@ -143,8 +158,8 @@ TEST(InternalTranslateSig, ReadOnlySourceCreatesReferencesInAnotherScope)
     CQuickBytes output;
     ULONG length = UINT32_MAX;
     ASSERT_EQ(S_OK, source->TranslateSigWithScope(source.p, nullptr, 0,
-        TypeRefSignature.data(), (ULONG)TypeRefSignature.size(), targetAssembly.p,
-        target.p, &output, &length));
+        TypeRefSignature.data(), (ULONG)TypeRefSignature.size(), internalTarget.p,
+        internalTarget.p, &output, &length));
     constexpr std::array<BYTE, 3> expected =
         { IMAGE_CEE_CS_CALLCONV_FIELD, ELEMENT_TYPE_CLASS, 0x09 };
     ASSERT_EQ(expected.size(), length);
@@ -180,6 +195,8 @@ TEST(InternalTranslateSig, ModuleScopedTypeRefCreatesSourceAssemblyRef)
     minipal::com_ptr<IMetaDataEmit> sourceEmit, target;
     ASSERT_EQ(S_OK, CreateScope(false, sourceEmit));
     ASSERT_EQ(S_OK, CreateScope(false, target));
+    minipal::com_ptr<IMDInternalEmit> internalTarget;
+    ASSERT_EQ(S_OK, target->QueryInterface(IID_IMDInternalEmit, (void**)&internalTarget));
     minipal::com_ptr<IMDInternalImport> source, targetInternal;
     ASSERT_EQ(S_OK, sourceEmit->QueryInterface(IID_IMDInternalImport, (void**)&source));
     ASSERT_EQ(S_OK, target->QueryInterface(IID_IMDInternalImport, (void**)&targetInternal));
@@ -206,7 +223,7 @@ TEST(InternalTranslateSig, ModuleScopedTypeRefCreatesSourceAssemblyRef)
     ULONG length = 0;
     ASSERT_EQ(S_OK, source->TranslateSigWithScope(source.p, nullptr, 0,
         TypeRefSignature.data(), (ULONG)TypeRefSignature.size(),
-        targetAssembly.p, target.p, &output, &length));
+        internalTarget.p, internalTarget.p, &output, &length));
     constexpr std::array<BYTE, 3> expected =
         { IMAGE_CEE_CS_CALLCONV_FIELD, ELEMENT_TYPE_CLASS, 0x09 };
     ASSERT_EQ(expected.size(), length);
@@ -228,6 +245,8 @@ TEST(InternalTranslateSig, NestedTypeRefPreservesItsEnclosingScope)
     minipal::com_ptr<IMetaDataEmit> sourceEmit, target;
     ASSERT_EQ(S_OK, CreateScope(false, sourceEmit));
     ASSERT_EQ(S_OK, CreateScope(false, target));
+    minipal::com_ptr<IMDInternalEmit> internalTarget;
+    ASSERT_EQ(S_OK, target->QueryInterface(IID_IMDInternalEmit, (void**)&internalTarget));
     minipal::com_ptr<IMetaDataAssemblyEmit> sourceAssembly;
     ASSERT_EQ(S_OK, sourceEmit->QueryInterface(IID_IMetaDataAssemblyEmit, (void**)&sourceAssembly));
     ASSEMBLYMETADATA metadata{};
@@ -251,7 +270,7 @@ TEST(InternalTranslateSig, NestedTypeRefPreservesItsEnclosingScope)
     ULONG length = 0;
     ASSERT_EQ(S_OK, source->TranslateSigWithScope(nullptr, nullptr, 0,
         nestedSignature.data(), (ULONG)nestedSignature.size(),
-        nullptr, target.p, &output, &length));
+        nullptr, internalTarget.p, &output, &length));
     constexpr std::array<BYTE, 3> expected =
         { IMAGE_CEE_CS_CALLCONV_FIELD, ELEMENT_TYPE_CLASS, 0x0D };
     ASSERT_EQ(expected.size(), length);
@@ -274,6 +293,8 @@ TEST(InternalTranslateSig, ExpandedTypeRefTokenReportsExactLength)
     minipal::com_ptr<IMetaDataEmit> sourceEmit, target;
     ASSERT_EQ(S_OK, CreateScope(false, sourceEmit));
     ASSERT_EQ(S_OK, CreateScope(false, target));
+    minipal::com_ptr<IMDInternalEmit> internalTarget;
+    ASSERT_EQ(S_OK, target->QueryInterface(IID_IMDInternalEmit, (void**)&internalTarget));
     minipal::com_ptr<IMetaDataAssemblyEmit> sourceAssembly;
     ASSERT_EQ(S_OK, sourceEmit->QueryInterface(IID_IMetaDataAssemblyEmit, (void**)&sourceAssembly));
     ASSEMBLYMETADATA metadata{};
@@ -299,7 +320,7 @@ TEST(InternalTranslateSig, ExpandedTypeRefTokenReportsExactLength)
     ULONG length = 0;
     ASSERT_EQ(S_OK, source->TranslateSigWithScope(nullptr, nullptr, 0,
         TypeRefSignature.data(), (ULONG)TypeRefSignature.size(),
-        nullptr, target.p, &output, &length));
+        nullptr, internalTarget.p, &output, &length));
     constexpr std::array<BYTE, 4> expected =
         { IMAGE_CEE_CS_CALLCONV_FIELD, ELEMENT_TYPE_CLASS, 0x80, 0x81 };
     ASSERT_EQ(expected.size(), length);
@@ -313,6 +334,8 @@ TEST(InternalTranslateSig, NullAssemblyImportWaitsForDestinationWriteLock)
     minipal::com_ptr<IMetaDataEmit> sourceEmit, target;
     ASSERT_EQ(S_OK, CreateScope(true, sourceEmit));
     ASSERT_EQ(S_OK, CreateScope(true, target));
+    minipal::com_ptr<IMDInternalEmit> internalTarget;
+    ASSERT_EQ(S_OK, target->QueryInterface(IID_IMDInternalEmit, (void**)&internalTarget));
     minipal::com_ptr<IMDInternalImport> source, targetInternal;
     ASSERT_EQ(S_OK, sourceEmit->QueryInterface(IID_IMDInternalImport, (void**)&source));
     ASSERT_EQ(S_OK, target->QueryInterface(IID_IMDInternalImport, (void**)&targetInternal));
@@ -330,7 +353,7 @@ TEST(InternalTranslateSig, NullAssemblyImportWaitsForDestinationWriteLock)
     {
         started.set_value();
         return source->TranslateSigWithScope(nullptr, nullptr, 0,
-            signature.data(), (ULONG)signature.size(), nullptr, target.p, &output, &length);
+            signature.data(), (ULONG)signature.size(), nullptr, internalTarget.p, &output, &length);
     });
 
     EXPECT_EQ(std::future_status::ready, startedFuture.wait_for(std::chrono::seconds(5)));
@@ -348,6 +371,8 @@ TEST(InternalTranslateSig, RejectsInvalidArgumentsAndMissingTypeRef)
 {
     minipal::com_ptr<IMetaDataEmit> emit;
     ASSERT_EQ(S_OK, CreateScope(false, emit));
+    minipal::com_ptr<IMDInternalEmit> internalEmit;
+    ASSERT_EQ(S_OK, emit->QueryInterface(IID_IMDInternalEmit, (void**)&internalEmit));
     minipal::com_ptr<IMDInternalImport> internal;
     ASSERT_EQ(S_OK, emit->QueryInterface(IID_IMDInternalImport, (void**)&internal));
 
@@ -356,19 +381,19 @@ TEST(InternalTranslateSig, RejectsInvalidArgumentsAndMissingTypeRef)
     EXPECT_EQ(E_INVALIDARG, internal->TranslateSigWithScope(nullptr, nullptr, 0,
         TypeRefSignature.data(), (ULONG)TypeRefSignature.size(), nullptr, nullptr, &output, &length));
     EXPECT_EQ(E_INVALIDARG, internal->TranslateSigWithScope(nullptr, nullptr, 0,
-        TypeRefSignature.data(), (ULONG)TypeRefSignature.size(), nullptr, emit.p, nullptr, &length));
+        TypeRefSignature.data(), (ULONG)TypeRefSignature.size(), nullptr, internalEmit.p, nullptr, &length));
     EXPECT_EQ(E_INVALIDARG, internal->TranslateSigWithScope(nullptr, nullptr, 0,
-        TypeRefSignature.data(), (ULONG)TypeRefSignature.size(), nullptr, emit.p, &output, nullptr));
+        TypeRefSignature.data(), (ULONG)TypeRefSignature.size(), nullptr, internalEmit.p, &output, nullptr));
     EXPECT_EQ(E_INVALIDARG, internal->TranslateSigWithScope(nullptr, nullptr, 0,
-        nullptr, (ULONG)TypeRefSignature.size(), nullptr, emit.p, &output, &length));
+        nullptr, (ULONG)TypeRefSignature.size(), nullptr, internalEmit.p, &output, &length));
     EXPECT_EQ(E_INVALIDARG, internal->TranslateSigWithScope(nullptr, nullptr, 0,
-        TypeRefSignature.data(), 0, nullptr, emit.p, &output, &length));
+        TypeRefSignature.data(), 0, nullptr, internalEmit.p, &output, &length));
     EXPECT_EQ(E_INVALIDARG, internal->TranslateSigWithScope(nullptr, nullptr, 1,
-        TypeRefSignature.data(), (ULONG)TypeRefSignature.size(), nullptr, emit.p, &output, &length));
+        TypeRefSignature.data(), (ULONG)TypeRefSignature.size(), nullptr, internalEmit.p, &output, &length));
     EXPECT_EQ(CLDB_E_TOO_BIG, internal->TranslateSigWithScope(nullptr, nullptr, 0,
-        TypeRefSignature.data(), std::numeric_limits<ULONG>::max(), nullptr, emit.p, &output, &length));
+        TypeRefSignature.data(), std::numeric_limits<ULONG>::max(), nullptr, internalEmit.p, &output, &length));
     EXPECT_EQ(42u, length);
     EXPECT_EQ(CLDB_E_FILE_CORRUPT, internal->TranslateSigWithScope(nullptr, nullptr, 0,
-        TypeRefSignature.data(), (ULONG)TypeRefSignature.size(), nullptr, emit.p, &output, &length));
+        TypeRefSignature.data(), (ULONG)TypeRefSignature.size(), nullptr, internalEmit.p, &output, &length));
     EXPECT_EQ(0u, length);
 }

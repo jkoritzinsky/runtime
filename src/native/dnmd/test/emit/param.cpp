@@ -40,6 +40,42 @@ TEST(Param, Define)
     EXPECT_EQ(0, constValueLength);
 }
 
+TEST(Param, OptionalName)
+{
+    minipal::com_ptr<IMetaDataEmit> emit;
+    ASSERT_NO_FATAL_FAILURE(CreateEmit(emit));
+
+    std::array<uint8_t, 4> signature = { IMAGE_CEE_CS_CALLCONV_DEFAULT_HASTHIS, 1, ELEMENT_TYPE_VOID, ELEMENT_TYPE_I4 };
+    mdMethodDef method;
+    ASSERT_EQ(S_OK, emit->DefineMethod(TokenFromRid(1, mdtTypeDef), W("Method"), 0,
+        signature.data(), (ULONG)signature.size(), 0, 0, &method));
+
+    mdParamDef unnamed;
+    ASSERT_EQ(S_OK, emit->DefineParam(method, 0, nullptr, pdOut, ELEMENT_TYPE_VOID, nullptr, 0, &unnamed));
+    mdParamDef named;
+    ASSERT_EQ(S_OK, emit->DefineParam(method, 1, W("Named"), pdIn, ELEMENT_TYPE_VOID, nullptr, 0, &named));
+    ASSERT_EQ(S_OK, emit->SetParamProps(named, nullptr, pdOut, ELEMENT_TYPE_VOID, nullptr, 0));
+
+    minipal::com_ptr<IMetaDataImport> import;
+    ASSERT_EQ(S_OK, emit->QueryInterface(IID_IMetaDataImport, (void**)&import));
+    WCHAR name[16]{};
+    mdMethodDef owner;
+    ULONG sequence, nameLength, flags, valueLength;
+    DWORD constType;
+    UVCP_CONSTANT value;
+
+    ASSERT_EQ(S_OK, import->GetParamProps(unnamed, &owner, &sequence, name, 16,
+        &nameLength, &flags, &constType, &value, &valueLength));
+    EXPECT_EQ(0u, nameLength);
+    EXPECT_EQ(0, name[0]);
+    EXPECT_EQ(pdOut, flags);
+
+    ASSERT_EQ(S_OK, import->GetParamProps(named, &owner, &sequence, name, 16,
+        &nameLength, &flags, &constType, &value, &valueLength));
+    EXPECT_EQ(WSTR_string{ W("Named") }, WSTR_string(name, nameLength - 1));
+    EXPECT_EQ(pdOut, flags);
+}
+
 TEST(Param, DefineWithConstant)
 {
     minipal::com_ptr<IMetaDataEmit> emit;

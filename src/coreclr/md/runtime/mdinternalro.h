@@ -29,7 +29,7 @@ public:
     __checkReturn
     STDMETHODIMP    QueryInterface(REFIID riid, void** ppv);
     STDMETHODIMP_(ULONG) AddRef(void);
-    STDMETHODIMP_(ULONG) Release(void);
+    STDMETHODIMP_(ULONG) Release(void) noexcept;
 
     __checkReturn
     STDMETHODIMP TranslateSigWithScope(
@@ -38,8 +38,8 @@ public:
         ULONG       cbHashValue,            // [IN] count of bytes in the hash value.
         PCCOR_SIGNATURE pbSigBlob,          // [IN] signature in the importing scope
         ULONG       cbSigBlob,              // [IN] count of bytes of signature
-        IMetaDataAssemblyEmit *pAssemEmit,  // [IN] assembly emit scope.
-        IMetaDataEmit *emit,                // [IN] emit interface
+        IMDInternalEmit *pAssemEmit,        // [IN] assembly emit scope.
+        IMDInternalEmit *emit,              // [IN] emit interface
         CQuickBytes *pqkSigEmit,            // [OUT] buffer to hold translated signature
         ULONG       *pcbSig)                // [OUT] count of bytes in the translated signature
         DAC_UNEXPECTED();
@@ -92,20 +92,12 @@ public:
         HENUMInternal   *phEnumBody,        // [OUT] buffer to fill for enumerator data for MethodBody tokens.
         HENUMInternal   *phEnumDecl);       // [OUT] buffer to fill for enumerator data for MethodDecl tokens.
 
-    STDMETHODIMP_(void) EnumMethodImplReset(
-        HENUMInternal   *phEnumBody,        // [IN] MethodBody enumerator.
-        HENUMInternal   *phEnumDecl);       // [IN] MethodDecl enumerator.
-
     __checkReturn
     STDMETHODIMP EnumMethodImplNext( // return hresult
         HENUMInternal   *phEnumBody,        // [IN] input enum for MethodBody
         HENUMInternal   *phEnumDecl,        // [IN] input enum for MethodDecl
         mdToken         *ptkBody,           // [OUT] return token for MethodBody
         mdToken         *ptkDecl);          // [OUT] return token for MethodDecl
-
-    STDMETHODIMP_(void) EnumMethodImplClose(
-        HENUMInternal   *phEnumBody,        // [IN] MethodBody enumerator.
-        HENUMInternal   *phEnumDecl);       // [IN] MethodDecl enumerator.
 
     //*****************************************
     // Enumerator helpers for memberdef, memberref, interfaceimp,

@@ -2,6 +2,7 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 
 #include "emit.hpp"
+#include <array>
 #include <atomic>
 #include <thread>
 
@@ -43,6 +44,59 @@ TEST(TypeDef, Define)
     mdMethodDef method;
     EXPECT_EQ(S_FALSE, import->EnumMethods(&hEnum, typeDef, &method, 1, &count));
     import->CloseEnum(hEnum);
+}
+
+TEST(TypeDef, MembersAddedAfterMultipleTypes)
+{
+    minipal::com_ptr<IMetaDataEmit> emit;
+    ASSERT_NO_FATAL_FAILURE(CreateEmit(emit));
+    mdTypeDef first, second;
+    ASSERT_EQ(S_OK, emit->DefineTypeDef(W("First"), tdPublic, mdTypeDefNil, nullptr, &first));
+    ASSERT_EQ(S_OK, emit->DefineTypeDef(W("Second"), tdPublic, mdTypeDefNil, nullptr, &second));
+
+    std::array<uint8_t, 2> fieldSig = { IMAGE_CEE_CS_CALLCONV_FIELD, ELEMENT_TYPE_I4 };
+    mdFieldDef firstField, secondField;
+    ASSERT_EQ(S_OK, emit->DefineField(first, W("FirstField"), fdPublic,
+        fieldSig.data(), (ULONG)fieldSig.size(), ELEMENT_TYPE_VOID, nullptr, 0, &firstField));
+    ASSERT_EQ(S_OK, emit->DefineField(second, W("SecondField"), fdPublic,
+        fieldSig.data(), (ULONG)fieldSig.size(), ELEMENT_TYPE_VOID, nullptr, 0, &secondField));
+
+    std::array<uint8_t, 3> methodSig = { IMAGE_CEE_CS_CALLCONV_DEFAULT, 0, ELEMENT_TYPE_VOID };
+    mdMethodDef firstMethod, secondMethod;
+    ASSERT_EQ(S_OK, emit->DefineMethod(first, W("FirstMethod"), mdPublic | mdStatic,
+        methodSig.data(), (ULONG)methodSig.size(), 0, 0, &firstMethod));
+    ASSERT_EQ(S_OK, emit->DefineMethod(second, W("SecondMethod"), mdPublic | mdStatic,
+        methodSig.data(), (ULONG)methodSig.size(), 0, 0, &secondMethod));
+
+    minipal::com_ptr<IMetaDataImport> import;
+    ASSERT_EQ(S_OK, emit->QueryInterface(IID_IMetaDataImport, (void**)&import));
+
+    HCORENUM enumeration = nullptr;
+    mdFieldDef fields[2]{};
+    ULONG count;
+    ASSERT_EQ(S_OK, import->EnumFields(&enumeration, first, fields, 2, &count));
+    EXPECT_EQ(1u, count);
+    EXPECT_EQ(firstField, fields[0]);
+    import->CloseEnum(enumeration);
+
+    enumeration = nullptr;
+    ASSERT_EQ(S_OK, import->EnumFields(&enumeration, second, fields, 2, &count));
+    EXPECT_EQ(1u, count);
+    EXPECT_EQ(secondField, fields[0]);
+    import->CloseEnum(enumeration);
+
+    enumeration = nullptr;
+    mdMethodDef methods[2]{};
+    ASSERT_EQ(S_OK, import->EnumMethods(&enumeration, first, methods, 2, &count));
+    EXPECT_EQ(1u, count);
+    EXPECT_EQ(firstMethod, methods[0]);
+    import->CloseEnum(enumeration);
+
+    enumeration = nullptr;
+    ASSERT_EQ(S_OK, import->EnumMethods(&enumeration, second, methods, 2, &count));
+    EXPECT_EQ(1u, count);
+    EXPECT_EQ(secondMethod, methods[0]);
+    import->CloseEnum(enumeration);
 }
 
 TEST(TypeDef, DefineWithInterfaces)

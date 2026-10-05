@@ -35,6 +35,88 @@ TEST(MethodDef, Define)
     EXPECT_THAT(std::vector<uint8_t>(sigBlob, sigBlob + sigBlobLength), testing::ContainerEq(std::vector<uint8_t>(sig.begin(), sig.end())));
 }
 
+TEST(MethodDef, RuntimeSpecialNames)
+{
+    minipal::com_ptr<IMetaDataEmit> emit;
+    ASSERT_NO_FATAL_FAILURE(CreateEmit(emit));
+    mdTypeDef type;
+    ASSERT_EQ(S_OK, emit->DefineTypeDef(W("Example"), tdPublic, mdTypeDefNil, nullptr, &type));
+
+    minipal::com_ptr<IMetaDataImport> import;
+    ASSERT_EQ(S_OK, emit->QueryInterface(IID_IMetaDataImport, (void**)&import));
+
+    struct MethodCase
+    {
+        LPCWSTR name;
+        DWORD attributes;
+        uint8_t callingConvention;
+    };
+    constexpr MethodCase cases[] =
+    {
+        { W(".ctor"), mdPublic, IMAGE_CEE_CS_CALLCONV_DEFAULT_HASTHIS },
+        { W(".cctor"), mdPrivate | mdStatic, IMAGE_CEE_CS_CALLCONV_DEFAULT },
+        { W("_VtblGap1_1"), mdPublic | mdVirtual | mdAbstract, IMAGE_CEE_CS_CALLCONV_DEFAULT_HASTHIS },
+    };
+
+    for (MethodCase testCase : cases)
+    {
+        std::array<uint8_t, 3> sig = { testCase.callingConvention, 0, ELEMENT_TYPE_VOID };
+        mdMethodDef method;
+        ASSERT_EQ(S_OK, emit->DefineMethod(type, testCase.name, testCase.attributes,
+            sig.data(), (ULONG)sig.size(), 0, 0, &method));
+
+        WSTR_string readName(32, 0);
+        ULONG nameLength, sigLength, rva;
+        DWORD flags, implFlags;
+        mdTypeDef owner;
+        PCCOR_SIGNATURE sigBlob;
+        ASSERT_EQ(S_OK, import->GetMethodProps(method, &owner, &readName[0], (ULONG)readName.size(),
+            &nameLength, &flags, &sigBlob, &sigLength, &rva, &implFlags));
+        EXPECT_EQ(testCase.attributes | mdSpecialName | mdRTSpecialName, flags);
+
+        ASSERT_EQ(S_OK, emit->SetMethodProps(method, testCase.attributes | mdSpecialName, 0, 0));
+        ASSERT_EQ(S_OK, import->GetMethodProps(method, &owner, &readName[0], (ULONG)readName.size(),
+            &nameLength, &flags, &sigBlob, &sigLength, &rva, &implFlags));
+        EXPECT_EQ(testCase.attributes | mdSpecialName | mdRTSpecialName, flags);
+    }
+}
+
+TEST(MethodDef, GlobalParent)
+{
+    minipal::com_ptr<IMetaDataEmit> emit;
+    ASSERT_NO_FATAL_FAILURE(CreateEmit(emit));
+    minipal::com_ptr<IMetaDataImport> import;
+    ASSERT_EQ(S_OK, emit->QueryInterface(IID_IMetaDataImport, (void**)&import));
+
+    struct GlobalMethod
+    {
+        mdTypeDef parent;
+        LPCWSTR name;
+    };
+    constexpr GlobalMethod methods[] =
+    {
+        { mdTypeDefNil, W("First") },
+        { mdTokenNil, W("Second") },
+    };
+    std::array<uint8_t, 3> sig = { IMAGE_CEE_CS_CALLCONV_DEFAULT, 0, ELEMENT_TYPE_VOID };
+    for (GlobalMethod global : methods)
+    {
+        mdMethodDef method;
+        ASSERT_EQ(S_OK, emit->DefineMethod(global.parent, global.name, mdPublic | mdStatic,
+            sig.data(), (ULONG)sig.size(), 0, 0, &method));
+
+        mdTypeDef owner;
+        WSTR_string readName(16, 0);
+        ULONG nameLength, sigLength, rva;
+        DWORD flags, implFlags;
+        PCCOR_SIGNATURE sigBlob;
+        ASSERT_EQ(S_OK, import->GetMethodProps(method, &owner, &readName[0], (ULONG)readName.size(),
+            &nameLength, &flags, &sigBlob, &sigLength, &rva, &implFlags));
+        EXPECT_EQ(TokenFromRid(1, mdtTypeDef), owner);
+        EXPECT_EQ(mdPublic | mdStatic, flags);
+    }
+}
+
 TEST(MethodDef, DefineWithInvalidType)
 {
     minipal::com_ptr<IMetaDataEmit> emit;

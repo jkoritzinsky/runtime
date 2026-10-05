@@ -10,12 +10,12 @@ class CQuickBytes;
 class IMetaModelCommon;
 
 #include <internal/dnmd_platform.hpp>
-#include <metadata.h>
+#include <corpriv.h>
 #include "tearoffbase.hpp"
 #include "dnmdowner.hpp"
 #include "pal.hpp"
 
-class InternalMetadataImportRO : public TearOffBase<IMDInternalImportENC>
+class InternalMetadataImportRO : public TearOffBase<IMDInternalImportENC, IGetIMDInternalImport>
 {
     mdhandle_view m_handle;
     pal::ReadWriteLock* m_lock;
@@ -26,6 +26,11 @@ protected:
         if (riid == IID_IMDInternalImport)
         {
             *ppvObject = static_cast<IMDInternalImport*>(this);
+            return true;
+        }
+        if (riid == IID_IGetIMDInternalImport)
+        {
+            *ppvObject = static_cast<IGetIMDInternalImport*>(this);
             return true;
         }
         return false;
@@ -39,6 +44,16 @@ public:
     { }
     mdhandle_t MetaData() const { return m_handle.get(); }
     pal::ReadWriteLock* Lock() const { return m_lock; }
+public: // IGetIMDInternalImport
+    STDMETHOD(GetIMDInternalImport)(IMDInternalImport** ppInternalImport) override
+    {
+        if (ppInternalImport == nullptr)
+            return E_POINTER;
+        *ppInternalImport = static_cast<IMDInternalImport*>(this);
+        (void)AddRef();
+        return S_OK;
+    }
+
 public: // IMDInternalImport
 
     //*****************************************************************************
@@ -70,20 +85,12 @@ public: // IMDInternalImport
         HENUMInternal   *phEnumBody,        // [IN] MethodBody enumerator.
         HENUMInternal   *phEnumDecl) override;  // [IN] MethodDecl enumerator.
 
-    STDMETHOD_(void, EnumMethodImplReset)(
-        HENUMInternal   *phEnumBody,        // [IN] MethodBody enumerator.
-        HENUMInternal   *phEnumDecl) override;  // [IN] MethodDecl enumerator.
-
     __checkReturn
     STDMETHOD(EnumMethodImplNext)(          // return hresult (S_OK = TRUE, S_FALSE = FALSE or error code)
         HENUMInternal   *phEnumBody,        // [IN] input enum for MethodBody
         HENUMInternal   *phEnumDecl,        // [IN] input enum for MethodDecl
         mdToken         *ptkBody,           // [OUT] return token for MethodBody
         mdToken         *ptkDecl) override;     // [OUT] return token for MethodDecl
-
-    STDMETHOD_(void, EnumMethodImplClose)(
-        HENUMInternal   *phEnumBody,        // [IN] MethodBody enumerator.
-        HENUMInternal   *phEnumDecl) override;  // [IN] MethodDecl enumerator.
 
     //*****************************************
     // Enumerator helpers for memberdef, memberref, interfaceimp,
@@ -654,8 +661,8 @@ public: // IMDInternalImport
         ULONG       cbHashValue,            // [IN] count of bytes in the hash value.
         PCCOR_SIGNATURE pbSigBlob,          // [IN] signature in the importing scope
         ULONG       cbSigBlob,              // [IN] count of bytes of signature
-        IMetaDataAssemblyEmit *pAssemEmit,  // [IN] assembly emit scope.
-        IMetaDataEmit *emit,                // [IN] emit interface
+        IMDInternalEmit *pAssemEmit,        // [IN] assembly emit scope.
+        IMDInternalEmit *emit,              // [IN] emit interface
         CQuickBytes *pqkSigEmit,            // [OUT] buffer to hold translated signature
         ULONG       *pcbSig) override;          // [OUT] count of bytes in the translated signature
 
