@@ -3,6 +3,7 @@
 
 #include "metadatarw.hpp"
 #include "../metadataemit.hpp"
+#include "../enclog.hpp"
 #include "../hcorenum.hpp"
 #include "dnmd_interfaces.hpp"
 
@@ -1319,7 +1320,7 @@ STDMETHODIMP InternalMetadataRW::ChangeMvid(REFGUID newMvid)
     static_assert(sizeof(mvid) == sizeof(newMvid), "Metadata and COM GUIDs must have the same size");
     std::memcpy(&mvid, &newMvid, sizeof(mvid));
     return md_set_column_value_as_guid(module, mdtModule_Mvid, mvid)
-        ? _emit->LogToken(TokenFromRid(1, mdtModule))
+        ? enc_log::LogToken(_handle, TokenFromRid(1, mdtModule))
         : E_FAIL;
 }
 

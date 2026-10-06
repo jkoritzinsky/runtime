@@ -9,9 +9,9 @@ DNMD provides the following tools:
   - [`IMetaDataDispenser`][api_dispenser] / `IMetaDataDispenserEx`
   - [`IMetaDataImport`][api_import] / [`IMetaDataImport2`][api_import2]
   - [`IMetaDataAssemblyImport`][api_assemblyimport]
-  - `IMetaDataEmit` / `IMetaDataEmit2` / `IMetaDataEmitHelper`
+  - `IMetaDataEmit` / `IMetaDataEmit2`
   - `IMetaDataAssemblyEmit`
-  - `IMDInternalImport` / `IMDInternalImportENC` for CoreCLR integration
+  - `IMDInternalImport` / `IMDInternalImportENC` / `IMDInternalEmit` for CoreCLR integration
 - `dnmd_interfaces_static` - A static library version of `dnmd_interfaces`.
 - `mddump` - Utility for dumping ECMA-335 tables.
 - `mdmerge` - Utility for merging EnC deltas into ECMA-335 tables.

@@ -8,26 +8,14 @@
 
 #include <cor.h>
 #include <corhdr.h>
-#if defined(DNMD_ENABLE_INTERNAL_INTERFACES)
-#include <metadataemithelper.h>
-#endif // DNMD_ENABLE_INTERNAL_INTERFACES
 
 #include <cstdint>
 #include <cstddef>
 #include <atomic>
 #include <unordered_map>
 
-#if defined(DNMD_ENABLE_INTERNAL_INTERFACES)
-class InternalMetadataRW;
-class MetadataEmit final : public TearOffBase<IMetaDataEmit2, IMetaDataAssemblyEmit, IMetaDataEmitHelper>
-#else // DNMD_ENABLE_INTERNAL_INTERFACES
 class MetadataEmit final : public TearOffBase<IMetaDataEmit2, IMetaDataAssemblyEmit>
-#endif // DNMD_ENABLE_INTERNAL_INTERFACES
 {
-#if defined(DNMD_ENABLE_INTERNAL_INTERFACES)
-    friend class InternalMetadataRW;
-#endif // DNMD_ENABLE_INTERNAL_INTERFACES
-
     struct DuplicateIndex
     {
         mdhandle_t handle = nullptr;
@@ -78,13 +66,6 @@ protected:
             *ppvObject = static_cast<IMetaDataAssemblyEmit*>(this);
             return true;
         }
-#if defined(DNMD_ENABLE_INTERNAL_INTERFACES)
-        else if (riid == IID_IMetaDataEmitHelper)
-        {
-            *ppvObject = static_cast<IMetaDataEmitHelper*>(this);
-            return true;
-        }
-#endif // DNMD_ENABLE_INTERNAL_INTERFACES
         return false;
     }
 
@@ -525,19 +506,13 @@ public: // IMetaDataAssemblyEmit
         DWORD       dwOffset,
         DWORD       dwResourceFlags) override;
 
-#if defined(DNMD_ENABLE_INTERNAL_INTERFACES)
-public: // IMetaDataEmitHelper
-    STDMETHOD(DefineMethodSemanticsHelper)(mdToken tkAssociation, DWORD dwFlags, mdMethodDef md) override;
-    STDMETHOD(SetFieldLayoutHelper)(mdFieldDef fd, ULONG ulOffset) override;
-    STDMETHOD(DefineEventHelper)(mdTypeDef td, LPCWSTR szEvent, DWORD dwEventFlags, mdToken tkEventType, mdEvent *pmdEvent) override;
-    STDMETHOD(AddDeclarativeSecurityHelper)(mdToken tk, DWORD dwAction, void const *pValue, DWORD cbValue, mdPermission *pmdPermission) override;
-    STDMETHOD(SetResolutionScopeHelper)(mdTypeRef tr, mdToken rs) override;
-    STDMETHOD(SetManifestResourceOffsetHelper)(mdManifestResource mr, ULONG ulOffset) override;
-    STDMETHOD(SetTypeParent)(mdTypeDef td, mdToken tkExtends) override;
-    STDMETHOD(AddInterfaceImpl)(mdTypeDef td, mdToken tkInterface) override;
-
-#else // DNMD_ENABLE_INTERNAL_INTERFACES
+public: // Metadata emit helpers
     STDMETHOD(SetFieldLayoutHelper)(mdFieldDef fd, ULONG ulOffset);
+#if defined(DNMD_ENABLE_INTERNAL_INTERFACES)
+    STDMETHOD(DefineMethodSemanticsHelper)(mdToken tkAssociation, DWORD dwFlags, mdMethodDef md);
+    STDMETHOD(DefineEventHelper)(mdTypeDef td, LPCWSTR szEvent, DWORD dwEventFlags, mdToken tkEventType, mdEvent *pmdEvent);
+    STDMETHOD(SetTypeParent)(mdTypeDef td, mdToken tkExtends);
+    STDMETHOD(AddInterfaceImpl)(mdTypeDef td, mdToken tkInterface);
 #endif // DNMD_ENABLE_INTERNAL_INTERFACES
 };
 

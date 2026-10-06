@@ -4,7 +4,6 @@
 #include "emit.hpp"
 #include <dnmd.hpp>
 #include <metadata.h>
-#include <metadataemithelper.h>
 #include <mdinternalemit.h>
 #include <minipal/rwlock.h>
 #include <chrono>
@@ -458,6 +457,34 @@ TEST(UpdateMode, ScopesCaptureModeAndExposeInternalEmitter)
     ASSERT_EQ(S_OK, internal->SetMDUpdateMode(MDUpdateFull, &previous));
     EXPECT_EQ(MDUpdateFull, previous);
 }
+
+TEST(UpdateMode, ChangingMvidRecordsENCLog)
+{
+    minipal::com_ptr<IMetaDataDispenserEx> dispenser;
+    ASSERT_EQ(S_OK, GetDispenser(IID_IMetaDataDispenserEx, (void**)&dispenser));
+    VARIANT option{};
+    V_VT(&option) = VT_UI4;
+    V_UI4(&option) = MDUpdateENC;
+    ASSERT_EQ(S_OK, dispenser->SetOption(MetaDataSetUpdate, &option));
+
+    minipal::com_ptr<IMetaDataEmit2> emit;
+    ASSERT_EQ(S_OK, dispenser->DefineScope(CLSID_CorMetaDataRuntime, 0,
+        IID_IMetaDataEmit2, (IUnknown**)&emit));
+    minipal::com_ptr<IMDInternalEmit> internal;
+    ASSERT_EQ(S_OK, emit->QueryInterface(IID_IMDInternalEmit, (void**)&internal));
+
+    GUID expected = { 0x9be71e5c, 0xae85, 0x4ebd, { 0x81, 0x02, 0x11, 0xe7, 0x33, 0xa2, 0x15, 0x6c } };
+    ASSERT_EQ(S_OK, internal->ChangeMvid(expected));
+    minipal::com_ptr<IMetaDataImport> import;
+    ASSERT_EQ(S_OK, emit->QueryInterface(IID_IMetaDataImport, (void**)&import));
+    GUID actual{};
+    ASSERT_EQ(S_OK, import->GetScopeProps(nullptr, 0, nullptr, &actual));
+    EXPECT_EQ(0, std::memcmp(&expected, &actual, sizeof(expected)));
+
+    std::vector<LogEntry> log;
+    ASSERT_NO_FATAL_FAILURE(ReadENCLog(emit.p, log));
+    EXPECT_EQ((std::vector<LogEntry>{ { TokenFromRid(1, mdtModule), 0 } }), log);
+}
 #endif // DNMD_ENABLE_INTERNAL_INTERFACES
 
 TEST(UpdateMode, ENCRecordsCoreEditsAndResetsWithoutChangingTokens)
@@ -557,8 +584,8 @@ TEST(UpdateMode, LogsRelatedRowsAndCreationOperations)
     minipal::com_ptr<IMetaDataEmit2> emit;
     ASSERT_EQ(S_OK, dispenser->DefineScope(CLSID_CorMetaDataRuntime, 0,
         IID_IMetaDataEmit2, (IUnknown**)&emit));
-    minipal::com_ptr<IMetaDataEmitHelper> helper;
-    ASSERT_EQ(S_OK, emit->QueryInterface(IID_IMetaDataEmitHelper, (void**)&helper));
+    minipal::com_ptr<IMDInternalEmit> internal;
+    ASSERT_EQ(S_OK, emit->QueryInterface(IID_IMDInternalEmit, (void**)&internal));
     mdTypeDef type, nested;
     mdTypeRef reference;
     mdMethodDef method;
@@ -579,14 +606,13 @@ TEST(UpdateMode, LogsRelatedRowsAndCreationOperations)
     ASSERT_EQ(S_OK, emit->DefineField(type, W("State"), fdPublic,
         fieldSig, sizeof(fieldSig), ELEMENT_TYPE_VOID, nullptr, 0, &field));
     ASSERT_EQ(S_OK, emit->SetClassLayout(type, 4, nullptr, 16));
-    ASSERT_EQ(S_OK, helper->SetFieldLayoutHelper(field, 8));
-    ASSERT_EQ(S_OK, helper->SetFieldLayoutHelper(field, 12));
-    ASSERT_EQ(S_OK, helper->DefineEventHelper(type, W("First"), 0, reference, &eventToken));
-    ASSERT_EQ(S_OK, helper->DefineMethodSemanticsHelper(eventToken, msAddOn, method));
-    ASSERT_EQ(S_OK, helper->DefineEventHelper(type, W("Second"), 0, reference, &secondEvent));
+    ASSERT_EQ(S_OK, internal->SetFieldLayoutHelper(field, 8));
+    ASSERT_EQ(S_OK, internal->SetFieldLayoutHelper(field, 12));
+    ASSERT_EQ(S_OK, internal->DefineEventHelper(type, W("First"), 0, reference, &eventToken));
+    ASSERT_EQ(S_OK, internal->DefineMethodSemanticsHelper(eventToken, msAddOn, method));
+    ASSERT_EQ(S_OK, internal->DefineEventHelper(type, W("Second"), 0, reference, &secondEvent));
     ASSERT_EQ(S_OK, emit->DefineProperty(type, W("Value"), 0, propertySig, sizeof(propertySig),
         ELEMENT_TYPE_VOID, nullptr, 0, mdMethodDefNil, mdMethodDefNil, nullptr, &property));
-    ASSERT_EQ(S_OK, helper->SetResolutionScopeHelper(reference, TokenFromRid(1, mdtModule)));
     ASSERT_EQ(S_OK, emit->DeleteClassLayout(type));
 
     std::vector<LogEntry> log;
@@ -604,7 +630,7 @@ TEST(UpdateMode, LogsRelatedRowsAndCreationOperations)
         { RecordToken(mdtid_EventMap, 1), 5 }, { secondEvent, 0 },
         { RecordToken(mdtid_PropertyMap, 1), 0 },
         { RecordToken(mdtid_PropertyMap, 1), 4 }, { property, 0 },
-        { reference, 0 }, { RecordToken(mdtid_ClassLayout, 1), 0 },
+        { RecordToken(mdtid_ClassLayout, 1), 0 },
         { RecordToken(mdtid_FieldLayout, 1), 0 }
     }), log);
 }

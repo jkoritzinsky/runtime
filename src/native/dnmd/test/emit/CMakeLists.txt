@@ -19,7 +19,7 @@ set(SOURCES
 	updatemode.cpp)
 
 if (DNMD_ENABLE_INTERNAL_INTERFACES)
-	list(APPEND SOURCES metadataemithelper.cpp)
+	list(APPEND SOURCES internalemit.cpp)
 endif()
 
 set(HEADERS emit.hpp)

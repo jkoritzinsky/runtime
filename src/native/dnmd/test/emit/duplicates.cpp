@@ -2,7 +2,8 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 
 #include "emit.hpp"
-#include <metadataemithelper.h>
+#include "../../src/interfaces/dnmdowner.hpp"
+#include <dnmd.hpp>
 
 #include <array>
 #include <vector>
@@ -467,9 +468,6 @@ TEST(CheckDuplicates, LookupIndexObservesChangedNamesAndScopes)
     ASSERT_NO_FATAL_FAILURE(CreateDispenser(ReflectionEmitChecks, dispenser));
     minipal::com_ptr<IMetaDataEmit> emit;
     ASSERT_NO_FATAL_FAILURE(DefineScope(dispenser.p, emit));
-    minipal::com_ptr<IMetaDataEmitHelper> helper;
-    ASSERT_EQ(S_OK, emit->QueryInterface(IID_IMetaDataEmitHelper, (void**)&helper));
-
     mdModuleRef otherScope;
     ASSERT_EQ(S_OK, emit->DefineModuleRef(W("Other"), &otherScope));
     mdTypeRef oldRef, duplicate, newRef;
@@ -477,7 +475,11 @@ TEST(CheckDuplicates, LookupIndexObservesChangedNamesAndScopes)
     ASSERT_EQ(S_OK, emit->DefineTypeRefByName(module, W("N.Referenced"), &oldRef));
     ASSERT_EQ(META_S_DUPLICATE, emit->DefineTypeRefByName(module, W("N.Referenced"), &duplicate));
     ASSERT_EQ(oldRef, duplicate);
-    ASSERT_EQ(S_OK, helper->SetResolutionScopeHelper(oldRef, otherScope));
+    minipal::com_ptr<IDNMDOwner> owner;
+    ASSERT_EQ(S_OK, emit->QueryInterface(IID_IDNMDOwner, (void**)&owner));
+    mdcursor_t typeRef;
+    ASSERT_TRUE(md_token_to_cursor(owner->MetaData(), oldRef, &typeRef));
+    ASSERT_TRUE(md_set_column_value_as_token(typeRef, mdtTypeRef_ResolutionScope, otherScope));
     ASSERT_EQ(S_OK, emit->DefineTypeRefByName(module, W("N.Referenced"), &newRef));
     EXPECT_NE(oldRef, newRef);
     ASSERT_EQ(META_S_DUPLICATE, emit->DefineTypeRefByName(otherScope, W("N.Referenced"), &duplicate));

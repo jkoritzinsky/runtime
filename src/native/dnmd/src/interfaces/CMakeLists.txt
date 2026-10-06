@@ -15,6 +15,7 @@ set(HEADERS
   ../inc/internal/span.hpp
   ./metadataimportro.hpp
   ./metadataemit.hpp
+  ./enclog.hpp
   ./hcorenum.hpp
   ./controllingiunknown.hpp
   ./tearoffbase.hpp

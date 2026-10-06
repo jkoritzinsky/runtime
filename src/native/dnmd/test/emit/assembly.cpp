@@ -2,6 +2,7 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 
 #include "emit.hpp"
+#include <cstring>
 
 TEST(Assembly, DefineNoPublicKey)
 {
@@ -73,4 +74,49 @@ TEST(Assembly, DefineWithDefaultCulture)
     EXPECT_EQ(W("Dynamic"), WSTR_string(name));
     EXPECT_EQ(0u, read.cbLocale);
     EXPECT_EQ(static_cast<WCHAR>(0), culture[0]);
+}
+
+TEST(PublicEmit, SecurityAndResourceOffset)
+{
+    minipal::com_ptr<IMetaDataEmit> emit;
+    ASSERT_NO_FATAL_FAILURE(CreateEmit(emit));
+    mdToken noInterfaces = mdTokenNil;
+    mdTypeDef type;
+    ASSERT_EQ(S_OK, emit->DefineTypeDef(W("Secured"), tdPublic, mdTypeDefNil, &noInterfaces, &type));
+    BYTE permissionBlob[] = { 0x2e, 0x00 };
+    mdPermission permission;
+    ASSERT_EQ(S_OK, emit->DefinePermissionSet(type, dclDemand,
+        permissionBlob, sizeof(permissionBlob), &permission));
+
+    minipal::com_ptr<IMetaDataImport> import;
+    ASSERT_EQ(S_OK, emit->QueryInterface(IID_IMetaDataImport, (void**)&import));
+    DWORD action;
+    void const *blob;
+    ULONG blobSize;
+    ASSERT_EQ(S_OK, import->GetPermissionSetProps(permission, &action, &blob, &blobSize));
+    EXPECT_EQ(dclDemand, action);
+    ASSERT_EQ(sizeof(permissionBlob), blobSize);
+    EXPECT_EQ(0, std::memcmp(permissionBlob, blob, blobSize));
+    WCHAR typeName[32];
+    ULONG typeNameLength;
+    DWORD typeFlags;
+    mdToken base;
+    ASSERT_EQ(S_OK, import->GetTypeDefProps(type, typeName, 32, &typeNameLength, &typeFlags, &base));
+    EXPECT_NE(0u, typeFlags & tdHasSecurity);
+
+    minipal::com_ptr<IMetaDataAssemblyEmit> assemblyEmit;
+    ASSERT_EQ(S_OK, emit->QueryInterface(IID_IMetaDataAssemblyEmit, (void**)&assemblyEmit));
+    mdManifestResource resource;
+    ASSERT_EQ(S_OK, assemblyEmit->DefineManifestResource(W("Embedded"), mdTokenNil, 1, mrPublic, &resource));
+    ASSERT_EQ(S_OK, assemblyEmit->SetManifestResourceProps(resource, mdTokenNil, 42, UINT32_MAX));
+
+    minipal::com_ptr<IMetaDataAssemblyImport> assemblyImport;
+    ASSERT_EQ(S_OK, emit->QueryInterface(IID_IMetaDataAssemblyImport, (void**)&assemblyImport));
+    WCHAR name[32];
+    ULONG nameLength;
+    mdToken implementation;
+    DWORD offset, flags;
+    ASSERT_EQ(S_OK, assemblyImport->GetManifestResourceProps(resource,
+        name, 32, &nameLength, &implementation, &offset, &flags));
+    EXPECT_EQ(42u, offset);
 }

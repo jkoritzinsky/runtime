@@ -10,9 +10,6 @@
 
 #include <cor.h>
 #include <corhdr.h>
-#if defined(DNMD_ENABLE_INTERNAL_INTERFACES)
-#include <metadataemithelper.h>
-#endif // DNMD_ENABLE_INTERNAL_INTERFACES
 
 #include <cstdint>
 #include <mutex>
@@ -94,13 +91,8 @@ public:
     }
 };
 
-#if defined(DNMD_ENABLE_INTERNAL_INTERFACES)
-template<typename TImport, typename TEmit>
-class ThreadSafeImportEmit : public TearOffBase<IMetaDataImport2, IMetaDataEmit2, IMetaDataAssemblyImport, IMetaDataAssemblyEmit, IMetaDataEmitHelper>
-#else // DNMD_ENABLE_INTERNAL_INTERFACES
 template<typename TImport, typename TEmit>
 class ThreadSafeImportEmit : public TearOffBase<IMetaDataImport2, IMetaDataEmit2, IMetaDataAssemblyImport, IMetaDataAssemblyEmit>
-#endif // DNMD_ENABLE_INTERNAL_INTERFACES
 {
 #if defined(DNMD_ENABLE_INTERNAL_INTERFACES)
     // The internal RW tear-off on the same controlling unknown owns this lock view.
@@ -138,13 +130,6 @@ protected:
             *ppvObject = static_cast<IMetaDataAssemblyEmit*>(this);
             return true;
         }
-#if defined(DNMD_ENABLE_INTERNAL_INTERFACES)
-        if (riid == IID_IMetaDataEmitHelper)
-        {
-            *ppvObject = static_cast<IMetaDataEmitHelper*>(this);
-            return true;
-        }
-#endif // DNMD_ENABLE_INTERNAL_INTERFACES
         return false;
     }
 
@@ -1789,58 +1774,6 @@ public: // IMetaDataAssemblyEmit
         return _emit->SetManifestResourceProps(mr, tkImplementation, dwOffset, dwResourceFlags);
     }
 
-#if defined(DNMD_ENABLE_INTERNAL_INTERFACES)
-public: // IMetaDataEmitHelper
-    STDMETHOD(DefineMethodSemanticsHelper)(mdToken tkAssociation, DWORD dwFlags, mdMethodDef md) override
-    {
-        std::lock_guard<pal::WriteLock> lock { this->GetLock()->GetWriteLock() };
-        return _emit->DefineMethodSemanticsHelper(tkAssociation, dwFlags, md);
-    }
-
-    STDMETHOD(SetFieldLayoutHelper)(mdFieldDef fd, ULONG ulOffset) override
-    {
-        std::lock_guard<pal::WriteLock> lock { this->GetLock()->GetWriteLock() };
-        return _emit->SetFieldLayoutHelper(fd, ulOffset);
-    }
-
-    STDMETHOD(DefineEventHelper)(mdTypeDef td, LPCWSTR szEvent, DWORD dwEventFlags, mdToken tkEventType, mdEvent *pmdEvent) override
-    {
-        std::lock_guard<pal::WriteLock> lock { this->GetLock()->GetWriteLock() };
-        return _emit->DefineEventHelper(td, szEvent, dwEventFlags, tkEventType, pmdEvent);
-    }
-
-    STDMETHOD(AddDeclarativeSecurityHelper)(
-        mdToken tk, DWORD dwAction, void const *pValue, DWORD cbValue, mdPermission *pmdPermission) override
-    {
-        std::lock_guard<pal::WriteLock> lock { this->GetLock()->GetWriteLock() };
-        return _emit->AddDeclarativeSecurityHelper(tk, dwAction, pValue, cbValue, pmdPermission);
-    }
-
-    STDMETHOD(SetResolutionScopeHelper)(mdTypeRef tr, mdToken rs) override
-    {
-        std::lock_guard<pal::WriteLock> lock { this->GetLock()->GetWriteLock() };
-        return _emit->SetResolutionScopeHelper(tr, rs);
-    }
-
-    STDMETHOD(SetManifestResourceOffsetHelper)(mdManifestResource mr, ULONG ulOffset) override
-    {
-        std::lock_guard<pal::WriteLock> lock { this->GetLock()->GetWriteLock() };
-        return _emit->SetManifestResourceOffsetHelper(mr, ulOffset);
-    }
-
-    STDMETHOD(SetTypeParent)(mdTypeDef td, mdToken tkExtends) override
-    {
-        std::lock_guard<pal::WriteLock> lock { this->GetLock()->GetWriteLock() };
-        return _emit->SetTypeParent(td, tkExtends);
-    }
-
-    STDMETHOD(AddInterfaceImpl)(mdTypeDef td, mdToken tkInterface) override
-    {
-        std::lock_guard<pal::WriteLock> lock { this->GetLock()->GetWriteLock() };
-        return _emit->AddInterfaceImpl(td, tkInterface);
-    }
-
-#endif // DNMD_ENABLE_INTERNAL_INTERFACES
 };
 
 #endif // _SRC_INTERFACES_THREADSAFE_HPP_

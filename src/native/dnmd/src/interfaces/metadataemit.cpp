@@ -1,4 +1,5 @@
 #include "metadataemit.hpp"
+#include "enclog.hpp"
 #include "importhelpers.hpp"
 #include "signatures.hpp"
 #include "pal.hpp"
@@ -40,17 +41,6 @@ namespace
         ENCPropertyCreate = 4,
         ENCEventCreate = 5,
     };
-
-    HRESULT AppendENCLog(mdhandle_t metadata, mdToken token, uint32_t operation)
-    {
-        md_added_row_t row{ mdcursor_t{} };
-        if (!md_append_row(metadata, mdtid_ENCLog, &row))
-            return E_FAIL;
-        if (!md_set_column_value_as_constant(row, mdtENCLog_Token, token)
-            || !md_set_column_value_as_constant(row, mdtENCLog_Op, operation))
-            return E_FAIL;
-        return S_OK;
-    }
 
     struct MetadataSnapshot
     {
@@ -852,20 +842,12 @@ HRESULT MetadataEmit::FindExisting(mdtable_id_t table, size_t hash, Match match,
 
 HRESULT MetadataEmit::LogToken(mdToken token, uint32_t operation)
 {
-    return _md_ptr.UpdateMode() == MDUpdateENC
-        ? AppendENCLog(MetaData(), token, operation)
-        : S_OK;
+    return enc_log::LogToken(_md_ptr, token, operation);
 }
 
 HRESULT MetadataEmit::LogRow(mdcursor_t row, uint32_t operation)
 {
-    if (_md_ptr.UpdateMode() != MDUpdateENC)
-        return S_OK;
-
-    mdToken token;
-    if (!md_cursor_to_token(row, &token))
-        return CLDB_E_FILE_CORRUPT;
-    return AppendENCLog(MetaData(), token | 0x80000000u, operation);
+    return enc_log::LogRow(_md_ptr, row, operation);
 }
 
 HRESULT MetadataEmit::SetModuleProps(
@@ -4360,7 +4342,7 @@ HRESULT MetadataEmit::ApplyEditAndContinue(
             if (!md_get_column_value_as_constant(row, mdtENCLog_Token, &token)
                 || !md_get_column_value_as_constant(row, mdtENCLog_Op, &operation))
                 return E_INVALIDARG;
-            RETURN_IF_FAILED(AppendENCLog(updated.handle.get(), token, operation));
+            RETURN_IF_FAILED(enc_log::Append(updated.handle.get(), token, operation));
             if (i + 1 < count && !md_cursor_next(&row))
                 return E_INVALIDARG;
         }
@@ -4418,7 +4400,7 @@ HRESULT MetadataEmit::TranslateSigWithScope(
             {
                 mdToken token;
                 logStatus = md_cursor_to_token(row, &token)
-                    ? AppendENCLog(moduleEmit->MetaData(), token, ENCUpdate)
+                    ? enc_log::Append(moduleEmit->MetaData(), token, ENCUpdate)
                     : CLDB_E_FILE_CORRUPT;
             }
         },
@@ -5485,41 +5467,6 @@ HRESULT MetadataEmit::DefineEventHelper(mdTypeDef td, LPCWSTR szEvent, DWORD dwE
 {
     return DefineEvent(td, szEvent, dwEventFlags, tkEventType,
         mdMethodDefNil, mdMethodDefNil, mdMethodDefNil, nullptr, pmdEvent);
-}
-
-HRESULT MetadataEmit::AddDeclarativeSecurityHelper(
-    mdToken tk, DWORD dwAction, void const *pValue, DWORD cbValue, mdPermission *pmdPermission)
-{
-    if ((TypeFromToken(tk) != mdtTypeDef && TypeFromToken(tk) != mdtMethodDef && TypeFromToken(tk) != mdtAssembly)
-        || IsNilToken(tk) || pmdPermission == nullptr || (cbValue != 0 && pValue == nullptr)
-        || dwAction == 0 || dwAction > dclMaximumValue)
-        return E_INVALIDARG;
-
-    return DefinePermissionSet(tk, dwAction, pValue, cbValue, pmdPermission);
-}
-
-HRESULT MetadataEmit::SetResolutionScopeHelper(mdTypeRef tr, mdToken rs)
-{
-    if (TypeFromToken(tr) != mdtTypeRef || IsNilToken(tr))
-        return E_INVALIDARG;
-
-    mdcursor_t typeRef;
-    if (!md_token_to_cursor(MetaData(), tr, &typeRef))
-        return CLDB_E_RECORD_NOTFOUND;
-
-    return md_set_column_value_as_token(typeRef, mdtTypeRef_ResolutionScope, rs) ? LogToken(tr) : E_FAIL;
-}
-
-HRESULT MetadataEmit::SetManifestResourceOffsetHelper(mdManifestResource mr, ULONG ulOffset)
-{
-    if (TypeFromToken(mr) != mdtManifestResource || IsNilToken(mr))
-        return E_INVALIDARG;
-
-    mdcursor_t resource;
-    if (!md_token_to_cursor(MetaData(), mr, &resource))
-        return CLDB_E_RECORD_NOTFOUND;
-
-    return md_set_column_value_as_constant(resource, mdtManifestResource_Offset, ulOffset) ? LogToken(mr) : E_FAIL;
 }
 
 HRESULT MetadataEmit::SetTypeParent(mdTypeDef td, mdToken tkExtends)
