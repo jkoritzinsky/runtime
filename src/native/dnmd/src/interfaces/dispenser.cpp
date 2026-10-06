@@ -16,6 +16,7 @@
 #include "threadsafe.hpp"
 #if defined(DNMD_ENABLE_INTERNAL_INTERFACES)
 #include "internal/metadataimport.hpp"
+#include "internal/metadatarw.hpp"
 #endif // DNMD_ENABLE_INTERNAL_INTERFACES
 #include <minipal/guid.h>
 #include <minipal/rwlock.h>
@@ -110,7 +111,7 @@ namespace
         if (!threadSafe)
         {
 #if defined(DNMD_ENABLE_INTERNAL_INTERFACES)
-            (void)unknown->CreateAndAddTearOff<InternalMetadataImportRW>(handle_view);
+            (void)unknown->CreateAndAddTearOff<InternalMetadataRW>(handle_view, emit);
 #endif // DNMD_ENABLE_INTERNAL_INTERFACES
             return unknown;
         }
@@ -120,9 +121,9 @@ namespace
 
         (void)threadSafeUnknown->CreateAndAddTearOff<DelegatingDNMDOwner>(handle_view);
 #if defined(DNMD_ENABLE_INTERNAL_INTERFACES)
-        auto* wrapper = threadSafeUnknown->CreateAndAddTearOff<ThreadSafeImportEmit<MetadataImportRO, MetadataEmit>>(
-            std::move(unknown), import, emit);
-        (void)threadSafeUnknown->CreateAndAddTearOff<InternalMetadataImportRW>(handle_view, wrapper->GetLock());
+        InternalMetadataRW* internal = threadSafeUnknown->CreateAndAddTearOff<InternalMetadataRW>(handle_view, emit);
+        (void)threadSafeUnknown->CreateAndAddTearOff<ThreadSafeImportEmit<MetadataImportRO, MetadataEmit>>(
+            std::move(unknown), import, emit, internal->GetLock());
 #else // DNMD_ENABLE_INTERNAL_INTERFACES
         (void)threadSafeUnknown->CreateAndAddTearOff<ThreadSafeImportEmit<MetadataImportRO, MetadataEmit>>(
             std::move(unknown), import, emit);

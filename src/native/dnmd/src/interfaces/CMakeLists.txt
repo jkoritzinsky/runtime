@@ -26,7 +26,9 @@ set(HEADERS
 
 if (DNMD_ENABLE_INTERNAL_INTERFACES)
   list(APPEND SOURCES ./internal/metadataimport.cpp)
+  list(APPEND SOURCES ./internal/metadatarw.cpp)
   list(APPEND HEADERS ./internal/metadataimport.hpp)
+  list(APPEND HEADERS ./internal/metadatarw.hpp)
 endif()
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)

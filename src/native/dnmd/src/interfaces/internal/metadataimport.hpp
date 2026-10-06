@@ -4,7 +4,6 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
-#include <mutex>
 
 class CQuickBytes;
 class IMetaModelCommon;
@@ -18,7 +17,6 @@ class IMetaModelCommon;
 class InternalMetadataImportRO : public TearOffBase<IMDInternalImportENC, IGetIMDInternalImport>
 {
     mdhandle_view m_handle;
-    pal::ReadWriteLock* m_lock;
 protected:
     virtual bool TryGetInterfaceOnThis(REFIID riid, void** ppvObject) override
     {
@@ -37,13 +35,11 @@ protected:
     }
 public:
 
-    InternalMetadataImportRO(IUnknown* controllingUnknown, mdhandle_view md_ptr, pal::ReadWriteLock* lock = nullptr)
+    InternalMetadataImportRO(IUnknown* controllingUnknown, mdhandle_view md_ptr)
         : TearOffBase(controllingUnknown)
         , m_handle{ md_ptr }
-        , m_lock{ lock }
     { }
     mdhandle_t MetaData() const { return m_handle.get(); }
-    pal::ReadWriteLock* Lock() const { return m_lock; }
 public: // IGetIMDInternalImport
     STDMETHOD(GetIMDInternalImport)(IMDInternalImport** ppInternalImport) override
     {
@@ -770,36 +766,6 @@ public: // IMDInternalImport
         LPCSTR          *pszNamespace,     // [OUT] Namespace of Custom Attribute.
         LPCSTR          *pszName) override;    // [OUT] Name of Custom Attribute.
 
-};
-
-class InternalMetadataImportRW final : public InternalMetadataImportRO
-{
-    minipal::com_ptr<IUnknown> _userContext;
-    std::mutex _contextMutex;
-protected:
-    bool TryGetInterfaceOnThis(REFIID riid, void** ppvObject) override
-    {
-        if (InternalMetadataImportRO::TryGetInterfaceOnThis(riid, ppvObject))
-            return true;
-        if (riid == IID_IMDInternalImportENC)
-        {
-            *ppvObject = static_cast<IMDInternalImportENC*>(this);
-            return true;
-        }
-        return false;
-    }
-
-public:
-    using InternalMetadataImportRO::InternalMetadataImportRO;
-
-    STDMETHOD(ApplyEditAndContinue)(
-        void* pDeltaMD,
-        ULONG cbDeltaMD,
-        IMDInternalImport** ppv) override;
-
-    STDMETHOD(EnumDeltaTokensInit)(HENUMInternal* phEnum) override;
-
-    STDMETHOD(SetUserContextData)(IUnknown* context) override;
 };
 
 #endif // _SRC_INTERFACES_INTERNAL_METADATAIMPORT_HPP_

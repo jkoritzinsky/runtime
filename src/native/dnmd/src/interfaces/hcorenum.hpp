@@ -108,4 +108,17 @@ struct HCORENUMImplDeleter
 // C++ lifetime wrapper for HCORENUMImpl memory
 using HCORENUMImpl_ptr = std::unique_ptr<HCORENUMImpl, HCORENUMImplDeleter>;
 
+struct HCORENUMImplInPlaceDeleter
+{
+    using pointer = HCORENUMImpl*;
+    void operator()(HCORENUMImpl* mem)
+    {
+        HCORENUMImpl::DestroyInAllocatedMemory(mem);
+        // VM enum holders call EnumClose even when initialization fails.
+        HCORENUMImpl::CreateDynamicEnumInAllocatedMemory(mem);
+    }
+};
+
+using HCORENUMImplInPlace_ptr = std::unique_ptr<HCORENUMImpl, HCORENUMImplInPlaceDeleter>;
+
 #endif // _SRC_HCORENUM_HPP

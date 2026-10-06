@@ -121,45 +121,52 @@ namespace pal
 {
     class ReadWriteLock::Impl final
     {
-        minipal_rwlock _lock{};
+        minipal_rwlock _ownedLock{};
+        minipal_rwlock* _activeLock = &_ownedLock;
     public:
         Impl()
         {
-            if (!minipal_rwlock_init(&_lock))
+            if (!minipal_rwlock_init(&_ownedLock))
                 throw std::bad_alloc();
         }
 
         ~Impl()
         {
-            minipal_rwlock_destroy(&_lock);
+            minipal_rwlock_destroy(&_ownedLock);
         }
 
         minipal_rwlock* NativeHandle() noexcept
         {
-            return &_lock;
+            return _activeLock;
+        }
+
+        void Borrow(minipal_rwlock* lock) noexcept
+        {
+            assert(lock != nullptr);
+            _activeLock = lock;
         }
 
         // BasicLockable cannot report acquisition failure; never continue without the lock.
         void lock_shared() noexcept
         {
-            if (!minipal_rwlock_enter_read(&_lock))
+            if (!minipal_rwlock_enter_read(_activeLock))
                 std::terminate();
         }
 
         void unlock_shared() noexcept
         {
-            minipal_rwlock_leave_read(&_lock);
+            minipal_rwlock_leave_read(_activeLock);
         }
 
         void lock() noexcept
         {
-            if (!minipal_rwlock_enter_write(&_lock))
+            if (!minipal_rwlock_enter_write(_activeLock))
                 std::terminate();
         }
 
         void unlock() noexcept
         {
-            minipal_rwlock_leave_write(&_lock);
+            minipal_rwlock_leave_write(_activeLock);
         }
     };
 }
@@ -177,6 +184,11 @@ pal::ReadWriteLock::~ReadWriteLock() = default;
 minipal_rwlock* pal::ReadWriteLock::NativeHandle() noexcept
 {
     return _impl->NativeHandle();
+}
+
+void pal::ReadWriteLock::Borrow(minipal_rwlock* lock) noexcept
+{
+    _impl->Borrow(lock);
 }
 
 pal::ReadLock::ReadLock(pal::ReadWriteLock& lock) noexcept

@@ -9,6 +9,7 @@
 #include <mdinternalemit.h>
 #include <minipal/rwlock.h>
 #include "dnmdowner.hpp"
+#include "pal.hpp"
 
 #include <gtest/gtest.h>
 #include <atomic>
@@ -130,6 +131,69 @@ namespace
         EXPECT_TRUE(blocked);
         EXPECT_TRUE(reader.get());
     }
+
+    void ExpectInternalEmitUsesWritableLock(IMDInternalImport* internal)
+    {
+        minipal::com_ptr<IMDInternalEmit> emitter;
+        ASSERT_EQ(S_OK, internal->QueryInterface(IID_IMDInternalEmit, (void**)&emitter));
+        ExpectSameComIdentity(internal, emitter.p);
+
+        minipal_rwlock* lock = internal->GetReaderWriterLock();
+        ASSERT_NE(nullptr, lock);
+        ASSERT_TRUE(minipal_rwlock_enter_read(lock));
+        std::promise<void> started;
+        std::future<void> startedFuture = started.get_future();
+        mdTypeDef created = mdTypeDefNil;
+        std::future<HRESULT> pending = std::async(std::launch::async, [&]
+        {
+            started.set_value();
+            return emitter->DefineTypeDef(W("FromInternalEmit"), tdPublic,
+                mdTypeDefNil, nullptr, &created);
+        });
+
+        bool didStart = startedFuture.wait_for(std::chrono::seconds(5)) == std::future_status::ready;
+        bool blocked = didStart && pending.wait_for(std::chrono::milliseconds(250)) == std::future_status::timeout;
+        minipal_rwlock_leave_read(lock);
+        ASSERT_TRUE(didStart);
+        EXPECT_TRUE(blocked);
+        ASSERT_EQ(S_OK, pending.get());
+
+        mdTypeDef found = mdTypeDefNil;
+        ASSERT_EQ(S_OK, internal->FindTypeDef(nullptr, "FromInternalEmit", mdTokenNil, &found));
+        EXPECT_EQ(created, found);
+    }
+}
+
+TEST(InternalConversion, ReadOnlyScopeHasNoWritableInterfaceOrLock)
+{
+    std::vector<uint8_t> image;
+    ASSERT_NO_FATAL_FAILURE(CreateImage(image));
+
+    minipal::com_ptr<IMetaDataDispenserEx> dispenser;
+    ASSERT_EQ(S_OK, GetDispenser(IID_IMetaDataDispenserEx, (void**)&dispenser));
+    VARIANT option{};
+    V_VT(&option) = VT_UI4;
+    V_UI4(&option) = MDThreadSafetyOn;
+    ASSERT_EQ(S_OK, dispenser->SetOption(MetaDataThreadSafetyOptions, &option));
+
+    minipal::com_ptr<IMDInternalImport> internal;
+    ASSERT_EQ(S_OK, dispenser->OpenScopeOnMemory(image.data(), (ULONG)image.size(),
+        ofReadOnly | ofCopyMemory, IID_IMDInternalImport, (IUnknown**)&internal));
+    EXPECT_EQ(nullptr, internal->GetReaderWriterLock());
+    EXPECT_EQ(S_OK, internal->SetReaderWriterLock(nullptr));
+
+    minipal_rwlock other{};
+    ASSERT_TRUE(minipal_rwlock_init(&other));
+    EXPECT_EQ(E_NOTIMPL, internal->SetReaderWriterLock(&other));
+    minipal_rwlock_destroy(&other);
+
+    minipal::com_ptr<IMDInternalEmit> emitter;
+    EXPECT_EQ(E_NOINTERFACE, internal->QueryInterface(IID_IMDInternalEmit, (void**)&emitter));
+    minipal::com_ptr<IGetIMDInternalImport> getter;
+    ASSERT_EQ(S_OK, internal->QueryInterface(IID_IGetIMDInternalImport, (void**)&getter));
+    minipal::com_ptr<IMDInternalImport> fromGetter;
+    ASSERT_EQ(S_OK, getter->GetIMDInternalImport(&fromGetter));
+    EXPECT_EQ(internal.p, fromGetter.p);
 }
 
 TEST(InternalConversion, NewWritableScopeSharesPublicAndInternalIdentity)
@@ -163,12 +227,10 @@ TEST(InternalConversion, NewWritableScopeSharesPublicAndInternalIdentity)
     minipal::com_ptr<IDNMDOwner> owner;
     ASSERT_EQ(S_OK, internal->QueryInterface(IID_IDNMDOwner, (void**)&owner));
     EXPECT_TRUE(owner->IsReadWrite());
-    EXPECT_EQ(nullptr, internal->GetReaderWriterLock());
-
-    minipal_rwlock external{};
-    ASSERT_TRUE(minipal_rwlock_init(&external));
-    EXPECT_EQ(E_NOTIMPL, internal->SetReaderWriterLock(&external));
-    minipal_rwlock_destroy(&external);
+    minipal_rwlock* lock = internal->GetReaderWriterLock();
+    ASSERT_NE(nullptr, lock);
+    EXPECT_EQ(S_OK, internal->SetReaderWriterLock(lock));
+    EXPECT_EQ(E_INVALIDARG, internal->SetReaderWriterLock(nullptr));
 
     mdTypeDef type;
     ASSERT_EQ(S_OK, internalEmit->DefineTypeDef(W("Created"), tdPublic, mdTypeDefNil, nullptr, &type));
@@ -177,10 +239,49 @@ TEST(InternalConversion, NewWritableScopeSharesPublicAndInternalIdentity)
     EXPECT_EQ(type, found);
     ASSERT_EQ(S_OK, internal->FindTypeDef("", "Created", mdTokenNil, &found));
     EXPECT_EQ(type, found);
+    ExpectInternalEmitUsesWritableLock(internal.p);
 
     IMDInternalImport* alreadyWritable = nullptr;
     EXPECT_EQ(S_FALSE, ConvertDNMDInternalImport(internal.p, &alreadyWritable));
     EXPECT_EQ(internal.p, alreadyWritable);
+}
+
+TEST(InternalConversion, WritableScopeBorrowsExternalLock)
+{
+    pal::ReadWriteLock sharedLock;
+    minipal::com_ptr<IMetaDataDispenserEx> dispenser;
+    ASSERT_EQ(S_OK, GetDispenser(IID_IMetaDataDispenserEx, (void**)&dispenser));
+    VARIANT option{};
+    V_VT(&option) = VT_UI4;
+    V_UI4(&option) = MDThreadSafetyOn;
+    ASSERT_EQ(S_OK, dispenser->SetOption(MetaDataThreadSafetyOptions, &option));
+
+    minipal::com_ptr<IMDInternalImport> internal;
+    ASSERT_EQ(S_OK, dispenser->DefineScope(CLSID_CorMetaDataRuntime, 0,
+        IID_IMDInternalImport, (IUnknown**)&internal));
+    minipal::com_ptr<IMetaDataEmit> emit;
+    ASSERT_EQ(S_OK, internal->QueryInterface(IID_IMetaDataEmit, (void**)&emit));
+
+    minipal_rwlock* original = internal->GetReaderWriterLock();
+    ASSERT_NE(nullptr, original);
+    ASSERT_NE(original, sharedLock.NativeHandle());
+    ASSERT_EQ(S_OK, internal->SetReaderWriterLock(sharedLock.NativeHandle()));
+    EXPECT_EQ(sharedLock.NativeHandle(), internal->GetReaderWriterLock());
+    EXPECT_EQ(S_OK, internal->SetReaderWriterLock(sharedLock.NativeHandle()));
+    EXPECT_EQ(E_INVALIDARG, internal->SetReaderWriterLock(nullptr));
+    EXPECT_EQ(E_UNEXPECTED, internal->SetReaderWriterLock(original));
+    EXPECT_EQ(sharedLock.NativeHandle(), internal->GetReaderWriterLock());
+
+    mdTypeDef type;
+    ASSERT_EQ(S_OK, emit->DefineTypeDef(W("ExternalLock"), tdPublic, mdTypeDefNil, nullptr, &type));
+    ExpectInternalReadWaitsForPublicWrite(internal.p, type);
+    ExpectInternalEmitUsesWritableLock(internal.p);
+
+    emit.Release();
+    internal.Release();
+    dispenser.Release();
+    ASSERT_TRUE(minipal_rwlock_enter_write(sharedLock.NativeHandle()));
+    minipal_rwlock_leave_write(sharedLock.NativeHandle());
 }
 
 TEST(InternalConversion, NestedClassEnumerationIncludesEmptyAndUnsortedTables)
@@ -254,6 +355,8 @@ TEST(InternalConversion, MetadataHandleSlotTracksScopeReplacement)
     ASSERT_EQ(S_OK, ConvertDNMDInternalImport(readOnly.p, &writablePointer));
     minipal::com_ptr<IMDInternalImport> writable;
     writable.Attach(writablePointer);
+    minipal_rwlock* lock = writable->GetReaderWriterLock();
+    ASSERT_NE(nullptr, lock);
 
     void const* writableSlot = nullptr;
     ASSERT_EQ(S_OK, GetDNMDInternalMetadataHandleSlot(writable.p, &writableSlot));
@@ -265,6 +368,7 @@ TEST(InternalConversion, MetadataHandleSlotTracksScopeReplacement)
     ASSERT_NE(nullptr, writableHandle);
 
     ASSERT_EQ(S_OK, ReOpenDNMDMetaDataWithMemory(writable.p, image.data(), (ULONG)image.size(), 0));
+    EXPECT_EQ(lock, writable->GetReaderWriterLock());
     void const* reopenedSlot = nullptr;
     ASSERT_EQ(S_OK, GetDNMDInternalMetadataHandleSlot(writable.p, &reopenedSlot));
     EXPECT_EQ(writableSlot, reopenedSlot);
@@ -392,6 +496,7 @@ TEST(InternalConversion, ReadOnlyConversionClonesDataAndBridgesIdentity)
     ASSERT_EQ(S_OK, writable->QueryInterface(IID_IDNMDOwner, (void**)&writableOwner));
     EXPECT_TRUE(writableOwner->IsReadWrite());
     EXPECT_NE(oldOwner->MetaData(), writableOwner->MetaData());
+    ASSERT_NE(nullptr, writable->GetReaderWriterLock());
 
     minipal::com_ptr<IMetaDataEmit> emit;
     minipal::com_ptr<IMetaDataImport2> import;
@@ -468,6 +573,7 @@ TEST(InternalConversion, CompressedInternalReadDefaultsToReadOnly)
     minipal::com_ptr<IDNMDOwner> promotedOwner;
     ASSERT_EQ(S_OK, promotedInternal->QueryInterface(IID_IDNMDOwner, (void**)&promotedOwner));
     EXPECT_TRUE(promotedOwner->IsReadWrite());
+    ASSERT_NE(nullptr, promotedInternal->GetReaderWriterLock());
     EXPECT_NE(owner->MetaData(), promotedOwner->MetaData());
     ExpectSameComIdentity(promotedPublic.p, promotedInternal.p);
 
@@ -475,6 +581,7 @@ TEST(InternalConversion, CompressedInternalReadDefaultsToReadOnly)
     ASSERT_EQ(S_OK, ConvertDNMDInternalImport(internal.p, &result));
     minipal::com_ptr<IMDInternalImport> writable;
     writable.Attach(result);
+    ASSERT_NE(nullptr, writable->GetReaderWriterLock());
     ASSERT_EQ(S_OK, writable->QueryInterface(IID_IMetaDataEmit, (void**)&emit));
     mdTypeDef added;
     ASSERT_EQ(S_OK, emit->DefineTypeDef(W("Writable"), tdPublic, mdTypeDefNil, nullptr, &added));
@@ -517,7 +624,9 @@ TEST(InternalConversion, UncompressedInternalReadIsAlreadyWritable)
     ASSERT_EQ(S_OK, internal->QueryInterface(IID_IDNMDOwner, (void**)&owner));
     EXPECT_TRUE(md_is_uncompressed_table_heap(owner->MetaData()));
     EXPECT_TRUE(owner->IsReadWrite());
-    EXPECT_EQ(nullptr, internal->GetReaderWriterLock());
+    minipal_rwlock* lock = internal->GetReaderWriterLock();
+    ASSERT_NE(nullptr, lock);
+    EXPECT_EQ(S_OK, internal->SetReaderWriterLock(lock));
     IMDInternalImport* unchanged = nullptr;
     EXPECT_EQ(S_FALSE, ConvertDNMDInternalImport(internal.p, &unchanged));
     EXPECT_EQ(internal.p, unchanged);
@@ -638,7 +747,7 @@ TEST(InternalConversion, ThreadSafeScopeSerializesInternalReadsWithWrites)
     minipal_rwlock* lock = internal->GetReaderWriterLock();
     ASSERT_NE(nullptr, lock);
     EXPECT_EQ(S_OK, internal->SetReaderWriterLock(lock));
-    EXPECT_EQ(E_NOTIMPL, internal->SetReaderWriterLock(nullptr));
+    EXPECT_EQ(E_INVALIDARG, internal->SetReaderWriterLock(nullptr));
     mdTypeDef type;
     ASSERT_EQ(S_OK, emit->DefineTypeDef(W("ThreadSafe"), tdPublic, mdTypeDefNil, nullptr, &type));
     mdTypeDef nested, found;
@@ -652,14 +761,62 @@ TEST(InternalConversion, ThreadSafeScopeSerializesInternalReadsWithWrites)
     ULONG ifaceType = UINT32_MAX;
     EXPECT_EQ(S_FALSE, internal->GetIfaceTypeOfTypeDef(type, &ifaceType));
     EXPECT_EQ(ifDual, ifaceType);
+
+    HENUMInternal all{};
+    ASSERT_EQ(S_OK, internal->EnumInit(mdtAssemblyRef, mdTokenNil, &all));
+    EXPECT_EQ(0u, internal->EnumGetCount(&all));
+    internal->EnumClose(&all);
+
+    HENUMInternal allDirect{};
+    ASSERT_EQ(S_OK, internal->EnumAllInit(mdtAssemblyRef, &allDirect));
+    EXPECT_EQ(0u, internal->EnumGetCount(&allDirect));
+    internal->EnumClose(&allDirect);
+
+    HENUMInternal methodBody{}, methodDecl{};
+    ASSERT_EQ(S_OK, internal->EnumMethodImplInit(type, &methodBody, &methodDecl));
+    EXPECT_EQ(0u, internal->EnumMethodImplGetCount(&methodBody, &methodDecl));
+    internal->EnumClose(&methodBody);
+    internal->EnumClose(&methodDecl);
+
+    HENUMInternal associates{};
+    ASSERT_EQ(S_OK, internal->EnumAssociateInit(mdEventNil, &associates));
+    EXPECT_EQ(S_OK, internal->GetAllAssociates(&associates, nullptr, 0));
+    internal->EnumClose(&associates);
+
+    GUID guid{ 1 };
+    EXPECT_EQ(S_FALSE, internal->GetItemGuid(type, &guid));
+    GUID emptyGuid{};
+    EXPECT_EQ(0, std::memcmp(&guid, &emptyGuid, sizeof(guid)));
+    ULONG dispid = 0;
+    EXPECT_EQ(S_FALSE, internal->GetDispIdOfMemberDef(type, &dispid));
+    EXPECT_EQ(UINT32_MAX, dispid);
     ExpectInternalReadWaitsForPublicWrite(internal.p, type);
+}
+
+TEST(InternalConversion, ThreadSafeInternalEmitSharesThePublicLock)
+{
+    minipal::com_ptr<IMetaDataDispenserEx> dispenser;
+    ASSERT_EQ(S_OK, GetDispenser(IID_IMetaDataDispenserEx, (void**)&dispenser));
+    VARIANT option{};
+    V_VT(&option) = VT_UI4;
+    V_UI4(&option) = MDThreadSafetyOn;
+    ASSERT_EQ(S_OK, dispenser->SetOption(MetaDataThreadSafetyOptions, &option));
+
+    minipal::com_ptr<IMDInternalImport> internal;
+    ASSERT_EQ(S_OK, dispenser->DefineScope(CLSID_CorMetaDataRuntime, 0,
+        IID_IMDInternalImport, (IUnknown**)&internal));
+    ExpectInternalEmitUsesWritableLock(internal.p);
 }
 
 TEST(InternalConversion, InterfaceTypeAttributeDeterminesCOMInterfaceKind)
 {
     minipal::com_ptr<IMetaDataEmit> emit;
-    minipal::com_ptr<IMetaDataDispenser> dispenser;
-    ASSERT_EQ(S_OK, GetDispenser(IID_IMetaDataDispenser, (void**)&dispenser));
+    minipal::com_ptr<IMetaDataDispenserEx> dispenser;
+    ASSERT_EQ(S_OK, GetDispenser(IID_IMetaDataDispenserEx, (void**)&dispenser));
+    VARIANT option{};
+    V_VT(&option) = VT_UI4;
+    V_UI4(&option) = MDThreadSafetyOn;
+    ASSERT_EQ(S_OK, dispenser->SetOption(MetaDataThreadSafetyOptions, &option));
     ASSERT_EQ(S_OK, dispenser->DefineScope(CLSID_CorMetaDataRuntime, 0,
         IID_IMetaDataEmit, (IUnknown**)&emit));
     mdTypeDef type;
@@ -686,6 +843,20 @@ TEST(InternalConversion, InterfaceTypeAttributeDeterminesCOMInterfaceKind)
     EXPECT_EQ(ifDispatch, ifaceType);
     ASSERT_EQ(S_OK, internal->GetIsDualOfTypeDef(type, &isDual));
     EXPECT_EQ(0u, isDual);
+
+    LPCSTR attributeNamespace, attributeName;
+    ASSERT_EQ(S_OK, internal->GetNameOfCustomAttribute(token, &attributeNamespace, &attributeName));
+    EXPECT_STREQ("System.Runtime.InteropServices", attributeNamespace);
+    EXPECT_STREQ("InterfaceTypeAttribute", attributeName);
+
+    HENUMInternal attributes{};
+    ASSERT_EQ(S_OK, internal->EnumCustomAttributeByNameInit(type,
+        "System.Runtime.InteropServices.InterfaceTypeAttribute", &attributes));
+    mdToken found;
+    EXPECT_TRUE(internal->EnumNext(&attributes, &found));
+    EXPECT_EQ(token, found);
+    EXPECT_FALSE(internal->EnumNext(&attributes, &found));
+    internal->EnumClose(&attributes);
 }
 
 TEST(InternalConversion, ThreadSafeInternalReadersObserveConcurrentEmission)

@@ -12,7 +12,6 @@
 #include <corhdr.h>
 #if defined(DNMD_ENABLE_INTERNAL_INTERFACES)
 #include <metadataemithelper.h>
-#include <mdinternalemit.h>
 #endif // DNMD_ENABLE_INTERNAL_INTERFACES
 
 #include <cstdint>
@@ -97,13 +96,18 @@ public:
 
 #if defined(DNMD_ENABLE_INTERNAL_INTERFACES)
 template<typename TImport, typename TEmit>
-class ThreadSafeImportEmit : public TearOffBase<IMetaDataImport2, IMetaDataEmit2, IMetaDataAssemblyImport, IMetaDataAssemblyEmit, IMetaDataEmitHelper, IMDInternalEmit>
+class ThreadSafeImportEmit : public TearOffBase<IMetaDataImport2, IMetaDataEmit2, IMetaDataAssemblyImport, IMetaDataAssemblyEmit, IMetaDataEmitHelper>
 #else // DNMD_ENABLE_INTERNAL_INTERFACES
 template<typename TImport, typename TEmit>
 class ThreadSafeImportEmit : public TearOffBase<IMetaDataImport2, IMetaDataEmit2, IMetaDataAssemblyImport, IMetaDataAssemblyEmit>
 #endif // DNMD_ENABLE_INTERNAL_INTERFACES
 {
+#if defined(DNMD_ENABLE_INTERNAL_INTERFACES)
+    // The internal RW tear-off on the same controlling unknown owns this lock view.
+    pal::ReadWriteLock* _lock;
+#else // DNMD_ENABLE_INTERNAL_INTERFACES
     pal::ReadWriteLock _lock;
+#endif // DNMD_ENABLE_INTERNAL_INTERFACES
     // owning reference to the thread-unsafe object that provides the underlying implementation.
     minipal::com_ptr<ControllingIUnknown> _threadUnsafe;
     // non-owning reference to the concrete non-locking implementations
@@ -140,19 +144,22 @@ protected:
             *ppvObject = static_cast<IMetaDataEmitHelper*>(this);
             return true;
         }
-        if (riid == IID_IMDInternalEmit)
-        {
-            *ppvObject = static_cast<IMDInternalEmit*>(this);
-            return true;
-        }
 #endif // DNMD_ENABLE_INTERNAL_INTERFACES
         return false;
     }
 
 public:
-    ThreadSafeImportEmit(IUnknown* controllingUnknown, minipal::com_ptr<ControllingIUnknown>&& threadUnsafe, TImport* import, TEmit* emit)
+    ThreadSafeImportEmit(IUnknown* controllingUnknown, minipal::com_ptr<ControllingIUnknown>&& threadUnsafe, TImport* import, TEmit* emit
+#if defined(DNMD_ENABLE_INTERNAL_INTERFACES)
+        , pal::ReadWriteLock* lock
+#endif // DNMD_ENABLE_INTERNAL_INTERFACES
+        )
         : TearOffBase(controllingUnknown)
+#if defined(DNMD_ENABLE_INTERNAL_INTERFACES)
+        , _lock{ lock }
+#else // DNMD_ENABLE_INTERNAL_INTERFACES
         , _lock { }
+#endif // DNMD_ENABLE_INTERNAL_INTERFACES
         , _threadUnsafe{ std::move(threadUnsafe) }
         , _import{ import }
         , _emit{ emit }
@@ -160,38 +167,45 @@ public:
         assert(_threadUnsafe.p != nullptr);
         assert(_import != nullptr);
         assert(_emit != nullptr);
+#if defined(DNMD_ENABLE_INTERNAL_INTERFACES)
+        assert(_lock != nullptr);
+#endif // DNMD_ENABLE_INTERNAL_INTERFACES
     }
 
     virtual ~ThreadSafeImportEmit() = default;
 
     pal::ReadWriteLock* GetLock() noexcept
     {
+#if defined(DNMD_ENABLE_INTERNAL_INTERFACES)
+        return _lock;
+#else // DNMD_ENABLE_INTERNAL_INTERFACES
         return &_lock;
+#endif // DNMD_ENABLE_INTERNAL_INTERFACES
     }
 
 public: // IMetaDataImport
     STDMETHOD_(void, CloseEnum)(HCORENUM hEnum) override
     {
-        std::lock_guard<pal::ReadLock> lock { this->_lock.GetReadLock() };
+        std::lock_guard<pal::ReadLock> lock { this->GetLock()->GetReadLock() };
         return _import->CloseEnum(hEnum);
     }
 
     STDMETHOD(CountEnum)(HCORENUM hEnum, ULONG *pulCount) override
     {
-        std::lock_guard<pal::ReadLock> lock { this->_lock.GetReadLock() };
+        std::lock_guard<pal::ReadLock> lock { this->GetLock()->GetReadLock() };
         return _import->CountEnum(hEnum, pulCount);
     }
 
     STDMETHOD(ResetEnum)(HCORENUM hEnum, ULONG ulPos) override
     {
-        std::lock_guard<pal::ReadLock> lock { this->_lock.GetReadLock() };
+        std::lock_guard<pal::ReadLock> lock { this->GetLock()->GetReadLock() };
         return _import->ResetEnum(hEnum, ulPos);
     }
 
     STDMETHOD(EnumTypeDefs)(HCORENUM *phEnum, mdTypeDef rTypeDefs[],
                             ULONG cMax, ULONG *pcTypeDefs) override
     {
-        std::lock_guard<pal::ReadLock> lock { this->_lock.GetReadLock() };
+        std::lock_guard<pal::ReadLock> lock { this->GetLock()->GetReadLock() };
         return _import->EnumTypeDefs(phEnum, rTypeDefs, cMax, pcTypeDefs);
     }
 
@@ -199,14 +213,14 @@ public: // IMetaDataImport
                             mdInterfaceImpl rImpls[], ULONG cMax,
                             ULONG* pcImpls) override
     {
-        std::lock_guard<pal::ReadLock> lock { this->_lock.GetReadLock() };
+        std::lock_guard<pal::ReadLock> lock { this->GetLock()->GetReadLock() };
         return _import->EnumInterfaceImpls(phEnum, td, rImpls, cMax, pcImpls);
     }
 
     STDMETHOD(EnumTypeRefs)(HCORENUM *phEnum, mdTypeRef rTypeRefs[],
                             ULONG cMax, ULONG* pcTypeRefs) override
     {
-        std::lock_guard<pal::ReadLock> lock { this->_lock.GetReadLock() };
+        std::lock_guard<pal::ReadLock> lock { this->GetLock()->GetReadLock() };
         return _import->EnumTypeRefs(phEnum, rTypeRefs, cMax, pcTypeRefs);
     }
 
@@ -215,7 +229,7 @@ public: // IMetaDataImport
         mdToken     tkEnclosingClass,
         mdTypeDef   *ptd) override
     {
-        std::lock_guard<pal::ReadLock> lock { this->_lock.GetReadLock() };
+        std::lock_guard<pal::ReadLock> lock { this->GetLock()->GetReadLock() };
         return _import->FindTypeDefByName(szTypeDef, tkEnclosingClass, ptd);
     }
 
@@ -226,14 +240,14 @@ public: // IMetaDataImport
         ULONG       *pchName,
         GUID        *pmvid) override
     {
-        std::lock_guard<pal::ReadLock> lock { this->_lock.GetReadLock() };
+        std::lock_guard<pal::ReadLock> lock { this->GetLock()->GetReadLock() };
         return _import->GetScopeProps(szName, cchName, pchName, pmvid);
     }
 
     STDMETHOD(GetModuleFromScope)(
         mdModule    *pmd) override
     {
-        std::lock_guard<pal::ReadLock> lock { this->_lock.GetReadLock() };
+        std::lock_guard<pal::ReadLock> lock { this->GetLock()->GetReadLock() };
         return _import->GetModuleFromScope(pmd);
     }
 
@@ -246,7 +260,7 @@ public: // IMetaDataImport
         DWORD       *pdwTypeDefFlags,
         mdToken     *ptkExtends) override
     {
-        std::lock_guard<pal::ReadLock> lock { this->_lock.GetReadLock() };
+        std::lock_guard<pal::ReadLock> lock { this->GetLock()->GetReadLock() };
         return _import->GetTypeDefProps(td, szTypeDef, cchTypeDef, pchTypeDef, pdwTypeDefFlags, ptkExtends);
     }
 
@@ -255,7 +269,7 @@ public: // IMetaDataImport
         mdTypeDef   *pClass,
         mdToken     *ptkIface) override
     {
-        std::lock_guard<pal::ReadLock> lock { this->_lock.GetReadLock() };
+        std::lock_guard<pal::ReadLock> lock { this->GetLock()->GetReadLock() };
         return _import->GetInterfaceImplProps(iiImpl, pClass, ptkIface);
     }
 
@@ -267,13 +281,13 @@ public: // IMetaDataImport
         ULONG       cchName,
         ULONG       *pchName) override
     {
-        std::lock_guard<pal::ReadLock> lock { this->_lock.GetReadLock() };
+        std::lock_guard<pal::ReadLock> lock { this->GetLock()->GetReadLock() };
         return _import->GetTypeRefProps(tr, ptkResolutionScope, szName, cchName, pchName);
     }
 
     STDMETHOD(ResolveTypeRef)(mdTypeRef tr, REFIID riid, IUnknown **ppIScope, mdTypeDef *ptd) override
     {
-        return _import->ResolveTypeRef(tr, riid, ppIScope, ptd, &_lock, static_cast<IMetaDataImport2*>(this));
+        return _import->ResolveTypeRef(tr, riid, ppIScope, ptd, this->GetLock(), static_cast<IMetaDataImport2*>(this));
     }
 
     STDMETHOD(EnumMembers)(
@@ -283,7 +297,7 @@ public: // IMetaDataImport
         ULONG       cMax,
         ULONG       *pcTokens) override
     {
-        std::lock_guard<pal::ReadLock> lock { this->_lock.GetReadLock() };
+        std::lock_guard<pal::ReadLock> lock { this->GetLock()->GetReadLock() };
         return _import->EnumMembers(phEnum, cl, rMembers, cMax, pcTokens);
     }
 
@@ -295,7 +309,7 @@ public: // IMetaDataImport
         ULONG       cMax,
         ULONG       *pcTokens) override
     {
-        std::lock_guard<pal::ReadLock> lock { this->_lock.GetReadLock() };
+        std::lock_guard<pal::ReadLock> lock { this->GetLock()->GetReadLock() };
         return _import->EnumMembersWithName(phEnum, cl, szName, rMembers, cMax, pcTokens);
     }
 
@@ -306,7 +320,7 @@ public: // IMetaDataImport
         ULONG       cMax,
         ULONG       *pcTokens) override
     {
-        std::lock_guard<pal::ReadLock> lock { this->_lock.GetReadLock() };
+        std::lock_guard<pal::ReadLock> lock { this->GetLock()->GetReadLock() };
         return _import->EnumMethods(phEnum, cl, rMethods, cMax, pcTokens);
     }
 
@@ -318,7 +332,7 @@ public: // IMetaDataImport
         ULONG       cMax,
         ULONG       *pcTokens) override
     {
-        std::lock_guard<pal::ReadLock> lock { this->_lock.GetReadLock() };
+        std::lock_guard<pal::ReadLock> lock { this->GetLock()->GetReadLock() };
         return _import->EnumMethodsWithName(phEnum, cl, szName, rMethods, cMax, pcTokens);
     }
 
@@ -329,7 +343,7 @@ public: // IMetaDataImport
         ULONG       cMax,
         ULONG       *pcTokens) override
     {
-        std::lock_guard<pal::ReadLock> lock { this->_lock.GetReadLock() };
+        std::lock_guard<pal::ReadLock> lock { this->GetLock()->GetReadLock() };
         return _import->EnumFields(phEnum, cl, rFields, cMax, pcTokens);
     }
 
@@ -341,7 +355,7 @@ public: // IMetaDataImport
         ULONG       cMax,
         ULONG       *pcTokens) override
     {
-        std::lock_guard<pal::ReadLock> lock { this->_lock.GetReadLock() };
+        std::lock_guard<pal::ReadLock> lock { this->GetLock()->GetReadLock() };
         return _import->EnumFieldsWithName(phEnum, cl, szName, rFields, cMax, pcTokens);
     }
 
@@ -352,7 +366,7 @@ public: // IMetaDataImport
         ULONG       cMax,
         ULONG       *pcTokens) override
     {
-        std::lock_guard<pal::ReadLock> lock { this->_lock.GetReadLock() };
+        std::lock_guard<pal::ReadLock> lock { this->GetLock()->GetReadLock() };
         return _import->EnumParams(phEnum, mb, rParams, cMax, pcTokens);
     }
 
@@ -363,7 +377,7 @@ public: // IMetaDataImport
         ULONG       cMax,
         ULONG       *pcTokens) override
     {
-        std::lock_guard<pal::ReadLock> lock { this->_lock.GetReadLock() };
+        std::lock_guard<pal::ReadLock> lock { this->GetLock()->GetReadLock() };
         return _import->EnumMemberRefs(phEnum, tkParent, rMemberRefs, cMax, pcTokens);
     }
 
@@ -375,7 +389,7 @@ public: // IMetaDataImport
         ULONG       cMax,
         ULONG       *pcTokens) override
     {
-        std::lock_guard<pal::ReadLock> lock { this->_lock.GetReadLock() };
+        std::lock_guard<pal::ReadLock> lock { this->GetLock()->GetReadLock() };
         return _import->EnumMethodImpls(phEnum, td, rMethodBody, rMethodDecl, cMax, pcTokens);
     }
 
@@ -387,7 +401,7 @@ public: // IMetaDataImport
         ULONG       cMax,
         ULONG       *pcTokens) override
     {
-        std::lock_guard<pal::ReadLock> lock { this->_lock.GetReadLock() };
+        std::lock_guard<pal::ReadLock> lock { this->GetLock()->GetReadLock() };
         return _import->EnumPermissionSets(phEnum, tk, dwActions, rPermission, cMax, pcTokens);
     }
 
@@ -398,7 +412,7 @@ public: // IMetaDataImport
         ULONG       cbSigBlob,
         mdToken     *pmb) override
     {
-        std::lock_guard<pal::ReadLock> lock { this->_lock.GetReadLock() };
+        std::lock_guard<pal::ReadLock> lock { this->GetLock()->GetReadLock() };
         return _import->FindMember(td, szName, pvSigBlob, cbSigBlob, pmb);
     }
 
@@ -409,7 +423,7 @@ public: // IMetaDataImport
         ULONG       cbSigBlob,
         mdMethodDef *pmb) override
     {
-        std::lock_guard<pal::ReadLock> lock { this->_lock.GetReadLock() };
+        std::lock_guard<pal::ReadLock> lock { this->GetLock()->GetReadLock() };
         return _import->FindMethod(td, szName, pvSigBlob, cbSigBlob, pmb);
     }
 
@@ -420,7 +434,7 @@ public: // IMetaDataImport
         ULONG       cbSigBlob,
         mdFieldDef  *pmb) override
     {
-        std::lock_guard<pal::ReadLock> lock { this->_lock.GetReadLock() };
+        std::lock_guard<pal::ReadLock> lock { this->GetLock()->GetReadLock() };
         return _import->FindField(td, szName, pvSigBlob, cbSigBlob, pmb);
     }
 
@@ -431,7 +445,7 @@ public: // IMetaDataImport
         ULONG       cbSigBlob,
         mdMemberRef *pmr) override
     {
-        std::lock_guard<pal::ReadLock> lock { this->_lock.GetReadLock() };
+        std::lock_guard<pal::ReadLock> lock { this->GetLock()->GetReadLock() };
         return _import->FindMemberRef(td, szName, pvSigBlob, cbSigBlob, pmr);
     }
 
@@ -448,7 +462,7 @@ public: // IMetaDataImport
         ULONG       *pulCodeRVA,
         DWORD       *pdwImplFlags) override
     {
-        std::lock_guard<pal::ReadLock> lock { this->_lock.GetReadLock() };
+        std::lock_guard<pal::ReadLock> lock { this->GetLock()->GetReadLock() };
         return _import->GetMethodProps(mb, pClass, szMethod, cchMethod, pchMethod, pdwAttr, ppvSigBlob, pcbSigBlob, pulCodeRVA, pdwImplFlags);
     }
 
@@ -462,7 +476,7 @@ public: // IMetaDataImport
         PCCOR_SIGNATURE *ppvSigBlob,
         ULONG       *pbSig) override
     {
-        std::lock_guard<pal::ReadLock> lock { this->_lock.GetReadLock() };
+        std::lock_guard<pal::ReadLock> lock { this->GetLock()->GetReadLock() };
         return _import->GetMemberRefProps(mr, ptk, szMember, cchMember, pchMember, ppvSigBlob, pbSig);
     }
 
@@ -473,7 +487,7 @@ public: // IMetaDataImport
         ULONG       cMax,
         ULONG       *pcProperties) override
     {
-        std::lock_guard<pal::ReadLock> lock { this->_lock.GetReadLock() };
+        std::lock_guard<pal::ReadLock> lock { this->GetLock()->GetReadLock() };
         return _import->EnumProperties(phEnum, td, rProperties, cMax, pcProperties);
     }
 
@@ -484,7 +498,7 @@ public: // IMetaDataImport
         ULONG       cMax,
         ULONG       *pcEvents) override
     {
-        std::lock_guard<pal::ReadLock> lock { this->_lock.GetReadLock() };
+        std::lock_guard<pal::ReadLock> lock { this->GetLock()->GetReadLock() };
         return _import->EnumEvents(phEnum, td, rEvents, cMax, pcEvents);
     }
 
@@ -503,7 +517,7 @@ public: // IMetaDataImport
         ULONG       cMax,
         ULONG       *pcOtherMethod) override
     {
-        std::lock_guard<pal::ReadLock> lock { this->_lock.GetReadLock() };
+        std::lock_guard<pal::ReadLock> lock { this->GetLock()->GetReadLock() };
         return _import->GetEventProps(ev, pClass, szEvent, cchEvent, pchEvent, pdwEventFlags, ptkEventType, pmdAddOn, pmdRemoveOn, pmdFire, rmdOtherMethod, cMax, pcOtherMethod);
     }
 
@@ -514,7 +528,7 @@ public: // IMetaDataImport
         ULONG       cMax,
         ULONG       *pcEventProp) override
     {
-        std::lock_guard<pal::ReadLock> lock { this->_lock.GetReadLock() };
+        std::lock_guard<pal::ReadLock> lock { this->GetLock()->GetReadLock() };
         return _import->EnumMethodSemantics(phEnum, mb, rEventProp, cMax, pcEventProp);
     }
 
@@ -523,7 +537,7 @@ public: // IMetaDataImport
         mdToken     tkEventProp,
         DWORD       *pdwSemanticsFlags) override
     {
-        std::lock_guard<pal::ReadLock> lock { this->_lock.GetReadLock() };
+        std::lock_guard<pal::ReadLock> lock { this->GetLock()->GetReadLock() };
         return _import->GetMethodSemantics(mb, tkEventProp, pdwSemanticsFlags);
     }
 
@@ -535,7 +549,7 @@ public: // IMetaDataImport
         ULONG       *pcFieldOffset,
         ULONG       *pulClassSize) override
     {
-        std::lock_guard<pal::ReadLock> lock { this->_lock.GetReadLock() };
+        std::lock_guard<pal::ReadLock> lock { this->GetLock()->GetReadLock() };
         return _import->GetClassLayout(td, pdwPackSize, rFieldOffset, cMax, pcFieldOffset, pulClassSize);
     }
 
@@ -544,7 +558,7 @@ public: // IMetaDataImport
         PCCOR_SIGNATURE *ppvNativeType,
         ULONG       *pcbNativeType) override
     {
-        std::lock_guard<pal::ReadLock> lock { this->_lock.GetReadLock() };
+        std::lock_guard<pal::ReadLock> lock { this->GetLock()->GetReadLock() };
         return _import->GetFieldMarshal(tk, ppvNativeType, pcbNativeType);
     }
 
@@ -553,7 +567,7 @@ public: // IMetaDataImport
         ULONG       *pulCodeRVA,
         DWORD       *pdwImplFlags) override
     {
-        std::lock_guard<pal::ReadLock> lock { this->_lock.GetReadLock() };
+        std::lock_guard<pal::ReadLock> lock { this->GetLock()->GetReadLock() };
         return _import->GetRVA(tk, pulCodeRVA, pdwImplFlags);
     }
 
@@ -563,7 +577,7 @@ public: // IMetaDataImport
         void const  **ppvPermission,
         ULONG       *pcbPermission) override
     {
-        std::lock_guard<pal::ReadLock> lock { this->_lock.GetReadLock() };
+        std::lock_guard<pal::ReadLock> lock { this->GetLock()->GetReadLock() };
         return _import->GetPermissionSetProps(pm, pdwAction, ppvPermission, pcbPermission);
     }
 
@@ -572,7 +586,7 @@ public: // IMetaDataImport
         PCCOR_SIGNATURE *ppvSig,
         ULONG       *pcbSig) override
     {
-        std::lock_guard<pal::ReadLock> lock { this->_lock.GetReadLock() };
+        std::lock_guard<pal::ReadLock> lock { this->GetLock()->GetReadLock() };
         return _import->GetSigFromToken(mdSig, ppvSig, pcbSig);
     }
 
@@ -583,7 +597,7 @@ public: // IMetaDataImport
         ULONG       cchName,
         ULONG       *pchName) override
     {
-        std::lock_guard<pal::ReadLock> lock { this->_lock.GetReadLock() };
+        std::lock_guard<pal::ReadLock> lock { this->GetLock()->GetReadLock() };
         return _import->GetModuleRefProps(mur, szName, cchName, pchName);
     }
 
@@ -593,7 +607,7 @@ public: // IMetaDataImport
         ULONG       cMax,
         ULONG       *pcModuleRefs) override
     {
-        std::lock_guard<pal::ReadLock> lock { this->_lock.GetReadLock() };
+        std::lock_guard<pal::ReadLock> lock { this->GetLock()->GetReadLock() };
         return _import->EnumModuleRefs(phEnum, rModuleRefs, cMax, pcModuleRefs);
     }
 
@@ -602,7 +616,7 @@ public: // IMetaDataImport
         PCCOR_SIGNATURE *ppvSig,
         ULONG       *pcbSig) override
     {
-        std::lock_guard<pal::ReadLock> lock { this->_lock.GetReadLock() };
+        std::lock_guard<pal::ReadLock> lock { this->GetLock()->GetReadLock() };
         return _import->GetTypeSpecFromToken(typespec, ppvSig, pcbSig);
     }
 
@@ -610,7 +624,7 @@ public: // IMetaDataImport
         mdToken     tk,
         MDUTF8CSTR  *pszUtf8NamePtr) override
     {
-        std::lock_guard<pal::ReadLock> lock { this->_lock.GetReadLock() };
+        std::lock_guard<pal::ReadLock> lock { this->GetLock()->GetReadLock() };
         return _import->GetNameFromToken(tk, pszUtf8NamePtr);
     }
 
@@ -620,7 +634,7 @@ public: // IMetaDataImport
         ULONG       cMax,
         ULONG       *pcTokens) override
     {
-        std::lock_guard<pal::ReadLock> lock { this->_lock.GetReadLock() };
+        std::lock_guard<pal::ReadLock> lock { this->GetLock()->GetReadLock() };
         return _import->EnumUnresolvedMethods(phEnum, rMethods, cMax, pcTokens);
     }
 
@@ -631,7 +645,7 @@ public: // IMetaDataImport
         ULONG       cchString,
         ULONG       *pchString) override
     {
-        std::lock_guard<pal::ReadLock> lock { this->_lock.GetReadLock() };
+        std::lock_guard<pal::ReadLock> lock { this->GetLock()->GetReadLock() };
         return _import->GetUserString(stk, szString, cchString, pchString);
     }
 
@@ -644,7 +658,7 @@ public: // IMetaDataImport
         ULONG       *pchImportName,
         mdModuleRef *pmrImportDLL) override
     {
-        std::lock_guard<pal::ReadLock> lock { this->_lock.GetReadLock() };
+        std::lock_guard<pal::ReadLock> lock { this->GetLock()->GetReadLock() };
         return _import->GetPinvokeMap(tk, pdwMappingFlags, szImportName, cchImportName, pchImportName, pmrImportDLL);
     }
 
@@ -654,7 +668,7 @@ public: // IMetaDataImport
         ULONG       cMax,
         ULONG       *pcSignatures) override
     {
-        std::lock_guard<pal::ReadLock> lock { this->_lock.GetReadLock() };
+        std::lock_guard<pal::ReadLock> lock { this->GetLock()->GetReadLock() };
         return _import->EnumSignatures(phEnum, rSignatures, cMax, pcSignatures);
     }
 
@@ -664,7 +678,7 @@ public: // IMetaDataImport
         ULONG       cMax,
         ULONG       *pcTypeSpecs) override
     {
-        std::lock_guard<pal::ReadLock> lock { this->_lock.GetReadLock() };
+        std::lock_guard<pal::ReadLock> lock { this->GetLock()->GetReadLock() };
         return _import->EnumTypeSpecs(phEnum, rTypeSpecs, cMax, pcTypeSpecs);
     }
 
@@ -674,7 +688,7 @@ public: // IMetaDataImport
         ULONG       cMax,
         ULONG       *pcStrings) override
     {
-        std::lock_guard<pal::ReadLock> lock { this->_lock.GetReadLock() };
+        std::lock_guard<pal::ReadLock> lock { this->GetLock()->GetReadLock() };
         return _import->EnumUserStrings(phEnum, rStrings, cMax, pcStrings);
     }
 
@@ -683,7 +697,7 @@ public: // IMetaDataImport
         ULONG       ulParamSeq,
         mdParamDef  *ppd) override
     {
-        std::lock_guard<pal::ReadLock> lock { this->_lock.GetReadLock() };
+        std::lock_guard<pal::ReadLock> lock { this->GetLock()->GetReadLock() };
         return _import->GetParamForMethodIndex(md, ulParamSeq, ppd);
     }
 
@@ -695,7 +709,7 @@ public: // IMetaDataImport
         ULONG       cMax,
         ULONG       *pcCustomAttributes) override
     {
-        std::lock_guard<pal::ReadLock> lock { this->_lock.GetReadLock() };
+        std::lock_guard<pal::ReadLock> lock { this->GetLock()->GetReadLock() };
         return _import->EnumCustomAttributes(phEnum, tk, tkType, rCustomAttributes, cMax, pcCustomAttributes);
     }
 
@@ -706,7 +720,7 @@ public: // IMetaDataImport
         void const  **ppBlob,
         ULONG       *pcbSize) override
     {
-        std::lock_guard<pal::ReadLock> lock { this->_lock.GetReadLock() };
+        std::lock_guard<pal::ReadLock> lock { this->GetLock()->GetReadLock() };
         return _import->GetCustomAttributeProps(cv, ptkObj, ptkType, ppBlob, pcbSize);
     }
 
@@ -715,7 +729,7 @@ public: // IMetaDataImport
         LPCWSTR     szName,
         mdTypeRef   *ptr) override
     {
-        std::lock_guard<pal::ReadLock> lock { this->_lock.GetReadLock() };
+        std::lock_guard<pal::ReadLock> lock { this->GetLock()->GetReadLock() };
         return _import->FindTypeRef(tkResolutionScope, szName, ptr);
     }
 
@@ -735,7 +749,7 @@ public: // IMetaDataImport
         UVCP_CONSTANT *ppValue,
         ULONG       *pcchValue) override
     {
-        std::lock_guard<pal::ReadLock> lock { this->_lock.GetReadLock() };
+        std::lock_guard<pal::ReadLock> lock { this->GetLock()->GetReadLock() };
         return _import->GetMemberProps(mb, pClass, szMember, cchMember, pchMember, pdwAttr, ppvSigBlob, pcbSigBlob, pulCodeRVA, pdwImplFlags, pdwCPlusTypeFlag, ppValue, pcchValue);
     }
 
@@ -753,7 +767,7 @@ public: // IMetaDataImport
         UVCP_CONSTANT *ppValue,
         ULONG       *pcchValue) override
     {
-        std::lock_guard<pal::ReadLock> lock { this->_lock.GetReadLock() };
+        std::lock_guard<pal::ReadLock> lock { this->GetLock()->GetReadLock() };
         return _import->GetFieldProps(mb, pClass, szField, cchField, pchField, pdwAttr, ppvSigBlob, pcbSigBlob, pdwCPlusTypeFlag, ppValue, pcchValue);
     }
 
@@ -775,7 +789,7 @@ public: // IMetaDataImport
         ULONG       cMax,
         ULONG       *pcOtherMethod) override
     {
-        std::lock_guard<pal::ReadLock> lock { this->_lock.GetReadLock() };
+        std::lock_guard<pal::ReadLock> lock { this->GetLock()->GetReadLock() };
         return _import->GetPropertyProps(prop, pClass, szProperty, cchProperty, pchProperty, pdwPropFlags, ppvSig, pbSig, pdwCPlusTypeFlag, ppDefaultValue, pcchDefaultValue, pmdSetter, pmdGetter, rmdOtherMethod, cMax, pcOtherMethod);
     }
 
@@ -792,7 +806,7 @@ public: // IMetaDataImport
         UVCP_CONSTANT *ppValue,
         ULONG       *pcchValue) override
     {
-        std::lock_guard<pal::ReadLock> lock { this->_lock.GetReadLock() };
+        std::lock_guard<pal::ReadLock> lock { this->GetLock()->GetReadLock() };
         return _import->GetParamProps(tk, pmd, pulSequence, szName, cchName, pchName, pdwAttr, pdwCPlusTypeFlag, ppValue, pcchValue);
     }
 
@@ -802,14 +816,14 @@ public: // IMetaDataImport
         void const**  ppData,
         ULONG       *pcbData) override
     {
-        std::lock_guard<pal::ReadLock> lock { this->_lock.GetReadLock() };
+        std::lock_guard<pal::ReadLock> lock { this->GetLock()->GetReadLock() };
         return _import->GetCustomAttributeByName(tkObj, szName, ppData, pcbData);
     }
 
     STDMETHOD_(BOOL, IsValidToken)(
         mdToken     tk) override
     {
-        std::lock_guard<pal::ReadLock> lock { this->_lock.GetReadLock() };
+        std::lock_guard<pal::ReadLock> lock { this->GetLock()->GetReadLock() };
         return _import->IsValidToken(tk);
     }
 
@@ -817,7 +831,7 @@ public: // IMetaDataImport
         mdTypeDef   tdNestedClass,
         mdTypeDef   *ptdEnclosingClass) override
     {
-        std::lock_guard<pal::ReadLock> lock { this->_lock.GetReadLock() };
+        std::lock_guard<pal::ReadLock> lock { this->GetLock()->GetReadLock() };
         return _import->GetNestedClassProps(tdNestedClass, ptdEnclosingClass);
     }
 
@@ -826,7 +840,7 @@ public: // IMetaDataImport
         ULONG       cbSig,
         ULONG       *pCallConv) override
     {
-        std::lock_guard<pal::ReadLock> lock { this->_lock.GetReadLock() };
+        std::lock_guard<pal::ReadLock> lock { this->GetLock()->GetReadLock() };
         return _import->GetNativeCallConvFromSig(pvSig, cbSig, pCallConv);
     }
 
@@ -834,7 +848,7 @@ public: // IMetaDataImport
         mdToken     pd,
         int         *pbGlobal) override
     {
-        std::lock_guard<pal::ReadLock> lock { this->_lock.GetReadLock() };
+        std::lock_guard<pal::ReadLock> lock { this->GetLock()->GetReadLock() };
         return _import->IsGlobal(pd, pbGlobal);
     }
 
@@ -846,7 +860,7 @@ public: // IMetaDataImport2
         ULONG       cMax,
         ULONG       *pcGenericParams) override
     {
-        std::lock_guard<pal::ReadLock> lock { this->_lock.GetReadLock() };
+        std::lock_guard<pal::ReadLock> lock { this->GetLock()->GetReadLock() };
         return _import->EnumGenericParams(phEnum, tk, rGenericParams, cMax, pcGenericParams);
     }
 
@@ -861,7 +875,7 @@ public: // IMetaDataImport2
         ULONG        cchName,
         ULONG        *pchName) override
     {
-        std::lock_guard<pal::ReadLock> lock { this->_lock.GetReadLock() };
+        std::lock_guard<pal::ReadLock> lock { this->GetLock()->GetReadLock() };
         return _import->GetGenericParamProps(gp, pulParamSeq, pdwParamFlags, ptOwner, reserved, wzname, cchName, pchName);
     }
 
@@ -871,7 +885,7 @@ public: // IMetaDataImport2
         PCCOR_SIGNATURE *ppvSigBlob,
         ULONG       *pcbSigBlob) override
     {
-        std::lock_guard<pal::ReadLock> lock { this->_lock.GetReadLock() };
+        std::lock_guard<pal::ReadLock> lock { this->GetLock()->GetReadLock() };
         return _import->GetMethodSpecProps(mi, tkParent, ppvSigBlob, pcbSigBlob);
     }
 
@@ -882,7 +896,7 @@ public: // IMetaDataImport2
         ULONG       cMax,
         ULONG       *pcGenericParamConstraints) override
     {
-        std::lock_guard<pal::ReadLock> lock { this->_lock.GetReadLock() };
+        std::lock_guard<pal::ReadLock> lock { this->GetLock()->GetReadLock() };
         return _import->EnumGenericParamConstraints(phEnum, tk, rGenericParamConstraints, cMax, pcGenericParamConstraints);
     }
 
@@ -891,7 +905,7 @@ public: // IMetaDataImport2
         mdGenericParam *ptGenericParam,
         mdToken      *ptkConstraintType) override
     {
-        std::lock_guard<pal::ReadLock> lock { this->_lock.GetReadLock() };
+        std::lock_guard<pal::ReadLock> lock { this->GetLock()->GetReadLock() };
         return _import->GetGenericParamConstraintProps(gpc, ptGenericParam, ptkConstraintType);
     }
 
@@ -899,7 +913,7 @@ public: // IMetaDataImport2
         DWORD* pdwPEKind,
         DWORD* pdwMAchine) override
     {
-        std::lock_guard<pal::ReadLock> lock { this->_lock.GetReadLock() };
+        std::lock_guard<pal::ReadLock> lock { this->GetLock()->GetReadLock() };
         return _import->GetPEKind(pdwPEKind, pdwMAchine);
     }
 
@@ -909,7 +923,7 @@ public: // IMetaDataImport2
         DWORD       ccBufSize,
         DWORD       *pccBufSize) override
     {
-        std::lock_guard<pal::ReadLock> lock { this->_lock.GetReadLock() };
+        std::lock_guard<pal::ReadLock> lock { this->GetLock()->GetReadLock() };
         return _import->GetVersionString(pwzBuf, ccBufSize, pccBufSize);
     }
 
@@ -920,7 +934,7 @@ public: // IMetaDataImport2
         ULONG       cMax,
         ULONG       *pcMethodSpecs) override
     {
-        std::lock_guard<pal::ReadLock> lock { this->_lock.GetReadLock() };
+        std::lock_guard<pal::ReadLock> lock { this->GetLock()->GetReadLock() };
         return _import->EnumMethodSpecs(phEnum, tk, rMethodSpecs, cMax, pcMethodSpecs);
     }
 
@@ -936,7 +950,7 @@ public: // IMetaDataAssemblyImport
         ASSEMBLYMETADATA* pMetaData,
         DWORD* pdwAssemblyFlags) override
     {
-        std::lock_guard<pal::ReadLock> lock { this->_lock.GetReadLock() };
+        std::lock_guard<pal::ReadLock> lock { this->GetLock()->GetReadLock() };
         return _import->GetAssemblyProps(mda, ppbPublicKey, pcbPublicKey, pulHashAlgId, szName, cchName, pchName, pMetaData, pdwAssemblyFlags);
     }
 
@@ -952,7 +966,7 @@ public: // IMetaDataAssemblyImport
         ULONG* pcbHashValue,
         DWORD* pdwAssemblyRefFlags) override
     {
-        std::lock_guard<pal::ReadLock> lock { this->_lock.GetReadLock() };
+        std::lock_guard<pal::ReadLock> lock { this->GetLock()->GetReadLock() };
         return _import->GetAssemblyRefProps(mdar, ppbPublicKeyOrToken, pcbPublicKeyOrToken, szName, cchName, pchName, pMetaData, ppbHashValue, pcbHashValue, pdwAssemblyRefFlags);
     }
 
@@ -965,7 +979,7 @@ public: // IMetaDataAssemblyImport
         ULONG* pcbHashValue,
         DWORD* pdwFileFlags) override
     {
-        std::lock_guard<pal::ReadLock> lock { this->_lock.GetReadLock() };
+        std::lock_guard<pal::ReadLock> lock { this->GetLock()->GetReadLock() };
         return _import->GetFileProps(mdf, szName, cchName, pchName, ppbHashValue, pcbHashValue, pdwFileFlags);
     }
 
@@ -978,7 +992,7 @@ public: // IMetaDataAssemblyImport
         mdTypeDef* ptkTypeDef,
         DWORD* pdwExportedTypeFlags) override
     {
-        std::lock_guard<pal::ReadLock> lock { this->_lock.GetReadLock() };
+        std::lock_guard<pal::ReadLock> lock { this->GetLock()->GetReadLock() };
         return _import->GetExportedTypeProps(mdct, szName, cchName, pchName, ptkImplementation, ptkTypeDef, pdwExportedTypeFlags);
     }
 
@@ -991,7 +1005,7 @@ public: // IMetaDataAssemblyImport
         DWORD* pdwOffset,
         DWORD* pdwResourceFlags) override
     {
-        std::lock_guard<pal::ReadLock> lock { this->_lock.GetReadLock() };
+        std::lock_guard<pal::ReadLock> lock { this->GetLock()->GetReadLock() };
         return _import->GetManifestResourceProps(mdmr, szName, cchName, pchName, ptkImplementation, pdwOffset, pdwResourceFlags);
     }
 
@@ -1001,7 +1015,7 @@ public: // IMetaDataAssemblyImport
         ULONG       cMax,
         ULONG* pcTokens) override
     {
-        std::lock_guard<pal::ReadLock> lock { this->_lock.GetReadLock() };
+        std::lock_guard<pal::ReadLock> lock { this->GetLock()->GetReadLock() };
         return _import->EnumAssemblyRefs(phEnum, rAssemblyRefs, cMax, pcTokens);
     }
 
@@ -1011,7 +1025,7 @@ public: // IMetaDataAssemblyImport
         ULONG       cMax,
         ULONG* pcTokens) override
     {
-        std::lock_guard<pal::ReadLock> lock { this->_lock.GetReadLock() };
+        std::lock_guard<pal::ReadLock> lock { this->GetLock()->GetReadLock() };
         return _import->EnumFiles(phEnum, rFiles, cMax, pcTokens);
     }
 
@@ -1021,7 +1035,7 @@ public: // IMetaDataAssemblyImport
         ULONG       cMax,
         ULONG* pcTokens) override
     {
-        std::lock_guard<pal::ReadLock> lock { this->_lock.GetReadLock() };
+        std::lock_guard<pal::ReadLock> lock { this->GetLock()->GetReadLock() };
         return _import->EnumExportedTypes(phEnum, rExportedTypes, cMax, pcTokens);
     }
 
@@ -1031,14 +1045,14 @@ public: // IMetaDataAssemblyImport
         ULONG       cMax,
         ULONG* pcTokens) override
     {
-        std::lock_guard<pal::ReadLock> lock { this->_lock.GetReadLock() };
+        std::lock_guard<pal::ReadLock> lock { this->GetLock()->GetReadLock() };
         return _import->EnumManifestResources(phEnum, rManifestResources, cMax, pcTokens);
     }
 
     STDMETHOD(GetAssemblyFromScope)(
         mdAssembly* ptkAssembly) override
     {
-        std::lock_guard<pal::ReadLock> lock { this->_lock.GetReadLock() };
+        std::lock_guard<pal::ReadLock> lock { this->GetLock()->GetReadLock() };
         return _import->GetAssemblyFromScope(ptkAssembly);
     }
 
@@ -1047,7 +1061,7 @@ public: // IMetaDataAssemblyImport
         mdToken     mdtExportedType,
         mdExportedType* ptkExportedType) override
     {
-        std::lock_guard<pal::ReadLock> lock { this->_lock.GetReadLock() };
+        std::lock_guard<pal::ReadLock> lock { this->GetLock()->GetReadLock() };
         return _import->FindExportedTypeByName(szName, mdtExportedType, ptkExportedType);
     }
 
@@ -1055,7 +1069,7 @@ public: // IMetaDataAssemblyImport
         LPCWSTR     szName,
         mdManifestResource* ptkManifestResource) override
     {
-        std::lock_guard<pal::ReadLock> lock { this->_lock.GetReadLock() };
+        std::lock_guard<pal::ReadLock> lock { this->GetLock()->GetReadLock() };
         return _import->FindManifestResourceByName(szName, ptkManifestResource);
     
     }
@@ -1068,7 +1082,7 @@ public: // IMetaDataAssemblyImport
         ULONG    cMax,
         ULONG* pcAssemblies) override
     {
-        std::lock_guard<pal::ReadLock> lock { this->_lock.GetReadLock() };
+        std::lock_guard<pal::ReadLock> lock { this->GetLock()->GetReadLock() };
         return _import->FindAssembliesByName(szAppBase, szPrivateBin, szAssemblyName, ppIUnk, cMax, pcAssemblies);
     }
 
@@ -1076,7 +1090,7 @@ public: // IMetaDataEmit
     STDMETHOD(SetModuleProps)(
         LPCWSTR     szName) override
     {
-        std::lock_guard<pal::WriteLock> lock { this->_lock.GetWriteLock() };
+        std::lock_guard<pal::WriteLock> lock { this->GetLock()->GetWriteLock() };
         return _emit->SetModuleProps(szName);
     }
 
@@ -1084,7 +1098,7 @@ public: // IMetaDataEmit
         LPCWSTR     szFile,
         DWORD       dwSaveFlags) override
     {
-        std::lock_guard<pal::WriteLock> lock { this->_lock.GetWriteLock() };
+        std::lock_guard<pal::WriteLock> lock { this->GetLock()->GetWriteLock() };
         return _emit->Save(szFile, dwSaveFlags);
     }
 
@@ -1092,7 +1106,7 @@ public: // IMetaDataEmit
         IStream     *pIStream,
         DWORD       dwSaveFlags) override
     {
-        std::lock_guard<pal::WriteLock> lock { this->_lock.GetWriteLock() };
+        std::lock_guard<pal::WriteLock> lock { this->GetLock()->GetWriteLock() };
         return _emit->SaveToStream(pIStream, dwSaveFlags);
     
     }
@@ -1101,7 +1115,7 @@ public: // IMetaDataEmit
         CorSaveSize fSave,
         DWORD       *pdwSaveSize) override
     {
-        std::lock_guard<pal::WriteLock> lock { this->_lock.GetWriteLock() };
+        std::lock_guard<pal::WriteLock> lock { this->GetLock()->GetWriteLock() };
         return _emit->GetSaveSize(fSave, pdwSaveSize);
     }
 
@@ -1112,7 +1126,7 @@ public: // IMetaDataEmit
         mdToken     rtkImplements[],
         mdTypeDef   *ptd) override
     {
-        std::lock_guard<pal::WriteLock> lock { this->_lock.GetWriteLock() };
+        std::lock_guard<pal::WriteLock> lock { this->GetLock()->GetWriteLock() };
         return _emit->DefineTypeDef(szTypeDef, dwTypeDefFlags, tkExtends, rtkImplements, ptd);
     }
 
@@ -1124,14 +1138,14 @@ public: // IMetaDataEmit
         mdTypeDef   tdEncloser,
         mdTypeDef   *ptd) override
     {
-        std::lock_guard<pal::WriteLock> lock { this->_lock.GetWriteLock() };
+        std::lock_guard<pal::WriteLock> lock { this->GetLock()->GetWriteLock() };
         return _emit->DefineNestedType(szTypeDef, dwTypeDefFlags, tkExtends, rtkImplements, tdEncloser, ptd);
     }
 
     STDMETHOD(SetHandler)(
         IUnknown    *pUnk) override
     {
-        std::lock_guard<pal::WriteLock> lock { this->_lock.GetWriteLock() };
+        std::lock_guard<pal::WriteLock> lock { this->GetLock()->GetWriteLock() };
         return _emit->SetHandler(pUnk);
     }
 
@@ -1145,7 +1159,7 @@ public: // IMetaDataEmit
         DWORD       dwImplFlags,
         mdMethodDef *pmd) override
     {
-        std::lock_guard<pal::WriteLock> lock { this->_lock.GetWriteLock() };
+        std::lock_guard<pal::WriteLock> lock { this->GetLock()->GetWriteLock() };
         return _emit->DefineMethod(td, szName, dwMethodFlags, pvSigBlob, cbSigBlob, ulCodeRVA, dwImplFlags, pmd);
     }
 
@@ -1154,7 +1168,7 @@ public: // IMetaDataEmit
         mdToken     tkBody,
         mdToken     tkDecl) override
     {
-        std::lock_guard<pal::WriteLock> lock { this->_lock.GetWriteLock() };
+        std::lock_guard<pal::WriteLock> lock { this->GetLock()->GetWriteLock() };
         return _emit->DefineMethodImpl(td, tkBody, tkDecl);
     }
 
@@ -1163,7 +1177,7 @@ public: // IMetaDataEmit
         LPCWSTR     szName,
         mdTypeRef   *ptr) override
     {
-        std::lock_guard<pal::WriteLock> lock { this->_lock.GetWriteLock() };
+        std::lock_guard<pal::WriteLock> lock { this->GetLock()->GetWriteLock() };
         return _emit->DefineTypeRefByName(tkResolutionScope, szName, ptr);
     }
 
@@ -1176,7 +1190,7 @@ public: // IMetaDataEmit
         IMetaDataAssemblyEmit *pAssemEmit,
         mdTypeRef   *ptr) override
     {
-        std::lock_guard<pal::WriteLock> lock { this->_lock.GetWriteLock() };
+        std::lock_guard<pal::WriteLock> lock { this->GetLock()->GetWriteLock() };
         return _emit->DefineImportType(pAssemImport, pbHashValue, cbHashValue, pImport, tdImport, pAssemEmit, ptr);
     }
 
@@ -1187,7 +1201,7 @@ public: // IMetaDataEmit
         ULONG       cbSigBlob,
         mdMemberRef *pmr) override
     {
-        std::lock_guard<pal::WriteLock> lock { this->_lock.GetWriteLock() };
+        std::lock_guard<pal::WriteLock> lock { this->GetLock()->GetWriteLock() };
         return _emit->DefineMemberRef(tkImport, szName, pvSigBlob, cbSigBlob, pmr);
     }
 
@@ -1216,7 +1230,7 @@ public: // IMetaDataEmit
         mdMethodDef rmdOtherMethods[],
         mdEvent     *pmdEvent) override
     {
-        std::lock_guard<pal::WriteLock> lock { this->_lock.GetWriteLock() };
+        std::lock_guard<pal::WriteLock> lock { this->GetLock()->GetWriteLock() };
         return _emit->DefineEvent(td, szEvent, dwEventFlags, tkEventType, mdAddOn, mdRemoveOn, mdFire, rmdOtherMethods, pmdEvent);
     }
 
@@ -1226,14 +1240,14 @@ public: // IMetaDataEmit
         COR_FIELD_OFFSET rFieldOffsets[],
         ULONG       ulClassSize) override
     {
-        std::lock_guard<pal::WriteLock> lock { this->_lock.GetWriteLock() };
+        std::lock_guard<pal::WriteLock> lock { this->GetLock()->GetWriteLock() };
         return _emit->SetClassLayout(td, dwPackSize, rFieldOffsets, ulClassSize);
     }
 
     STDMETHOD(DeleteClassLayout) (
         mdTypeDef   td) override
     {
-        std::lock_guard<pal::WriteLock> lock { this->_lock.GetWriteLock() };
+        std::lock_guard<pal::WriteLock> lock { this->GetLock()->GetWriteLock() };
         return _emit->DeleteClassLayout(td);
     }
 
@@ -1242,14 +1256,14 @@ public: // IMetaDataEmit
         PCCOR_SIGNATURE pvNativeType,
         ULONG       cbNativeType) override
     {
-        std::lock_guard<pal::WriteLock> lock { this->_lock.GetWriteLock() };
+        std::lock_guard<pal::WriteLock> lock { this->GetLock()->GetWriteLock() };
         return _emit->SetFieldMarshal(tk, pvNativeType, cbNativeType);
     }
 
     STDMETHOD(DeleteFieldMarshal) (
         mdToken     tk) override
     {
-        std::lock_guard<pal::WriteLock> lock { this->_lock.GetWriteLock() };
+        std::lock_guard<pal::WriteLock> lock { this->GetLock()->GetWriteLock() };
         return _emit->DeleteFieldMarshal(tk);
     }
 
@@ -1260,7 +1274,7 @@ public: // IMetaDataEmit
         ULONG       cbPermission,
         mdPermission *ppm) override
     {
-        std::lock_guard<pal::WriteLock> lock { this->_lock.GetWriteLock() };
+        std::lock_guard<pal::WriteLock> lock { this->GetLock()->GetWriteLock() };
         return _emit->DefinePermissionSet(tk, dwAction, pvPermission, cbPermission, ppm);
     }
 
@@ -1268,7 +1282,7 @@ public: // IMetaDataEmit
         mdMethodDef md,
         ULONG       ulRVA) override
     {
-        std::lock_guard<pal::WriteLock> lock { this->_lock.GetWriteLock() };
+        std::lock_guard<pal::WriteLock> lock { this->GetLock()->GetWriteLock() };
         return _emit->SetRVA(md, ulRVA);
     }
 
@@ -1277,7 +1291,7 @@ public: // IMetaDataEmit
         ULONG       cbSig,
         mdSignature *pmsig) override
     {
-        std::lock_guard<pal::WriteLock> lock { this->_lock.GetWriteLock() };
+        std::lock_guard<pal::WriteLock> lock { this->GetLock()->GetWriteLock() };
         return _emit->GetTokenFromSig(pvSig, cbSig, pmsig);
     }
 
@@ -1285,7 +1299,7 @@ public: // IMetaDataEmit
         LPCWSTR     szName,
         mdModuleRef *pmur) override
     {
-        std::lock_guard<pal::WriteLock> lock { this->_lock.GetWriteLock() };
+        std::lock_guard<pal::WriteLock> lock { this->GetLock()->GetWriteLock() };
         return _emit->DefineModuleRef(szName, pmur);
     }
 
@@ -1293,7 +1307,7 @@ public: // IMetaDataEmit
         mdMemberRef mr,
         mdToken     tk) override
     {
-        std::lock_guard<pal::WriteLock> lock { this->_lock.GetWriteLock() };
+        std::lock_guard<pal::WriteLock> lock { this->GetLock()->GetWriteLock() };
         return _emit->SetParent(mr, tk);
     }
 
@@ -1302,7 +1316,7 @@ public: // IMetaDataEmit
         ULONG       cbSig,
         mdTypeSpec *ptypespec) override
     {
-        std::lock_guard<pal::WriteLock> lock { this->_lock.GetWriteLock() };
+        std::lock_guard<pal::WriteLock> lock { this->GetLock()->GetWriteLock() };
         return _emit->GetTokenFromTypeSpec(pvSig, cbSig, ptypespec);
     }
 
@@ -1310,7 +1324,7 @@ public: // IMetaDataEmit
         void        *pbData,
         ULONG       cbData) override
     {
-        std::lock_guard<pal::WriteLock> lock { this->_lock.GetWriteLock() };
+        std::lock_guard<pal::WriteLock> lock { this->GetLock()->GetWriteLock() };
         return _emit->SaveToMemory(pbData, cbData);
     }
 
@@ -1319,14 +1333,14 @@ public: // IMetaDataEmit
         ULONG       cchString,
         mdString    *pstk) override
     {
-        std::lock_guard<pal::WriteLock> lock { this->_lock.GetWriteLock() };
+        std::lock_guard<pal::WriteLock> lock { this->GetLock()->GetWriteLock() };
         return _emit->DefineUserString(szString, cchString, pstk);
     }
 
     STDMETHOD(DeleteToken)(
         mdToken     tkObj) override
     {
-        std::lock_guard<pal::WriteLock> lock { this->_lock.GetWriteLock() };
+        std::lock_guard<pal::WriteLock> lock { this->GetLock()->GetWriteLock() };
         return _emit->DeleteToken(tkObj);
     }
 
@@ -1336,7 +1350,7 @@ public: // IMetaDataEmit
         ULONG       ulCodeRVA,
         DWORD       dwImplFlags) override
     {
-        std::lock_guard<pal::WriteLock> lock { this->_lock.GetWriteLock() };
+        std::lock_guard<pal::WriteLock> lock { this->GetLock()->GetWriteLock() };
         return _emit->SetMethodProps(md, dwMethodFlags, ulCodeRVA, dwImplFlags);
     }
 
@@ -1346,7 +1360,7 @@ public: // IMetaDataEmit
         mdToken     tkExtends,
         mdToken     rtkImplements[]) override
     {
-        std::lock_guard<pal::WriteLock> lock { this->_lock.GetWriteLock() };
+        std::lock_guard<pal::WriteLock> lock { this->GetLock()->GetWriteLock() };
         return _emit->SetTypeDefProps(td, dwTypeDefFlags, tkExtends, rtkImplements);
     }
 
@@ -1359,7 +1373,7 @@ public: // IMetaDataEmit
         mdMethodDef mdFire,
         mdMethodDef rmdOtherMethods[]) override
     {
-        std::lock_guard<pal::WriteLock> lock { this->_lock.GetWriteLock() };
+        std::lock_guard<pal::WriteLock> lock { this->GetLock()->GetWriteLock() };
         return _emit->SetEventProps(ev, dwEventFlags, tkEventType, mdAddOn, mdRemoveOn, mdFire, rmdOtherMethods);
     }
 
@@ -1370,7 +1384,7 @@ public: // IMetaDataEmit
         ULONG       cbPermission,
         mdPermission *ppm) override
     {
-        std::lock_guard<pal::WriteLock> lock { this->_lock.GetWriteLock() };
+        std::lock_guard<pal::WriteLock> lock { this->GetLock()->GetWriteLock() };
         return _emit->SetPermissionSetProps(tk, dwAction, pvPermission, cbPermission, ppm);
     }
 
@@ -1380,7 +1394,7 @@ public: // IMetaDataEmit
         LPCWSTR     szImportName,
         mdModuleRef mrImportDLL) override
     {
-        std::lock_guard<pal::WriteLock> lock { this->_lock.GetWriteLock() };
+        std::lock_guard<pal::WriteLock> lock { this->GetLock()->GetWriteLock() };
         return _emit->DefinePinvokeMap(tk, dwMappingFlags, szImportName, mrImportDLL);
     }
 
@@ -1390,14 +1404,14 @@ public: // IMetaDataEmit
         LPCWSTR     szImportName,
         mdModuleRef mrImportDLL) override
     {
-        std::lock_guard<pal::WriteLock> lock { this->_lock.GetWriteLock() };
+        std::lock_guard<pal::WriteLock> lock { this->GetLock()->GetWriteLock() };
         return _emit->SetPinvokeMap(tk, dwMappingFlags, szImportName, mrImportDLL);
     }
 
     STDMETHOD(DeletePinvokeMap)(
         mdToken     tk) override
     {
-        std::lock_guard<pal::WriteLock> lock { this->_lock.GetWriteLock() };
+        std::lock_guard<pal::WriteLock> lock { this->GetLock()->GetWriteLock() };
         return _emit->DeletePinvokeMap(tk);
     }
 
@@ -1409,7 +1423,7 @@ public: // IMetaDataEmit
         ULONG       cbCustomAttribute,
         mdCustomAttribute *pcv) override
     {
-        std::lock_guard<pal::WriteLock> lock { this->_lock.GetWriteLock() };
+        std::lock_guard<pal::WriteLock> lock { this->GetLock()->GetWriteLock() };
         return _emit->DefineCustomAttribute(tkOwner, tkCtor, pCustomAttribute, cbCustomAttribute, pcv);
     }
 
@@ -1418,7 +1432,7 @@ public: // IMetaDataEmit
         void const  *pCustomAttribute,
         ULONG       cbCustomAttribute) override
     {
-        std::lock_guard<pal::WriteLock> lock { this->_lock.GetWriteLock() };
+        std::lock_guard<pal::WriteLock> lock { this->GetLock()->GetWriteLock() };
         return _emit->SetCustomAttributeValue(pcv, pCustomAttribute, cbCustomAttribute);
     }
 
@@ -1433,7 +1447,7 @@ public: // IMetaDataEmit
         ULONG       cchValue,
         mdFieldDef  *pmd) override
     {
-        std::lock_guard<pal::WriteLock> lock { this->_lock.GetWriteLock() };
+        std::lock_guard<pal::WriteLock> lock { this->GetLock()->GetWriteLock() };
         return _emit->DefineField(td, szName, dwFieldFlags, pvSigBlob, cbSigBlob, dwCPlusTypeFlag, pValue, cchValue, pmd);
     }
 
@@ -1451,7 +1465,7 @@ public: // IMetaDataEmit
         mdMethodDef rmdOtherMethods[],
         mdProperty  *pmdProp) override
     {
-        std::lock_guard<pal::WriteLock> lock { this->_lock.GetWriteLock() };
+        std::lock_guard<pal::WriteLock> lock { this->GetLock()->GetWriteLock() };
         return _emit->DefineProperty(td, szProperty, dwPropFlags, pvSig, cbSig, dwCPlusTypeFlag, pValue, cchValue, mdSetter, mdGetter, rmdOtherMethods, pmdProp);
     }
 
@@ -1465,7 +1479,7 @@ public: // IMetaDataEmit
         ULONG       cchValue,
         mdParamDef  *ppd) override
     {
-        std::lock_guard<pal::WriteLock> lock { this->_lock.GetWriteLock() };
+        std::lock_guard<pal::WriteLock> lock { this->GetLock()->GetWriteLock() };
         return _emit->DefineParam(md, ulParamSeq, szName, dwParamFlags, dwCPlusTypeFlag, pValue, cchValue, ppd);
     }
 
@@ -1476,7 +1490,7 @@ public: // IMetaDataEmit
         void const  *pValue,
         ULONG       cchValue) override
     {
-        std::lock_guard<pal::WriteLock> lock { this->_lock.GetWriteLock() };
+        std::lock_guard<pal::WriteLock> lock { this->GetLock()->GetWriteLock() };
         return _emit->SetFieldProps(fd, dwFieldFlags, dwCPlusTypeFlag, pValue, cchValue);
     }
 
@@ -1490,7 +1504,7 @@ public: // IMetaDataEmit
         mdMethodDef mdGetter,
         mdMethodDef rmdOtherMethods[]) override
     {
-        std::lock_guard<pal::WriteLock> lock { this->_lock.GetWriteLock() };
+        std::lock_guard<pal::WriteLock> lock { this->GetLock()->GetWriteLock() };
         return _emit->SetPropertyProps(pr, dwPropFlags, dwCPlusTypeFlag, pValue, cchValue, mdSetter, mdGetter, rmdOtherMethods);
     }
 
@@ -1502,7 +1516,7 @@ public: // IMetaDataEmit
         void const  *pValue,
         ULONG       cchValue) override
     {
-        std::lock_guard<pal::WriteLock> lock { this->_lock.GetWriteLock() };
+        std::lock_guard<pal::WriteLock> lock { this->GetLock()->GetWriteLock() };
         return _emit->SetParamProps(pd, szName, dwParamFlags, dwCPlusTypeFlag, pValue, cchValue);
     }
 
@@ -1513,14 +1527,14 @@ public: // IMetaDataEmit
         ULONG       cSecAttrs,
         ULONG       *pulErrorAttr) override
     {
-        std::lock_guard<pal::WriteLock> lock { this->_lock.GetWriteLock() };
+        std::lock_guard<pal::WriteLock> lock { this->GetLock()->GetWriteLock() };
         return _emit->DefineSecurityAttributeSet(tkObj, rSecAttrs, cSecAttrs, pulErrorAttr);
     }
 
     STDMETHOD(ApplyEditAndContinue)(
         IUnknown    *pImport) override
     {
-        std::lock_guard<pal::WriteLock> lock { this->_lock.GetWriteLock() };
+        std::lock_guard<pal::WriteLock> lock { this->GetLock()->GetWriteLock() };
         return _emit->ApplyEditAndContinue(pImport);
     }
 
@@ -1549,7 +1563,7 @@ public: // IMetaDataEmit
             return emit->TranslateSigWithScope(pAssemImport, pbHashValue, cbHashValue, import, pbSigBlob, cbSigBlob, pAssemEmit, emit, pvTranslatedSig, cbTranslatedSigMax, pcbTranslatedSig);
         }
 
-        std::lock_guard<pal::WriteLock> lock { this->_lock.GetWriteLock() };
+        std::lock_guard<pal::WriteLock> lock { this->GetLock()->GetWriteLock() };
         return _emit->TranslateSigWithScope(pAssemImport, pbHashValue, cbHashValue, import, pbSigBlob, cbSigBlob, pAssemEmit, emit, pvTranslatedSig, cbTranslatedSigMax, pcbTranslatedSig);
     }
 
@@ -1557,7 +1571,7 @@ public: // IMetaDataEmit
         mdMethodDef md,
         DWORD       dwImplFlags) override
     {
-        std::lock_guard<pal::WriteLock> lock { this->_lock.GetWriteLock() };
+        std::lock_guard<pal::WriteLock> lock { this->GetLock()->GetWriteLock() };
         return _emit->SetMethodImplFlags(md, dwImplFlags);
     }
 
@@ -1565,7 +1579,7 @@ public: // IMetaDataEmit
         mdFieldDef  fd,
         ULONG       ulRVA) override
     {
-        std::lock_guard<pal::WriteLock> lock { this->_lock.GetWriteLock() };
+        std::lock_guard<pal::WriteLock> lock { this->GetLock()->GetWriteLock() };
         return _emit->SetFieldRVA(fd, ulRVA);
     }
 
@@ -1574,13 +1588,13 @@ public: // IMetaDataEmit
         IMapToken   *pHostMapToken,
         IUnknown    *pHandler) override
     {
-        std::lock_guard<pal::WriteLock> lock { this->_lock.GetWriteLock() };
+        std::lock_guard<pal::WriteLock> lock { this->GetLock()->GetWriteLock() };
         return _emit->Merge(pImport, pHostMapToken, pHandler);
     }
 
     STDMETHOD(MergeEnd)() override
     {
-        std::lock_guard<pal::WriteLock> lock { this->_lock.GetWriteLock() };
+        std::lock_guard<pal::WriteLock> lock { this->GetLock()->GetWriteLock() };
         return _emit->MergeEnd();
     }
 
@@ -1591,7 +1605,7 @@ public: // IMetaDataEmit2
         ULONG       cbSigBlob,
         mdMethodSpec *pmi) override
     {
-        std::lock_guard<pal::WriteLock> lock { this->_lock.GetWriteLock() };
+        std::lock_guard<pal::WriteLock> lock { this->GetLock()->GetWriteLock() };
         return _emit->DefineMethodSpec(tkParent, pvSigBlob, cbSigBlob, pmi);
     }
 
@@ -1599,7 +1613,7 @@ public: // IMetaDataEmit2
         CorSaveSize fSave,
         DWORD       *pdwSaveSize) override
     {
-        std::lock_guard<pal::WriteLock> lock { this->_lock.GetWriteLock() };
+        std::lock_guard<pal::WriteLock> lock { this->GetLock()->GetWriteLock() };
         return _emit->GetDeltaSaveSize(fSave, pdwSaveSize);
     }
 
@@ -1607,7 +1621,7 @@ public: // IMetaDataEmit2
         LPCWSTR     szFile,
         DWORD       dwSaveFlags) override
     {
-        std::lock_guard<pal::WriteLock> lock { this->_lock.GetWriteLock() };
+        std::lock_guard<pal::WriteLock> lock { this->GetLock()->GetWriteLock() };
         return _emit->SaveDelta(szFile, dwSaveFlags);
     }
 
@@ -1615,7 +1629,7 @@ public: // IMetaDataEmit2
         IStream     *pIStream,
         DWORD       dwSaveFlags) override
     {
-        std::lock_guard<pal::WriteLock> lock { this->_lock.GetWriteLock() };
+        std::lock_guard<pal::WriteLock> lock { this->GetLock()->GetWriteLock() };
         return _emit->SaveDeltaToStream(pIStream, dwSaveFlags);
     }
 
@@ -1623,7 +1637,7 @@ public: // IMetaDataEmit2
         void        *pbData,
         ULONG       cbData) override
     {
-        std::lock_guard<pal::WriteLock> lock { this->_lock.GetWriteLock() };
+        std::lock_guard<pal::WriteLock> lock { this->GetLock()->GetWriteLock() };
         return _emit->SaveDeltaToMemory(pbData, cbData);
     }
 
@@ -1636,7 +1650,7 @@ public: // IMetaDataEmit2
         mdToken      rtkConstraints[],
         mdGenericParam *pgp) override
     {
-        std::lock_guard<pal::WriteLock> lock { this->_lock.GetWriteLock() };
+        std::lock_guard<pal::WriteLock> lock { this->GetLock()->GetWriteLock() };
         return _emit->DefineGenericParam(tk, ulParamSeq, dwParamFlags, szname, reserved, rtkConstraints, pgp);
     }
 
@@ -1647,13 +1661,13 @@ public: // IMetaDataEmit2
         DWORD        reserved,
         mdToken      rtkConstraints[]) override
     {
-        std::lock_guard<pal::WriteLock> lock { this->_lock.GetWriteLock() };
+        std::lock_guard<pal::WriteLock> lock { this->GetLock()->GetWriteLock() };
         return _emit->SetGenericParamProps(gp, dwParamFlags, szName, reserved, rtkConstraints);
     }
 
     STDMETHOD(ResetENCLog)() override
     {
-        std::lock_guard<pal::WriteLock> lock { this->_lock.GetWriteLock() };
+        std::lock_guard<pal::WriteLock> lock { this->GetLock()->GetWriteLock() };
         return _emit->ResetENCLog();
     }
 
@@ -1667,7 +1681,7 @@ public: // IMetaDataAssemblyEmit
         DWORD       dwAssemblyFlags,
         mdAssembly  *pma) override
     {
-        std::lock_guard<pal::WriteLock> lock { this->_lock.GetWriteLock() };
+        std::lock_guard<pal::WriteLock> lock { this->GetLock()->GetWriteLock() };
         return _emit->DefineAssembly(pbPublicKey, cbPublicKey, ulHashAlgId, szName, pMetaData, dwAssemblyFlags, pma);
     }
 
@@ -1681,7 +1695,7 @@ public: // IMetaDataAssemblyEmit
         DWORD       dwAssemblyRefFlags,
         mdAssemblyRef *pmdar) override
     {
-        std::lock_guard<pal::WriteLock> lock { this->_lock.GetWriteLock() };
+        std::lock_guard<pal::WriteLock> lock { this->GetLock()->GetWriteLock() };
         return _emit->DefineAssemblyRef(pbPublicKeyOrToken, cbPublicKeyOrToken, szName, pMetaData, pbHashValue, cbHashValue, dwAssemblyRefFlags, pmdar);
     }
 
@@ -1692,7 +1706,7 @@ public: // IMetaDataAssemblyEmit
         DWORD       dwFileFlags,
         mdFile      *pmdf) override
     {
-        std::lock_guard<pal::WriteLock> lock { this->_lock.GetWriteLock() };
+        std::lock_guard<pal::WriteLock> lock { this->GetLock()->GetWriteLock() };
         return _emit->DefineFile(szName, pbHashValue, cbHashValue, dwFileFlags, pmdf);
     }
 
@@ -1703,7 +1717,7 @@ public: // IMetaDataAssemblyEmit
         DWORD       dwExportedTypeFlags,
         mdExportedType   *pmdct) override
     {
-        std::lock_guard<pal::WriteLock> lock { this->_lock.GetWriteLock() };
+        std::lock_guard<pal::WriteLock> lock { this->GetLock()->GetWriteLock() };
         return _emit->DefineExportedType(szName, tkImplementation, tkTypeDef, dwExportedTypeFlags, pmdct);
     }
 
@@ -1714,7 +1728,7 @@ public: // IMetaDataAssemblyEmit
         DWORD       dwResourceFlags,
         mdManifestResource  *pmdmr) override
     {
-        std::lock_guard<pal::WriteLock> lock { this->_lock.GetWriteLock() };
+        std::lock_guard<pal::WriteLock> lock { this->GetLock()->GetWriteLock() };
         return _emit->DefineManifestResource(szName, tkImplementation, dwOffset, dwResourceFlags, pmdmr);
     }
 
@@ -1727,7 +1741,7 @@ public: // IMetaDataAssemblyEmit
         ASSEMBLYMETADATA const *pMetaData,
         DWORD       dwAssemblyFlags) override
     {
-        std::lock_guard<pal::WriteLock> lock { this->_lock.GetWriteLock() };
+        std::lock_guard<pal::WriteLock> lock { this->GetLock()->GetWriteLock() };
         return _emit->SetAssemblyProps(pma, pbPublicKey, cbPublicKey, ulHashAlgId, szName, pMetaData, dwAssemblyFlags);
     }
 
@@ -1741,7 +1755,7 @@ public: // IMetaDataAssemblyEmit
         ULONG       cbHashValue,
         DWORD       dwAssemblyRefFlags) override
     {
-        std::lock_guard<pal::WriteLock> lock { this->_lock.GetWriteLock() };
+        std::lock_guard<pal::WriteLock> lock { this->GetLock()->GetWriteLock() };
         return _emit->SetAssemblyRefProps(ar, pbPublicKeyOrToken, cbPublicKeyOrToken, szName, pMetaData, pbHashValue, cbHashValue, dwAssemblyRefFlags);
     }
 
@@ -1751,7 +1765,7 @@ public: // IMetaDataAssemblyEmit
         ULONG       cbHashValue,
         DWORD       dwFileFlags) override
     {
-        std::lock_guard<pal::WriteLock> lock { this->_lock.GetWriteLock() };
+        std::lock_guard<pal::WriteLock> lock { this->GetLock()->GetWriteLock() };
         return _emit->SetFileProps(file, pbHashValue, cbHashValue, dwFileFlags);
     }
 
@@ -1761,7 +1775,7 @@ public: // IMetaDataAssemblyEmit
         mdTypeDef   tkTypeDef,
         DWORD       dwExportedTypeFlags) override
     {
-        std::lock_guard<pal::WriteLock> lock { this->_lock.GetWriteLock() };
+        std::lock_guard<pal::WriteLock> lock { this->GetLock()->GetWriteLock() };
         return _emit->SetExportedTypeProps(ct, tkImplementation, tkTypeDef, dwExportedTypeFlags);
     }
 
@@ -1771,7 +1785,7 @@ public: // IMetaDataAssemblyEmit
         DWORD       dwOffset,
         DWORD       dwResourceFlags) override
     {
-        std::lock_guard<pal::WriteLock> lock { this->_lock.GetWriteLock() };
+        std::lock_guard<pal::WriteLock> lock { this->GetLock()->GetWriteLock() };
         return _emit->SetManifestResourceProps(mr, tkImplementation, dwOffset, dwResourceFlags);
     }
 
@@ -1779,65 +1793,53 @@ public: // IMetaDataAssemblyEmit
 public: // IMetaDataEmitHelper
     STDMETHOD(DefineMethodSemanticsHelper)(mdToken tkAssociation, DWORD dwFlags, mdMethodDef md) override
     {
-        std::lock_guard<pal::WriteLock> lock { this->_lock.GetWriteLock() };
+        std::lock_guard<pal::WriteLock> lock { this->GetLock()->GetWriteLock() };
         return _emit->DefineMethodSemanticsHelper(tkAssociation, dwFlags, md);
     }
 
     STDMETHOD(SetFieldLayoutHelper)(mdFieldDef fd, ULONG ulOffset) override
     {
-        std::lock_guard<pal::WriteLock> lock { this->_lock.GetWriteLock() };
+        std::lock_guard<pal::WriteLock> lock { this->GetLock()->GetWriteLock() };
         return _emit->SetFieldLayoutHelper(fd, ulOffset);
     }
 
     STDMETHOD(DefineEventHelper)(mdTypeDef td, LPCWSTR szEvent, DWORD dwEventFlags, mdToken tkEventType, mdEvent *pmdEvent) override
     {
-        std::lock_guard<pal::WriteLock> lock { this->_lock.GetWriteLock() };
+        std::lock_guard<pal::WriteLock> lock { this->GetLock()->GetWriteLock() };
         return _emit->DefineEventHelper(td, szEvent, dwEventFlags, tkEventType, pmdEvent);
     }
 
     STDMETHOD(AddDeclarativeSecurityHelper)(
         mdToken tk, DWORD dwAction, void const *pValue, DWORD cbValue, mdPermission *pmdPermission) override
     {
-        std::lock_guard<pal::WriteLock> lock { this->_lock.GetWriteLock() };
+        std::lock_guard<pal::WriteLock> lock { this->GetLock()->GetWriteLock() };
         return _emit->AddDeclarativeSecurityHelper(tk, dwAction, pValue, cbValue, pmdPermission);
     }
 
     STDMETHOD(SetResolutionScopeHelper)(mdTypeRef tr, mdToken rs) override
     {
-        std::lock_guard<pal::WriteLock> lock { this->_lock.GetWriteLock() };
+        std::lock_guard<pal::WriteLock> lock { this->GetLock()->GetWriteLock() };
         return _emit->SetResolutionScopeHelper(tr, rs);
     }
 
     STDMETHOD(SetManifestResourceOffsetHelper)(mdManifestResource mr, ULONG ulOffset) override
     {
-        std::lock_guard<pal::WriteLock> lock { this->_lock.GetWriteLock() };
+        std::lock_guard<pal::WriteLock> lock { this->GetLock()->GetWriteLock() };
         return _emit->SetManifestResourceOffsetHelper(mr, ulOffset);
     }
 
     STDMETHOD(SetTypeParent)(mdTypeDef td, mdToken tkExtends) override
     {
-        std::lock_guard<pal::WriteLock> lock { this->_lock.GetWriteLock() };
+        std::lock_guard<pal::WriteLock> lock { this->GetLock()->GetWriteLock() };
         return _emit->SetTypeParent(td, tkExtends);
     }
 
     STDMETHOD(AddInterfaceImpl)(mdTypeDef td, mdToken tkInterface) override
     {
-        std::lock_guard<pal::WriteLock> lock { this->_lock.GetWriteLock() };
+        std::lock_guard<pal::WriteLock> lock { this->GetLock()->GetWriteLock() };
         return _emit->AddInterfaceImpl(td, tkInterface);
     }
 
-public: // IMDInternalEmit
-    STDMETHOD(ChangeMvid)(REFGUID newMvid) override
-    {
-        std::lock_guard<pal::WriteLock> lock{ this->_lock.GetWriteLock() };
-        return _emit->ChangeMvid(newMvid);
-    }
-
-    STDMETHOD(SetMDUpdateMode)(ULONG updateMode, ULONG* previousUpdateMode) override
-    {
-        std::lock_guard<pal::WriteLock> lock{ this->_lock.GetWriteLock() };
-        return _emit->SetMDUpdateMode(updateMode, previousUpdateMode);
-    }
 #endif // DNMD_ENABLE_INTERNAL_INTERFACES
 };
 

@@ -152,6 +152,8 @@ namespace pal
         ReadWriteLock();
         ~ReadWriteLock();
         minipal_rwlock* NativeHandle() noexcept;
+        // The caller owns the new lock, which must outlive this view. Switch only while this view is idle.
+        void Borrow(minipal_rwlock* lock) noexcept;
         ReadLock& GetReadLock() noexcept
         {
             return _readLock;
